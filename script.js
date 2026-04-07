@@ -3840,9 +3840,6 @@ function _buildCourseCard(course, idx) {
             // Dynamic courses store full paths in v; static courses need course.root prefix
             const fullPath = course.root ? course.root + '/' + v : v;
 
-            // Dynamic courses: always playable (files are in the index).
-            // Static courses: only show Play if no folder connected, OR file found in index.
-            const canPlay = course._isDynamic || !_libDirHandle || _libInIndex(fullPath);
             const row = document.createElement('div');
             row.className = 'lib-video-row';
             row.innerHTML = `
@@ -3850,7 +3847,7 @@ function _buildCourseCard(course, idx) {
               <span class="lib-video-title${isWatched ? ' watched' : ''}" title="${displayTitle}">${displayTitle}</span>
               <input type="checkbox" class="lib-watch-cb" ${isWatched ? 'checked' : ''}
                 onchange="toggleLibWatched('${videoId.replace(/'/g, "\\'")}')" title="Mark watched">
-              ${canPlay ? `<button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Play">&#9654; Play</button>` : ''}
+              <button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Play">&#9654; Play</button>
             `;
             group.appendChild(row);
           });
