@@ -742,6 +742,7 @@
     transition: all .12s;
   }
   .lib-play-btn:hover { background: rgba(74,222,128,.1); border-color: var(--accent2); }
+  .lib-not-in-folder { font-size: 10px; color: var(--muted); padding: 3px 8px; flex-shrink: 0; opacity: .6; }
 
   .lib-onedrive-note {
     background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.35);

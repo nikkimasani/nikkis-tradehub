@@ -3315,6 +3315,18 @@ function _libWatchedCount() {
   return Object.values(_libWatched).filter(Boolean).length;
 }
 
+// Quick check: is a given filename findable in the current index?
+function _libInIndex(pathStr) {
+  if (!_libDirHandle || _libFileIndex.size === 0) return false;
+  const filename = pathStr.split('/').pop();
+  if (_libFileIndex.has(pathStr.toLowerCase())) return true;
+  const lc = filename.toLowerCase();
+  for (const [, v] of _libFileIndex) {
+    if (v.handle.name.toLowerCase() === lc) return true;
+  }
+  return false;
+}
+
 // Strip spaces/dashes/underscores for fuzzy name comparison
 function _libNorm(s) {
   return s.toLowerCase().replace(/[\s\-_\.]+/g, '');
@@ -3619,10 +3631,12 @@ async function openLibraryFile(relPath) {
     if (iframeEl) { iframeEl.style.display = 'none'; iframeEl.src = ''; }
     if (dlRow) {
       const msg = dlRow.querySelector('.lib-viewer-dl-msg');
+      const isNotFound = e.message && e.message.includes('not found in index');
       if (msg) msg.innerHTML =
         '<strong style="color:var(--warn)">Could not open:</strong> ' + relPath.split('/').pop() +
-        '<br><br><strong>Error:</strong> ' + e.message +
-        '<br><br>This usually means the folder name on disk doesn\'t match exactly. Check the "Folder Contents" list above to verify your paths.';
+        '<br><br>' + (isNotFound
+          ? 'This video isn\'t in your connected folder. The course it belongs to may be stored in a different location on your computer — connect that folder instead, or download the course to your TG folder first.'
+          : '<strong>Error:</strong> ' + e.message);
       const btn = dlRow.querySelector('.lib-viewer-dl-btn');
       if (btn) btn.style.display = 'none';
       dlRow.style.display = '';
@@ -3826,6 +3840,8 @@ function _buildCourseCard(course, idx) {
             // Dynamic courses store full paths in v; static courses need course.root prefix
             const fullPath = course.root ? course.root + '/' + v : v;
 
+            // Show play button only if file is in the connected folder (or no folder connected = static library mode)
+            const inFolder = !_libDirHandle || _libInIndex(fullPath);
             const row = document.createElement('div');
             row.className = 'lib-video-row';
             row.innerHTML = `
@@ -3833,7 +3849,10 @@ function _buildCourseCard(course, idx) {
               <span class="lib-video-title${isWatched ? ' watched' : ''}" title="${displayTitle}">${displayTitle}</span>
               <input type="checkbox" class="lib-watch-cb" ${isWatched ? 'checked' : ''}
                 onchange="toggleLibWatched('${videoId.replace(/'/g, "\\'")}')" title="Mark watched">
-              <button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Open file">&#9654; Play</button>
+              ${inFolder
+                ? `<button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Play">&#9654; Play</button>`
+                : `<span class="lib-not-in-folder" title="Not in connected folder">&#128274; Not downloaded</span>`
+              }
             `;
             group.appendChild(row);
           });
