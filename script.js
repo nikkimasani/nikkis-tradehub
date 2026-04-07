@@ -3327,41 +3327,65 @@ async function _libTraverse(pathStr) {
   return await fileHandle.getFile();
 }
 
+// MIME type map for reliable inline rendering
+const _libMimeMap = {
+  mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska',
+  m4v: 'video/mp4', avi: 'video/x-msvideo',
+  pdf: 'application/pdf',
+  epub: 'application/epub+zip',
+};
+
 // Open a file in the embedded viewer
 async function openLibraryFile(relPath) {
   if (!_libDirHandle) { alert('Connect your TG folder first.'); return; }
   try {
     const file = await _libTraverse(relPath);
     if (_libViewerBlobUrl) URL.revokeObjectURL(_libViewerBlobUrl);
-    _libViewerBlobUrl = URL.createObjectURL(file);
 
     const ext = relPath.split('.').pop().toLowerCase();
     const rawName = relPath.split('/').pop().replace(/\.[^.]+$/, '');
     const title = rawName.replace(/[-_]/g, ' ').replace(/^\d+\s*/, '');
 
+    // Force correct MIME type so browser renders inline instead of downloading
+    const mime = _libMimeMap[ext] || file.type || 'application/octet-stream';
+    const typedBlob = file.slice(0, file.size, mime); // efficient — no data copy
+    _libViewerBlobUrl = URL.createObjectURL(typedBlob);
+
     const viewer = document.getElementById('lib-viewer');
     const videoEl = document.getElementById('lib-viewer-video');
     const iframeEl = document.getElementById('lib-viewer-iframe');
+    const dlRow = document.getElementById('lib-viewer-dl-row');
 
     document.getElementById('lib-viewer-title').textContent = title;
 
-    if (['mp4', 'mov', 'webm', 'mkv'].includes(ext)) {
+    if (['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi'].includes(ext)) {
       videoEl.src = _libViewerBlobUrl;
       videoEl.style.display = '';
       iframeEl.style.display = 'none';
       iframeEl.src = '';
-      viewer.style.display = '';
+      if (dlRow) dlRow.style.display = 'none';
+      viewer.style.display = 'flex';
       videoEl.focus();
-    } else {
-      // PDF, EPUB, etc. — render in iframe
+    } else if (ext === 'pdf') {
       iframeEl.src = _libViewerBlobUrl;
       iframeEl.style.display = '';
       videoEl.style.display = 'none';
       videoEl.src = '';
-      viewer.style.display = '';
+      if (dlRow) dlRow.style.display = 'none';
+      viewer.style.display = 'flex';
+    } else {
+      // EPUB or unknown — can't embed, offer download link
+      videoEl.style.display = 'none';
+      iframeEl.style.display = 'none';
+      if (dlRow) {
+        const dlLink = document.getElementById('lib-viewer-dl-link');
+        if (dlLink) { dlLink.href = _libViewerBlobUrl; dlLink.download = file.name; }
+        dlRow.style.display = '';
+      }
+      viewer.style.display = 'flex';
     }
   } catch(e) {
-    alert('Could not open file. Make sure the TG folder is connected and the file exists.\n\n' + relPath);
+    alert('Could not open: ' + relPath.split('/').pop() + '\n\nError: ' + e.message + '\n\nMake sure the TG folder is connected and this file exists at that path.');
   }
 }
 

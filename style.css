@@ -757,4 +757,15 @@
   .lib-viewer-media { max-width: 100%; max-height: 100%; width: 100%; height: 100%; border-radius: 6px; }
   video.lib-viewer-media { object-fit: contain; background: #000; }
   iframe.lib-viewer-media { border: none; background: #fff; }
+  .lib-viewer-dl-row {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; padding: 40px;
+  }
+  .lib-viewer-dl-msg { font-size: 14px; color: var(--muted); }
+  .lib-viewer-dl-btn {
+    display: inline-block; padding: 10px 24px; border-radius: 8px;
+    background: var(--accent); color: #000; font-size: 13px; font-weight: 700;
+    text-decoration: none; transition: opacity .15s;
+  }
+  .lib-viewer-dl-btn:hover { opacity: .85; }
   .sc-explanation { background:rgba(96,180,255,.07); border:1px solid rgba(96,180,255,.2); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--text); line-height:1.6; margin-top:14px; }
