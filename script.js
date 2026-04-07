@@ -3315,14 +3315,13 @@ function _libNorm(s) {
 }
 
 // Recursively index all files; topFolder = first-level subfolder name (= course name)
+// Only exact lowercase keys — no fuzzy keys here to prevent collision/overwrite
 async function _buildFileIndex(dirHandle, depth, topFolder) {
   if (depth > 8) return;
   try {
     for await (const entry of dirHandle.values()) {
       if (entry.kind === 'file') {
-        const info = { handle: entry, topFolder: topFolder || '' };
-        _libFileIndex.set(entry.name.toLowerCase(), info);
-        _libFileIndex.set(_libNorm(entry.name), info);
+        _libFileIndex.set(entry.name.toLowerCase(), { handle: entry, topFolder: topFolder || '' });
       } else if (entry.kind === 'directory') {
         await _buildFileIndex(entry, depth + 1, topFolder || entry.name);
       }
@@ -3334,13 +3333,11 @@ async function _buildFileIndex(dirHandle, depth, topFolder) {
 function _deriveDynamicLib() {
   const courseMap = new Map();
   const books = [];
-  const seen = new Set();
 
-  for (const [, info] of _libFileIndex) {
+  // Iterate only exact-key entries (key === lowercased filename)
+  for (const [key, info] of _libFileIndex) {
     const name = info.handle.name;
-    const lc = name.toLowerCase();
-    if (seen.has(lc)) continue; // skip fuzzy-key duplicates
-    seen.add(lc);
+    if (key !== name.toLowerCase()) continue; // skip any legacy fuzzy keys
 
     const ext = lc.split('.').pop();
     if (['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi'].includes(ext)) {
@@ -3400,7 +3397,15 @@ async function connectLibraryFolder() {
 // Look up a file by filename from the index
 async function _libTraverse(pathStr) {
   const filename = pathStr.split('/').pop();
-  const info = _libFileIndex.get(filename.toLowerCase()) || _libFileIndex.get(_libNorm(filename));
+  // 1. Exact match
+  let info = _libFileIndex.get(filename.toLowerCase());
+  // 2. Fuzzy linear scan fallback (only for static LIB_BOOKS/LIB_COURSES paths)
+  if (!info) {
+    const norm = _libNorm(filename);
+    for (const [, v] of _libFileIndex) {
+      if (_libNorm(v.handle.name) === norm) { info = v; break; }
+    }
+  }
   if (!info) throw new Error('File not found in index: "' + filename + '"');
   return await info.handle.getFile();
 }
