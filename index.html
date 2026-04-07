@@ -43,6 +43,7 @@
   <div class="tab" data-tab="learn">📚 Knowledge Base</div>
   <div class="tab" data-tab="practice">🃏 Practice</div>
   <div class="tab" data-tab="resources">🔗 Resources</div>
+  <div class="tab" data-tab="library">📂 My Library</div>
 </nav>
 
 <div class="main">
@@ -1700,6 +1701,45 @@
 
     </div>
   </div>
+
+    <!-- ============ MY LIBRARY ============ -->
+    <div class="panel" id="panel-library">
+      <div class="lib-panel-inner">
+
+        <!-- Browser compatibility warning -->
+        <div id="lib-browser-warn" style="display:none" class="lib-browser-warn">
+          ⚠ Your browser doesn't support local file access. Use Chrome or Edge for full functionality.
+        </div>
+
+        <!-- Top connect bar -->
+        <div class="lib-connect-bar">
+          <div class="lib-connect-left">
+            <span class="lib-title">📂 My Trading Library</span>
+            <span id="lib-progress-summary" class="lib-progress-summary">0 / 0 videos watched</span>
+          </div>
+          <div class="lib-connect-right">
+            <div id="lib-status" class="lib-status-disconnected">Not connected — click to connect</div>
+            <button class="btn lib-connect-btn" onclick="connectLibraryFolder()">🔗 Connect TG Folder</button>
+            <div class="lib-reconnect-note">Connection resets on page refresh — reconnect to open files</div>
+          </div>
+        </div>
+
+        <!-- Books section -->
+        <div class="lib-section-header">
+          <span>📚 Books &amp; PDFs</span>
+          <span id="lib-books-count" class="lib-count-badge">9</span>
+        </div>
+        <div class="lib-books-grid" id="lib-books-grid"></div>
+
+        <!-- Video Courses section -->
+        <div class="lib-section-header" style="margin-top:28px">
+          <span>🎬 Video Courses</span>
+          <span id="lib-videos-count" class="lib-count-badge">0 videos</span>
+        </div>
+        <div id="lib-courses-list"></div>
+
+      </div>
+    </div>
 
   </div>
 </div>

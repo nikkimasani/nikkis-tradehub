@@ -49,6 +49,9 @@ async function dbInit() {
     strategyNotes = JSON.parse(localStorage.getItem('td_strategy_notes') || '[]');
     renderStrategyNotes();
     _fcWeakSpots = JSON.parse(localStorage.getItem('td_flashcard_weak') || '[]');
+    // Sync library watched state
+    _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
+    updateLibProgress();
   } catch(e) {
     console.warn('Supabase sync failed, using localStorage only:', e);
   }
@@ -2800,6 +2803,831 @@ function scShuffle() {
 
 // Init scenarios
 scBuildDeck();
+
+// ==================== MY LIBRARY ====================
+
+const LIB_BOOKS = [
+  { title: "How to Day Trade for a Living", author: "Andrew Aziz", format: "EPUB", path: "How to Day Trade for a Living by Andrew Aziz EPUB/How to Day Trade for a Living by Andrew Aziz.epub" },
+  { title: "How to Day Trade for a Living", author: "Andrew Aziz (alt)", format: "EPUB", path: "How to Day Trade for a Living/how to day trade for a living tools, tactics, mone.epub" },
+  { title: "How to Day Trade Penny Stocks", author: "Bill Sykes", format: "EPUB", path: "How to Day Trade Penny Stocks for Beginners by Bill Sykes EPUB/How to Day Trade Penny Stocks for Beginners by Bill Sykes.epub" },
+  { title: "High-Probability Trade Setups", author: "Chartist's Guide", format: "PDF", path: "High-Probability Trade Setups - A Chartist's Guide to Real-Time Trading/~Get Your Files Here !/High-ProbabilityTradeSetups.pdf" },
+  { title: "How To Swing Trade", author: "Beginner's Guide", format: "PDF", path: "How To Swing Trade - A Beginners Guide to Trading Tools, Money Management, Rules, Routines and Strategies/How To Swing Trade - A Beginners Guide to Trading Tools, Money Management, Rules, Routines and Strategies.pdf" },
+  { title: "Strategies for Profiting on Every Trade", author: "Oliver L. Velez", format: "PDF", path: "Strategies for Profiting on Every Trade_ Simple Lessons for Mastering the Market by Oliver L. Velez .. PDF/Strategies for Profiting on Every Trade_ Simple Lessons for Mastering the Market by Oliver L. Velez ...pdf" },
+  { title: "Trade Like Jesse Livermore", author: "Richard Smitten", format: "PDF", path: "Trade Like Jesse Livermore by Richard Smitten PDF/Trade Like Jesse Livermore by Richard Smitten.pdf" },
+  { title: "Trade Like a Pro", author: "Jode Lebin", format: "PDF", path: "TRADE LIKE PRO by Jode Lebin (PDF)(Nonfiction).pdf" },
+  { title: "CRYPTOTRADING PRO", author: "", format: "PDF", path: "CRYPTOTRADING PRO/Book/CRYPTOTRADING PRO.pdf" },
+];
+
+const LIB_COURSES = [
+  {
+    title: "Trade One Pattern, Master One Process",
+    root: "Trade One Pattern, Master One Process/~Get Your Files Here !",
+    sections: [
+      { title: "Why Most Traders Never Make It", videos: [
+        "1 - Why Most Traders Never Make It/1 -Introduction.mp4",
+        "1 - Why Most Traders Never Make It/2 -The Real Problem No Process, No Profits.mp4",
+        "1 - Why Most Traders Never Make It/3 -The Setup That Changed Everything.mp4",
+        "1 - Why Most Traders Never Make It/4 -Examples of The Setup.mp4",
+        "1 - Why Most Traders Never Make It/5 -The Discipline Framework.mp4",
+      ]},
+      { title: "The Setup – Wedge, Break, Execute", videos: [
+        "2 - The Setup – Wedge, Break, Execute/1 -Spotting the Wedge.mp4",
+        "2 - The Setup – Wedge, Break, Execute/2 -Timing the Break.mp4",
+        "2 - The Setup – Wedge, Break, Execute/3 -Executing with Precision.mp4",
+        "2 - The Setup – Wedge, Break, Execute/4 -Contraction explanations (XAUUSD Real example).mp4",
+      ]},
+      { title: "Turn This into Income – Routine, Rules, Results", videos: [
+        "3 - Turn This into Income – Routine, Rules, Results/1 -One Trade a Day Small Account Blueprint.mp4",
+        "3 - Turn This into Income – Routine, Rules, Results/2 -Asset Focus Pick One, Master It.mp4",
+        "3 - Turn This into Income – Routine, Rules, Results/3 -Your Trading Commandments.mp4",
+        "3 - Turn This into Income – Routine, Rules, Results/4 -Final Words Boring Wins.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "TradingView + Technical Analysis: The Trading Blueprint",
+    root: "Tradingview + Technical Analysis - The Trading Blueprint/~Get Your Files Here !",
+    sections: [
+      { title: "Introduction And Welcome", videos: [
+        "1 - Introduction And Welcome/1 - My Introduction.mp4",
+        "1 - Introduction And Welcome/2 - What this course covers.mp4",
+        "1 - Introduction And Welcome/3 - What you will achieve in this course.mp4",
+        "1 - Introduction And Welcome/4 - How to get the most out of this course.mp4",
+        "1 - Introduction And Welcome/5 - What do you need for this course.mp4",
+        "1 - Introduction And Welcome/6 - Lets Begin The Journey.mp4",
+      ]},
+      { title: "Getting Started With TradingView", videos: [
+        "2 - Getting Started With Trading View/7 - Getting started with trading view.mp4",
+        "2 - Getting Started With Trading View/8 - Sign In and Overview.mp4",
+        "2 - Getting Started With Trading View/9 - 4 Major Sections of the Trading View.mp4",
+      ]},
+      { title: "Top Section", videos: [
+        "3 - Top Section/10 - Select Different Coins.mp4",
+        "3 - Top Section/11 - Compare Symbols.mp4",
+        "3 - Top Section/12 - Time Frame.mp4",
+        "3 - Top Section/13 - Candles.mp4",
+        "3 - Top Section/14 - Indicators.mp4",
+        "3 - Top Section/15 - Alerts.mp4",
+        "3 - Top Section/16 - Replay.mp4",
+        "3 - Top Section/17 - Undo Redo.mp4",
+        "3 - Top Section/18 - Chart Layout.mp4",
+        "3 - Top Section/19 - Saving A Chart.mp4",
+        "3 - Top Section/20 - Quick Search.mp4",
+        "3 - Top Section/21 - Chart Settings.mp4",
+        "3 - Top Section/22 - Publish tool.mp4",
+      ]},
+      { title: "Left Section", videos: [
+        "4 - Left Section/23 - Pointer.mp4",
+        "4 - Left Section/24 - Trendlines.mp4",
+        "4 - Left Section/25 - Fibonacci Tool.mp4",
+        "4 - Left Section/26 - Patterns.mp4",
+        "4 - Left Section/27 - Projection.mp4",
+        "4 - Left Section/28 - Brushes.mp4",
+        "4 - Left Section/29 - Text And Emojis.mp4",
+        "4 - Left Section/30 - Measure Tool.mp4",
+        "4 - Left Section/31 - Zoom In And Zoom Out.mp4",
+        "4 - Left Section/32 - Magnet Tool.mp4",
+        "4 - Left Section/33 - Lock Hide And Delete Drawings.mp4",
+        "4 - Left Section/34 - Basic Technical Analysis For you to start trading.mp4",
+      ]},
+      { title: "Right Section", videos: [
+        "5 - Right Section/35 - Watchlists News.mp4",
+        "5 - Right Section/36 - Alerts.mp4",
+        "5 - Right Section/37 - Object Tree And Data Window.mp4",
+        "5 - Right Section/38 - Messages.mp4",
+        "5 - Right Section/39 - Screeners.mp4",
+        "5 - Right Section/40 - Market News.mp4",
+        "5 - Right Section/41 - End Of Right Section.mp4",
+      ]},
+      { title: "Bottom Section", videos: [
+        "6 - Bottom Section/42 - Bottom Section.mp4",
+      ]},
+      { title: "Psychology & Learning", videos: [
+        "7 - Read Learn and fix your sentiments and the psychology/43 - How to fix your psychology and learn faster.mp4",
+      ]},
+      { title: "Basic Technical Analysis", videos: [
+        "8 - Basic Technical Analysis for Trading/44 - Technical Analysis Liquidity Areas Demand And Supply zones.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "TradingView Mobile: The Complete Trader's Guide",
+    root: "[ FreeCourseWeb.com ] Udemy - TradingView Mobile - The Complete Trader's Guide/~Get Your Files Here !",
+    sections: [
+      { title: "Introduction To TradingView On Mobile", videos: [
+        "1 - Introduction To TradingView On Mobile/1 -Introduction.mp4",
+        "1 - Introduction To TradingView On Mobile/2 -Why TradingView is a Must have Tool for Traders.mp4",
+        "1 - Introduction To TradingView On Mobile/3 -Downloading and Installing TradingView App (IOS & Android).mp4",
+        "1 - Introduction To TradingView On Mobile/4 -Creating and Setting up your TradingView Account.mp4",
+      ]},
+      { title: "Mastering The Basics", videos: [
+        "2 - Mastering The Basics Of TradingView Mobile/1 -Overview of the home screen, watchlist and charting tools.mp4",
+        "2 - Mastering The Basics Of TradingView Mobile/2 -Customizing your workspace for optimal trading.mp4",
+        "2 - Mastering The Basics Of TradingView Mobile/3 -How to Add Forex pairs, Stocks and Cryptocurrencies.mp4",
+        "2 - Mastering The Basics Of TradingView Mobile/4 -Exploring the line chart, bar chart and candlesticks.mp4",
+        "2 - Mastering The Basics Of TradingView Mobile/5 -Switching between Timeframes (1-minute to Monthly).mp4",
+      ]},
+      { title: "Advanced Charting Tools On Mobile", videos: [
+        "3 - Advanced Charting Tools On Mobile/1 -Using Drawing Tools, Trendlines, Support and Resistance & Fibonacci Retracements.mp4",
+        "3 - Advanced Charting Tools On Mobile/2 -Adding and Customizing Indicators (RSI, MACD, Moving Averages.mp4",
+        "3 - Advanced Charting Tools On Mobile/3 -Setting Up Price Alerts.mp4",
+      ]},
+      { title: "Trading and Analysis On Mobile", videos: [
+        "4 - Trading and Analysis On TradingView Mobile/1 -Using TradingView Social features to follow other trader's ideas.mp4",
+        "4 - Trading and Analysis On TradingView Mobile/2 -Connecting Your Broker To Tradingview.mp4",
+        "4 - Trading and Analysis On TradingView Mobile/3 -Placing Trades Directly from the App.mp4",
+        "4 - Trading and Analysis On TradingView Mobile/4 -Using Tradingview Replay Tool to Test Strategies.mp4",
+      ]},
+      { title: "Tips, Tricks And Best Practices", videos: [
+        "5 - Tips, Tricks And Best Practices/1 -Customizing Themes and Creating & Saving Layouts.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "Trade Like a Hedge Fund Manager",
+    root: "[ FreeCourseWeb.com ] Udemy - Trade like a Hedge Fund manager - Long - Short Equity strategy/~Get Your Files Here !",
+    sections: [
+      { title: "Full Course", videos: [
+        "1. Full free course/1. Introduction to the LongShort Equity approach.mp4",
+        "1. Full free course/2. Lessons from Julian Robertson and the Tiger cubs.mp4",
+      ]},
+      { title: "Additional Resources", videos: [
+        "2. Additional resources/1. Julian Robertson interview.mp4",
+        "2. Additional resources/2. Philippe Laffont interview - CEO and Founder of Coatue Management - Part 1.mp4",
+        "2. Additional resources/3. Philippe Laffont interview - CEO and Founder of Coatue Management - Part 2.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "Confirmed Divergence: Swing Trade & Day Trading Strategy",
+    root: "[ FreeCryptoLearn.com ] Udemy - Confirmed Divergence - Swing Trade and Day Trading Strategy/~Get Your Files Here !",
+    sections: [
+      { title: "Introduction", videos: [
+        "01 - Introduction/001 Introduction.mp4",
+        "01 - Introduction/002 Divergence in a Nutshell.mp4",
+      ]},
+      { title: "Confirmed Divergence Setup", videos: [
+        "02 - Confirmed Divergence Setup/001 The Setup.mp4",
+        "02 - Confirmed Divergence Setup/002 Identifying Confirmed Divergence Setup.mp4",
+        "02 - Confirmed Divergence Setup/003 Entry.mp4",
+        "02 - Confirmed Divergence Setup/004 Stop Loss.mp4",
+        "02 - Confirmed Divergence Setup/005 Profit Target.mp4",
+        "02 - Confirmed Divergence Setup/006 Trade Management.mp4",
+        "02 - Confirmed Divergence Setup/007 Reminders.mp4",
+      ]},
+      { title: "Weekly & 4-Hour Setups", videos: [
+        "03 - Weekly and 4-Hour Confirmed Divergence Setup/001 AUDUSD Long.mp4",
+        "03 - Weekly and 4-Hour Confirmed Divergence Setup/002 Bitcoin Long.mp4",
+        "03 - Weekly and 4-Hour Confirmed Divergence Setup/003 Bitcoin Short.mp4",
+        "03 - Weekly and 4-Hour Confirmed Divergence Setup/004 EURUSD Short.mp4",
+        "03 - Weekly and 4-Hour Confirmed Divergence Setup/005 XRP Short.mp4",
+      ]},
+      { title: "Daily & 1-Hour Setups", videos: [
+        "04 - Daily and 1-Hour Confirmed Divergence Setup/001 AUDNZD Short.mp4",
+        "04 - Daily and 1-Hour Confirmed Divergence Setup/002 Bitcoin Short.mp4",
+        "04 - Daily and 1-Hour Confirmed Divergence Setup/003 Cardano Short.mp4",
+        "04 - Daily and 1-Hour Confirmed Divergence Setup/004 GBPCAD Long.mp4",
+        "04 - Daily and 1-Hour Confirmed Divergence Setup/005 NZDUSD Short.mp4",
+      ]},
+      { title: "4-Hour & 15-Minute Setups", videos: [
+        "05 - 4-Hour and 15-Minute Confirmed Divergence/001 AUDCHF Long.mp4",
+        "05 - 4-Hour and 15-Minute Confirmed Divergence/002 CADJPY Long.mp4",
+        "05 - 4-Hour and 15-Minute Confirmed Divergence/003 German Dax Long.mp4",
+        "05 - 4-Hour and 15-Minute Confirmed Divergence/004 S&P500 Short.mp4",
+      ]},
+      { title: "Live Trades", videos: [
+        "06 - TRADES/001 JP225 Short Trade April 5, 2022.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "Forex Trading: Learn How To Trade Like A Pro",
+    root: "[ FreeCryptoLearn.com ] Udemy - Forex Trading Course - Learn How To Trade Like A Pro Trader!/~Get Your Files Here !",
+    sections: [
+      { title: "Start Here", videos: [
+        "1. Start Here/2. Course Overview.mp4",
+      ]},
+      { title: "Forex Strategy: Low Risk, High Probability Setups", videos: [
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/1. Prerequisite Chart Setup.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/2. The Strategy's Edge.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/3. The Simple 5-Step Formula.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/4. Step 1 Trend Identification.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/5. Step 2 Trend Confirmation.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/6. Step 3 Trade - Entry Determination.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/7. Step 4 Stop - Loss Identification.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/8. Step 5 Profit - Target Determination.mp4",
+        "2. Forex Trading Strategy - How To Identify Low Risk, High Probability Trade Setups/9. PRO TIP Lot Size Determination Hack.mp4",
+      ]},
+      { title: "Case Studies: Live Trade Examples", videos: [
+        "3. Case Studies - Live Forex Trade Examples/1. Live Trade Example - EURUSD.mp4",
+      ]},
+      { title: "Risk Management", videos: [
+        "4. Risk Management - How To Practice Proper Risk and Money Management Like A PRO!/1. Trade Like A Casino for Consistent Profits.mp4",
+        "4. Risk Management - How To Practice Proper Risk and Money Management Like A PRO!/2. Forex Trading Performance Analysis.mp4",
+      ]},
+      { title: "Forex Trading Plan", videos: [
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/1. Trading Psychology.mp4",
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/2. S = Specific.mp4",
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/3. M = Measurable.mp4",
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/4. A = Achievable.mp4",
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/5. R = Relevant.mp4",
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/6. T = Time - Bound.mp4",
+        "5. Forex Trading Plan - How To Develop A Fool - Proof, Winning Forex Trading Plan/7. Activity Setting Your SMART Forex Trading Goal.mp4",
+      ]},
+      { title: "How To Make Money Working 4 Hours A Week", videos: [
+        "6. How To Make Money Through Forex Trading Working 4 Hours A Week or Less!/1. Trend Trading Strategy EA Setup.mp4",
+        "6. How To Make Money Through Forex Trading Working 4 Hours A Week or Less!/2. MT4 Portable Mode Setup.mp4",
+        "6. How To Make Money Through Forex Trading Working 4 Hours A Week or Less!/3. FREE VPS Setup.mp4",
+        "6. How To Make Money Through Forex Trading Working 4 Hours A Week or Less!/4. Risk Management.mp4",
+        "6. How To Make Money Through Forex Trading Working 4 Hours A Week or Less!/5. FREE Bonus Profitable Forex Trading Crash Course.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "How to Day Trade Stocks",
+    root: "[ FreeCryptoLearn.com ] Udemy - How to Day Trade Stocks/~Get Your Files Here !",
+    sections: [
+      { title: "Complete Course", videos: [
+        "1. 1. How to approach trading/1. How to approach stock trading.mp4",
+        "2. 2. How the stock market works/1. How the stock market works..mp4",
+        "3. 3. How stocks move/1. How stocks move..mp4",
+        "4. 4. How much money do you need to trade/1. How much money do you need to trade..mp4",
+        "5. 5. How to flip positions/1. How to flip positions..mp4",
+        "6. 6. How to read the tape/1. How to read the tape..mp4",
+        "7. 7. How to minimize and deal with losses/1. How to minimize and deal with losses..mp4",
+        "8. 8. Combining technical indicators with intuition/1. Combining technical indicators with intuition..mp4",
+        "9. 9. How to use technical analysis/1. How to use technical analysis..mp4",
+        "10. 10. How to design your own trading strategy/1. How to design your own trading strategy..mp4",
+        "11. 11. How to handle psychological effects of trading/1. How to handle psychological effects of trading..mp4",
+        "12. 12. Market timing and periods/1. Market timing and periods..mp4",
+        "13. 13. How to take profits/1. How to take profits..mp4",
+        "14. 14. Why trading should not become your life/1. Why trading should not become your life..mp4",
+      ]},
+    ]
+  },
+  {
+    title: "No-Coding Profitable Algorithmic Trading (TradingView)",
+    root: "[ FreeCryptoLearn.com ] Udemy - No-Coding Profitable Algorithmic Trading using Tradingview!/~Get Your Files Here !",
+    _dynamicLoad: true,
+    sections: [
+      { title: "Phase 1: Why Almost All Traders Lose Money", videos: [] },
+      { title: "Phase 2: Different Ways of Trading the Market", videos: [] },
+      { title: "Phase 3: How Automated & Algorithmic Trading Works", videos: [] },
+      { title: "Phase 4: Must-Know Considerations Before Designing a System", videos: [] },
+      { title: "Phase 5: Defining and Testing Your Trading Idea", videos: [] },
+      { title: "Phase 6: Must-Know Before Backtesting", videos: [] },
+      { title: "Phase 7: How to Backtest on TradingView", videos: [] },
+      { title: "Phase 8: How to Automate a Trading Strategy", videos: [] },
+      { title: "Extra: How One Trader Turned $5K to $10M", videos: [] },
+      { title: "Extra: Tweaking and Enhancing Systems", videos: [] },
+      { title: "Extra: The Best Trading Indicator", videos: [] },
+      { title: "Extra: Everything About Trends & Trend Following", videos: [] },
+      { title: "Extra: How to Use Stop Losses Properly", videos: [] },
+      { title: "Extra: Position Sizing", videos: [] },
+      { title: "Extra: On Cutting Losses", videos: [] },
+      { title: "Extra: Risk and Risk Management", videos: [] },
+      { title: "Extra: On Trade Entries", videos: [] },
+      { title: "Extra: Predicting Markets & Market Fundamentals", videos: [] },
+      { title: "Extra: On Pyramiding", videos: [] },
+      { title: "Extra: Thoughts on Trading Systems", videos: [] },
+      { title: "Extra: Beliefs for Emotional Control", videos: [] },
+      { title: "Extra: Final Suggestions for New Traders", videos: [] },
+      { title: "Final Section: Accelerate Your Growth", videos: [] },
+    ]
+  },
+  {
+    title: "Straightforward Guide on How to Use TradingView",
+    root: "[ FreeCryptoLearn.com ] Udemy - Straightforward Guide on how to use TradingView/~Get Your Files Here !",
+    sections: [
+      { title: "Complete Course", videos: [
+        "1. Introduction.mp4",
+        "2. Lesson 1.mp4",
+        "3. Lesson 2.mp4",
+        "4. Lesson 3.mp4",
+        "5. Lesson 4.mp4",
+        "6. Lesson 5.mp4",
+        "7. Lesson 6.mp4",
+        "8. Conclusion.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "Trading View Mastery: Unlock Your TradingView Potential",
+    root: "[ FreeCryptoLearn.com ] Udemy - Trading View Mastery - Unlock Your TradingView Potential/~Get Your Files Here !",
+    sections: [
+      { title: "Foundations of Smart Investing", videos: [
+        "1. Foundations of Smart Investing/1. Lesson 1 Mastering Money Management for Smart Investments.mp4",
+        "1. Foundations of Smart Investing/2. Optimal Portfolio Allocation Balancing Risks for Maximum Returns.mp4",
+        "1. Foundations of Smart Investing/3. Understanding Investment Performance and Correlations.mp4",
+      ]},
+      { title: "Analyzing Investment Trends and Strategies", videos: [
+        "2. Analyzing Investment Trends and Strategies/1. Reading Market Signals Understanding Investment Life Cycles.mp4",
+        "2. Analyzing Investment Trends and Strategies/2. Navigating TradingView Your Ultimate Investment Platform.mp4",
+        "2. Analyzing Investment Trends and Strategies/3. Mastering Portfolio Management Strategies for Investment Success.mp4",
+      ]},
+      { title: "Building and Optimizing Your Portfolio", videos: [
+        "3. Building and Optimizing Your Investment Portfolio/1. Building an Optimal Portfolio Balancing Active and Passive Strategies.mp4",
+        "3. Building and Optimizing Your Investment Portfolio/2. Understanding Active and Passive Portfolio Strategies.mp4",
+        "3. Building and Optimizing Your Investment Portfolio/3. Understanding Demand Analysis and Correlation in Stock Trading.mp4",
+        "3. Building and Optimizing Your Investment Portfolio/4. Portfolio Diversification.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "Learn To Trade Stocks and Crypto Like the Professionals",
+    root: "[ WebToolTip.com ] Udemy - Learn To Trade Stocks and Crypto Like the Professionals/~Get Your Files Here !",
+    sections: [
+      { title: "Welcome to The World of Investment Trading", videos: [
+        "1 - Welcome to The World of Investment Trading/1 - Welcome.mp4",
+      ]},
+      { title: "Mastering TradingView", videos: [
+        "2 - Mastering Trading View/1 - Registering & Navigating Trading View.mp4",
+        "2 - Mastering Trading View/2 - Using The Manual Fib Tool.mp4",
+        "2 - Mastering Trading View/3 - Choosing Your MarketWatch Stocks & Crypto.mp4",
+      ]},
+      { title: "Trading With eToro & Other Platforms", videos: [
+        "3 - Trading With Etoro & Other Platforms/1 - Introduction To Trading Platforms.mp4",
+        "3 - Trading With Etoro & Other Platforms/2 - Opening A Trade On eToro.mp4",
+        "3 - Trading With Etoro & Other Platforms/3 - Closing A Trade On eToro.mp4",
+      ]},
+      { title: "Stocks Trader Pro Strategy", videos: [
+        "4 - Learning The Stocks Trader Pro Strategy/1 - Stocks Trader Pro Strategy.mp4",
+        "4 - Learning The Stocks Trader Pro Strategy/2 - Stocks Trader Pro Strategy Example - TESLA.mp4",
+        "4 - Learning The Stocks Trader Pro Strategy/3 - Stocks Trader Pro Strategy Example - SOL.mp4",
+        "4 - Learning The Stocks Trader Pro Strategy/4 - Stocks Trader Pro Strategy Example - Coke.mp4",
+        "4 - Learning The Stocks Trader Pro Strategy/5 - Stocks Trader Pro Strategy Example - SPDR.mp4",
+        "4 - Learning The Stocks Trader Pro Strategy/6 - Risk Management.mp4",
+      ]},
+      { title: "Trading Investor Mindset", videos: [
+        "5 - Developing a Trading Investor's Mindset/1 - Trading Investor Mindset.mp4",
+      ]},
+      { title: "Trade Tracker", videos: [
+        "6 - Using The Stocks & Crypto Trade Tracker/1 - Stocks & Crypto Trade Tracker.mp4",
+      ]},
+      { title: "Extended Learning", videos: [
+        "7 - Extended Learning Videos/1 - Crypto - The good, The Bad and The Ugly.mp4",
+        "7 - Extended Learning Videos/2 - Benefiting From Market Gaps.mp4",
+      ]},
+    ]
+  },
+  {
+    title: "Learn TradingView Pine Script Programming From Scratch",
+    root: "[GigaCourse.Com] Udemy - Learn TradingView Pine Script Programming From Scratch",
+    sections: [
+      { title: "Introduction", videos: ["1. Introduction/1. Who am I.mp4"] },
+      { title: "Quickstart", videos: ["2. Quickstart/1. Quickstart.mp4"] },
+      { title: "Basic Syntax", videos: [
+        "3. Basic Syntax/1. Overview & Structure of a Pine Script.mp4",
+        "3. Basic Syntax/2. Versions.mp4",
+        "3. Basic Syntax/3. Study vs. Strategy.mp4",
+        "3. Basic Syntax/4. Lines & Indentation.mp4",
+        "3. Basic Syntax/5. Comments.mp4",
+        "3. Basic Syntax/6. Recap.mp4",
+      ]},
+      { title: "Variables", videos: [
+        "4. Variables/1. Overview & Identifiers.mp4",
+        "4. Variables/2. Variable Types & Assignment.mp4",
+        "4. Variables/3. Variable Types - na Type.mp4",
+        "4. Variables/4. Built-in Variables.mp4",
+        "4. Variables/5. Variable Forms.mp4",
+      ]},
+      { title: "Variable Operations", videos: [
+        "5. Variable Operations/1. Arithmetic Operators.mp4",
+        "5. Variable Operations/2. Comparison Operators.mp4",
+        "5. Variable Operations/3. Logical Operators.mp4",
+      ]},
+      { title: "Drawing On The Chart", videos: [
+        "6. Drawing On The Chart/1. Intro.mp4",
+        "6. Drawing On The Chart/2. How To Make Your Indicator Plot Over the Chart.mp4",
+        "6. Drawing On The Chart/3. Using the plot() function.mp4",
+        "6. Drawing On The Chart/4. User Inputs with input().mp4",
+        "6. Drawing On The Chart/5. Plot prices levels with hline().mp4",
+        "6. Drawing On The Chart/6. Coloring Backgrounds with bgcolor() & fill().mp4",
+        "6. Drawing On The Chart/7. Coloring Candles.mp4",
+        "6. Drawing On The Chart/8. Arrows & Shapes using plotarrow() & plotshape().mp4",
+        "6. Drawing On The Chart/9. Plotting Unicode & Emojis with plotchar().mp4",
+        "6. Drawing On The Chart/10. Using Custom Candles to View More Charts on One Layout (PREMIUM HACK).mp4",
+        "6. Drawing On The Chart/11. Plotting Examples.mp4",
+        "6. Drawing On The Chart/12. PROJECT - Part 1 - Building an indicator from multiple indicators.mp4",
+      ]},
+      { title: "Conditional Operations", videos: [
+        "7. Conditional Operations/1.  Ternary Operator + Build a Color Selector.mp4",
+        "7. Conditional Operations/2. iff() Function.mp4",
+        "7. Conditional Operations/3. if Statement.mp4",
+        "7. Conditional Operations/4. Recap Bring it all Together.mp4",
+        "7. Conditional Operations/5. PROJECT - Part 2 - Build a Signal Generator from our Multi Indicator.mp4",
+      ]},
+      { title: "Functions", videos: [
+        "8. Functions/1. Overview & Syntax.mp4",
+        "8. Functions/2. Single & Multi Line Custom Function Examples.mp4",
+        "8. Functions/3. Keyword Arguments.mp4",
+        "8. Functions/4. Scope.mp4",
+        "8. Functions/5. Mini Project Build a Counter.mp4",
+        "8. Functions/6. Returning Multiple Results With Tuples.mp4",
+        "8. Functions/7. Function Execution.mp4",
+        "8. Functions/8. Recap.mp4",
+        "8. Functions/9. var operator.mp4",
+        "8. Functions/10. PROJECT Part 3 - Make a Multi Strategy Back Tester.mp4",
+      ]},
+      { title: "Wrapping Up", videos: ["9. Wrapping Up/1. Additional Resources & Next Steps.mp4"] },
+    ]
+  },
+  {
+    title: "TradingView Pine Script Strategies: The Complete Guide",
+    root: "[GigaCourse.Com] Udemy - Tradingview Pine Script Strategies The Complete Guide",
+    sections: [
+      { title: "Quickstart", videos: [
+        "1. Quickstart/1. What are strategies, backtesting & fowardtesting.mp4",
+        "1. Quickstart/2. Top 8 Reasons to Build A Strategy in Pinescript.mp4",
+        "1. Quickstart/3. How to build a strategy in Pinescript.mp4",
+      ]},
+      { title: "Analysing Pine Script Strategy Results", videos: [
+        "2. Analysing Pine Script Strategy Results/1. Overview.mp4",
+        "2. Analysing Pine Script Strategy Results/2. Performance Tab.mp4",
+        "2. Analysing Pine Script Strategy Results/3. Overview Tab.mp4",
+        "2. Analysing Pine Script Strategy Results/4. List of Trades Tab.mp4",
+      ]},
+      { title: "Standard Order Types", videos: [
+        "3. Pine Script Standard Order Types/1. Overview.mp4",
+        "3. Pine Script Standard Order Types/2. Reviewing Order Types.mp4",
+        "3. Pine Script Standard Order Types/3. Strategy Commands Overview.mp4",
+        "3. Pine Script Standard Order Types/4. Converting a Pine Script RSI Indicator Study to an RSI Strategy.mp4",
+        "3. Pine Script Standard Order Types/5. Code Layout.mp4",
+        "3. Pine Script Standard Order Types/6. How To Enter A Trade Using Market Orders With strategy.entry And strategy.order.mp4",
+        "3. Pine Script Standard Order Types/7. What's The Difference Between strategy.entry And strategy.order.mp4",
+        "3. Pine Script Standard Order Types/8. How To Exit A Trade Using Market Orders With strategy.close & strategy.close_all.mp4",
+        "3. Pine Script Standard Order Types/9. How To Place A Limit Entry Order In Pinescript.mp4",
+        "3. Pine Script Standard Order Types/10. How To Place A Stop Entry Order In Tradingview Pinescript.mp4",
+        "3. Pine Script Standard Order Types/11. How To Visualize Pending Orders In Tradingview Pinescript.mp4",
+        "3. Pine Script Standard Order Types/12. How To Cancel An Order In Pinescript.mp4",
+      ]},
+      { title: "Advanced Order Types", videos: [
+        "4. Pinescript Advanced Order Types/2. How To Place a Percentage Take Profit In PineScript.mp4",
+        "4. Pinescript Advanced Order Types/3. How To Place A Take Profit Using Ticks With Pinescript.mp4",
+        "4. Pinescript Advanced Order Types/4. How To Place A Stop Loss In Pinescript.mp4",
+        "4. Pinescript Advanced Order Types/5. How To Place A Stop-Limit Order In Pinescript.mp4",
+        "4. Pinescript Advanced Order Types/6. How To Place An OCO Order In Pinescript.mp4",
+        "4. Pinescript Advanced Order Types/7. How To Place A Trailing Stop In Pinescript.mp4",
+      ]},
+      { title: "Understanding The Broker Emulator", videos: [
+        "5. Understanding The Broker Emulator/1. Script Calculation.mp4",
+        "5. Understanding The Broker Emulator/2. Order Execution.mp4",
+        "5. Understanding The Broker Emulator/3. How Does The Broker Emulator Work In Pinescript.mp4",
+      ]},
+      { title: "Practical Examples", videos: [
+        "6. Practical Examples/1. Forex 50 Pips A Day Strategy.mp4",
+        "6. Practical Examples/2. Forex 1 Hour MACD Strategy.mp4",
+        "6. Practical Examples/3. Forex 1 Hour MACD Strategy - Part 2 Filtering Noise & Custom Settings..mp4",
+        "6. Practical Examples/4. Introduction To External Indicators & PineCoders Legendary Backtesting Engine.mp4",
+        "6. Practical Examples/5. Popular Adaptive Hull Moving Average Indicator Converted To A Strategy..mp4",
+        "6. Practical Examples/6. Crypto BNB Burn Buyer Strategy.mp4",
+      ]},
+    ]
+  },
+];
+
+// Library state
+let _libDirHandle = null;
+let _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
+const _libExpanded = new Set();
+let _libDynamicLoaded = new Set(); // track which dynamic courses have been loaded
+
+// Helper: count total hardcoded videos (excluding dynamic course)
+function _libTotalVideos() {
+  return LIB_COURSES.reduce((sum, c) => {
+    if (c._dynamicLoad) return sum;
+    return sum + c.sections.reduce((s2, sec) => s2 + sec.videos.length, 0);
+  }, 0);
+}
+
+function _libWatchedCount() {
+  return Object.values(_libWatched).filter(Boolean).length;
+}
+
+// Connect folder via File System Access API
+async function connectLibraryFolder() {
+  try {
+    _libDirHandle = await window.showDirectoryPicker({ mode: 'read' });
+    localStorage.setItem('td_lib_connected_name', _libDirHandle.name);
+    renderLibrary();
+  } catch(e) {
+    if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
+  }
+}
+
+// Traverse a relative path (forward slashes) from TG root
+async function _libTraverse(pathStr) {
+  const parts = pathStr.split('/');
+  let handle = _libDirHandle;
+  for (let i = 0; i < parts.length - 1; i++) {
+    handle = await handle.getDirectoryHandle(parts[i]);
+  }
+  const fileHandle = await handle.getFileHandle(parts[parts.length - 1]);
+  return await fileHandle.getFile();
+}
+
+// Open a file using File System Access API
+async function openLibraryFile(relPath) {
+  if (!_libDirHandle) { alert('Connect your TG folder first.'); return; }
+  try {
+    const file = await _libTraverse(relPath);
+    const url = URL.createObjectURL(file);
+    window.open(url, '_blank');
+  } catch(e) {
+    alert('Could not open file. Make sure the TG folder is connected and the file exists.\n\n' + relPath);
+  }
+}
+
+// Toggle watched state for a video
+function toggleLibWatched(videoId) {
+  _libWatched[videoId] = !_libWatched[videoId];
+  if (!_libWatched[videoId]) delete _libWatched[videoId];
+  dbSet('td_lib_watched', _libWatched);
+  updateLibProgress();
+}
+
+// Toggle accordion open/close for a course
+function toggleCourseAccordion(idx) {
+  if (_libExpanded.has(idx)) {
+    _libExpanded.delete(idx);
+  } else {
+    _libExpanded.add(idx);
+    if (LIB_COURSES[idx]._dynamicLoad && !_libDynamicLoaded.has(idx)) {
+      loadCourseVideos(idx);
+    }
+  }
+  // Re-render just the course card
+  const container = document.getElementById('lib-courses-list');
+  if (!container) return;
+  const card = container.querySelector('[data-course-idx="' + idx + '"]');
+  if (card) {
+    const newCard = _buildCourseCard(LIB_COURSES[idx], idx);
+    card.replaceWith(newCard);
+  }
+}
+
+// Dynamic video loading for No-Coding Algorithmic course
+async function loadCourseVideos(courseIdx) {
+  if (!_libDirHandle) return;
+  const course = LIB_COURSES[courseIdx];
+  const container = document.getElementById('lib-courses-list');
+  const card = container ? container.querySelector('[data-course-idx="' + courseIdx + '"]') : null;
+  const bodyEl = card ? card.querySelector('.lib-course-body') : null;
+  if (bodyEl) {
+    bodyEl.innerHTML = '<div class="lib-section-group"><div class="lib-loading">Loading videos from folder...</div></div>';
+  }
+
+  try {
+    const rootParts = course.root.split('/');
+    let rootHandle = _libDirHandle;
+    for (const part of rootParts) {
+      rootHandle = await rootHandle.getDirectoryHandle(part);
+    }
+
+    // For each section, try to read the folder
+    for (let si = 0; si < course.sections.length; si++) {
+      const sec = course.sections[si];
+      const sectionFolderName = sec.title; // try by title first
+      try {
+        // Try to find a matching folder by iterating directory entries
+        const entries = [];
+        for await (const entry of rootHandle.values()) {
+          if (entry.kind === 'directory') entries.push(entry);
+        }
+        // find closest match by looking for a folder that includes key words from sec.title
+        const keywords = sec.title.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase().split(' ').filter(w => w.length > 3);
+        let sectionDir = null;
+        for (const entry of entries) {
+          const eName = entry.name.toLowerCase();
+          if (keywords.some(kw => eName.includes(kw))) { sectionDir = entry; break; }
+        }
+        if (!sectionDir) continue;
+
+        // Get all mp4 files in this directory, sorted
+        const videoFiles = [];
+        for await (const f of sectionDir.values()) {
+          if (f.kind === 'file' && f.name.toLowerCase().endsWith('.mp4')) {
+            videoFiles.push(f.name);
+          }
+        }
+        videoFiles.sort();
+        course.sections[si].videos = videoFiles.map(fn => sectionDir.name + '/' + fn);
+      } catch(e) { /* section folder not found, keep empty */ }
+    }
+
+    _libDynamicLoaded.add(courseIdx);
+  } catch(e) {
+    console.warn('Could not load dynamic course videos:', e);
+  }
+
+  // Re-render the card with loaded videos
+  if (container) {
+    const card2 = container.querySelector('[data-course-idx="' + courseIdx + '"]');
+    if (card2) {
+      const newCard = _buildCourseCard(course, courseIdx);
+      card2.replaceWith(newCard);
+    }
+  }
+  updateLibProgress();
+}
+
+// Clean video title for display
+function _cleanVideoTitle(rawTitle) {
+  return rawTitle
+    .replace(/^\d+[\s\-\.]+/, '')
+    .replace(/\.mp4$/i, '')
+    .trim();
+}
+
+// Build a single course accordion card element
+function _buildCourseCard(course, idx) {
+  const isOpen = _libExpanded.has(idx);
+
+  // Calculate video count and watched count for this course
+  const totalVids = course.sections.reduce((s, sec) => s + sec.videos.length, 0);
+  let watchedVids = 0;
+  course.sections.forEach((sec, si) => {
+    sec.videos.forEach(v => {
+      const fname = v.split('/').pop();
+      const vid = idx + '::' + si + '::' + fname;
+      if (_libWatched[vid]) watchedVids++;
+    });
+  });
+
+  const pct = totalVids > 0 ? Math.round((watchedVids / totalVids) * 100) : 0;
+  const sectionCount = course.sections.length;
+
+  const card = document.createElement('div');
+  card.className = 'lib-course-card';
+  card.dataset.courseIdx = idx;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'lib-course-header';
+  header.onclick = () => toggleCourseAccordion(idx);
+  header.innerHTML = `
+    <span class="lib-course-title">${course.title}</span>
+    <div class="lib-course-meta">
+      <span class="lib-meta-badge">${sectionCount} section${sectionCount !== 1 ? 's' : ''}</span>
+      <span class="lib-meta-badge">${totalVids} videos</span>
+      <div class="lib-course-progress-wrap">
+        <div class="lib-progress-bar-track">
+          <div class="lib-progress-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="lib-progress-text">${watchedVids}/${totalVids}</div>
+      </div>
+    </div>
+    <span class="lib-chevron${isOpen ? ' open' : ''}">&#9658;</span>
+  `;
+  card.appendChild(header);
+
+  // Body (only when expanded)
+  if (isOpen) {
+    const body = document.createElement('div');
+    body.className = 'lib-course-body';
+
+    if (course._dynamicLoad && !_libDynamicLoaded.has(idx) && totalVids === 0) {
+      body.innerHTML = '<div class="lib-section-group"><div class="lib-loading">Loading videos from folder...</div></div>';
+    } else {
+      course.sections.forEach((sec, si) => {
+        const group = document.createElement('div');
+        group.className = 'lib-section-group';
+
+        const secTitle = document.createElement('div');
+        secTitle.className = 'lib-section-title';
+        secTitle.textContent = sec.title;
+        group.appendChild(secTitle);
+
+        if (sec.videos.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'lib-empty-section';
+          empty.textContent = 'No videos in this section.';
+          group.appendChild(empty);
+        } else {
+          sec.videos.forEach((v, vi) => {
+            const fname = v.split('/').pop();
+            const videoId = idx + '::' + si + '::' + fname;
+            const isWatched = !!_libWatched[videoId];
+            const displayTitle = _cleanVideoTitle(fname);
+            const fullPath = course.root + '/' + v;
+
+            const row = document.createElement('div');
+            row.className = 'lib-video-row';
+            row.innerHTML = `
+              <span class="lib-video-num">${vi + 1}</span>
+              <span class="lib-video-title${isWatched ? ' watched' : ''}" title="${displayTitle}">${displayTitle}</span>
+              <input type="checkbox" class="lib-watch-cb" ${isWatched ? 'checked' : ''}
+                onchange="toggleLibWatched('${videoId.replace(/'/g, "\\'")}')" title="Mark watched">
+              <button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Open file">&#9654; Play</button>
+            `;
+            group.appendChild(row);
+          });
+        }
+
+        body.appendChild(group);
+      });
+    }
+    card.appendChild(body);
+  }
+
+  return card;
+}
+
+// Update the progress summary and progress bars without full re-render
+function updateLibProgress() {
+  const watched = _libWatchedCount();
+  const total = _libTotalVideos();
+  const summaryEl = document.getElementById('lib-progress-summary');
+  if (summaryEl) summaryEl.textContent = watched + ' / ' + total + ' videos watched';
+
+  // Refresh all open course cards' progress bars
+  const container = document.getElementById('lib-courses-list');
+  if (!container) return;
+  LIB_COURSES.forEach((course, idx) => {
+    if (!_libExpanded.has(idx)) return;
+    const card = container.querySelector('[data-course-idx="' + idx + '"]');
+    if (!card) return;
+    const totalVids = course.sections.reduce((s, sec) => s + sec.videos.length, 0);
+    let watchedVids = 0;
+    course.sections.forEach((sec, si) => {
+      sec.videos.forEach(v => {
+        const fname = v.split('/').pop();
+        const vid = idx + '::' + si + '::' + fname;
+        if (_libWatched[vid]) watchedVids++;
+      });
+    });
+    const pct = totalVids > 0 ? Math.round((watchedVids / totalVids) * 100) : 0;
+    const fill = card.querySelector('.lib-progress-bar-fill');
+    const text = card.querySelector('.lib-progress-text');
+    if (fill) fill.style.width = pct + '%';
+    if (text) text.textContent = watchedVids + '/' + totalVids;
+  });
+}
+
+// Full render of the library panel
+function renderLibrary() {
+  // Browser check
+  const warnEl = document.getElementById('lib-browser-warn');
+  if (warnEl) {
+    warnEl.style.display = !('showDirectoryPicker' in window) ? '' : 'none';
+  }
+
+  // Connection status
+  const statusEl = document.getElementById('lib-status');
+  if (statusEl) {
+    if (_libDirHandle) {
+      statusEl.className = 'lib-status-connected';
+      statusEl.textContent = '✓ Folder Connected: ' + _libDirHandle.name;
+    } else {
+      statusEl.className = 'lib-status-disconnected';
+      statusEl.textContent = 'Not connected — click to connect';
+    }
+  }
+
+  // Progress summary
+  const total = _libTotalVideos();
+  const watched = _libWatchedCount();
+  const summaryEl = document.getElementById('lib-progress-summary');
+  if (summaryEl) summaryEl.textContent = watched + ' / ' + total + ' videos watched';
+
+  // Books grid
+  const booksGrid = document.getElementById('lib-books-grid');
+  if (booksGrid) {
+    booksGrid.innerHTML = LIB_BOOKS.map(book => {
+      const fmtClass = book.format === 'PDF' ? 'lib-format-pdf' : 'lib-format-epub';
+      return `
+        <div class="lib-book-card">
+          <div class="lib-book-title">${book.title}</div>
+          ${book.author ? '<div class="lib-book-author">by ' + book.author + '</div>' : ''}
+          <div class="lib-book-footer">
+            <span class="lib-format-badge ${fmtClass}">${book.format}</span>
+            <button class="lib-open-btn" onclick="openLibraryFile('${book.path.replace(/'/g, "\\'")}')" title="Open ${book.title}">Open &#8594;</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Video count badge
+  const videosCountEl = document.getElementById('lib-videos-count');
+  if (videosCountEl) videosCountEl.textContent = total + ' videos';
+
+  // Course list
+  const coursesList = document.getElementById('lib-courses-list');
+  if (coursesList) {
+    coursesList.innerHTML = '';
+    LIB_COURSES.forEach((course, idx) => {
+      coursesList.appendChild(_buildCourseCard(course, idx));
+    });
+  }
+}
+
+// Initialize library on page load
+(function initLibrary() {
+  // Sync watched state from localStorage
+  _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
+  renderLibrary();
+})();
 
 // ---- Load from Supabase (overwrites localStorage if newer data exists) ----
 dbInit();

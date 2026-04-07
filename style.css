@@ -598,4 +598,134 @@
   .sc-opt.correct { border-color:var(--accent2); background:rgba(74,222,128,.12); color:var(--accent2); }
   .sc-opt.wrong { border-color:var(--warn); background:rgba(251,91,82,.1); color:var(--warn); }
   .sc-opt.disabled { cursor:default; }
+
+  /* ===================== MY LIBRARY PANEL ===================== */
+  #panel-library { overflow-y: auto; }
+  .lib-panel-inner { padding: 20px 24px; max-width: 1200px; }
+
+  .lib-browser-warn {
+    background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3);
+    color: var(--gold); border-radius: 8px; padding: 10px 16px;
+    font-size: 13px; margin-bottom: 16px;
+  }
+
+  /* Connect bar */
+  .lib-connect-bar {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 24px; gap: 16px; flex-wrap: wrap;
+  }
+  .lib-connect-left { display: flex; flex-direction: column; gap: 4px; }
+  .lib-title { font-size: 20px; font-weight: 800; color: var(--text); }
+  .lib-progress-summary { font-size: 13px; color: var(--muted); }
+  .lib-connect-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .lib-connect-btn { font-size: 13px; padding: 7px 16px; white-space: nowrap; }
+  .lib-status-connected { font-size: 12px; font-weight: 700; color: var(--accent2); }
+  .lib-status-disconnected { font-size: 12px; color: var(--muted); }
+  .lib-reconnect-note { font-size: 11px; color: var(--muted); font-style: italic; }
+
+  /* Section headers */
+  .lib-section-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .lib-count-badge {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  /* Books grid */
+  .lib-books-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 8px;
+  }
+  @media (max-width: 900px) { .lib-books-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .lib-books-grid { grid-template-columns: 1fr; } }
+
+  .lib-book-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .lib-book-card:hover { border-color: var(--accent); box-shadow: 0 0 12px rgba(96,180,255,.1); }
+  .lib-book-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .lib-book-author { font-size: 11px; color: var(--muted); }
+  .lib-book-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .lib-format-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    padding: 2px 8px; border-radius: 6px;
+  }
+  .lib-format-pdf { background: rgba(251,91,82,.15); color: var(--warn); border: 1px solid rgba(251,91,82,.3); }
+  .lib-format-epub { background: rgba(96,180,255,.12); color: var(--accent); border: 1px solid rgba(96,180,255,.25); }
+  .lib-open-btn {
+    background: none; border: 1px solid var(--border); color: var(--accent);
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    transition: all .15s;
+  }
+  .lib-open-btn:hover { background: rgba(96,180,255,.1); border-color: var(--accent); }
+
+  /* Course accordion */
+  .lib-course-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 8px; overflow: hidden;
+  }
+  .lib-course-header {
+    display: flex; align-items: center; gap: 10px; padding: 13px 16px;
+    cursor: pointer; user-select: none; transition: background .12s;
+  }
+  .lib-course-header:hover { background: var(--surface2); }
+  .lib-course-title { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; min-width: 0; }
+  .lib-course-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .lib-meta-badge {
+    font-size: 11px; color: var(--muted); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px;
+    white-space: nowrap;
+  }
+  .lib-chevron { color: var(--muted); font-size: 12px; transition: transform .15s; flex-shrink: 0; }
+  .lib-chevron.open { transform: rotate(90deg); }
+
+  /* Progress bar inside course header */
+  .lib-course-progress-wrap { width: 80px; flex-shrink: 0; }
+  .lib-progress-bar-track {
+    height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .lib-progress-bar-fill {
+    height: 100%; background: var(--accent2); border-radius: 2px; transition: width .3s;
+  }
+  .lib-progress-text { font-size: 10px; color: var(--muted); text-align: right; margin-top: 2px; }
+
+  /* Course body */
+  .lib-course-body { border-top: 1px solid var(--border); }
+  .lib-section-group { padding: 0 16px; }
+  .lib-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--muted); padding: 10px 0 6px; border-bottom: 1px solid rgba(31,45,69,.5);
+    margin-bottom: 2px;
+  }
+
+  /* Video rows */
+  .lib-video-row {
+    display: flex; align-items: center; gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid rgba(31,45,69,.4);
+  }
+  .lib-video-row:last-child { border-bottom: none; }
+  .lib-video-num { font-size: 11px; color: var(--muted); min-width: 22px; text-align: right; flex-shrink: 0; }
+  .lib-video-title {
+    flex: 1; font-size: 12px; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .lib-video-title.watched { color: var(--muted); text-decoration: line-through; }
+  .lib-watch-cb { accent-color: var(--accent2); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+  .lib-play-btn {
+    background: none; border: 1px solid var(--border); color: var(--accent2);
+    font-size: 11px; padding: 3px 8px; border-radius: 5px; cursor: pointer; flex-shrink: 0;
+    transition: all .12s;
+  }
+  .lib-play-btn:hover { background: rgba(74,222,128,.1); border-color: var(--accent2); }
+
+  .lib-empty-section { font-size: 12px; color: var(--muted); padding: 8px 0; font-style: italic; }
+  .lib-loading { font-size: 12px; color: var(--muted); padding: 10px 0; }
   .sc-explanation { background:rgba(96,180,255,.07); border:1px solid rgba(96,180,255,.2); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--text); line-height:1.6; margin-top:14px; }
