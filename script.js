@@ -2109,6 +2109,12 @@ function fcRestartAll() {
   fcBuildDeck();
 }
 
+function fcShuffle() {
+  fcBuildDeck();
+  const card = document.getElementById('flashcard-wrap');
+  if (card) { card.classList.add('shuffle-pulse'); setTimeout(() => card.classList.remove('shuffle-pulse'), 400); }
+}
+
 // Init flashcards
 fcBuildDeck();
 
@@ -2510,6 +2516,210 @@ const SCENARIOS = [
     options: ["A. Keep trading your normal schedule — it's a small sample size", "B. Stop trading after 2 PM — your data shows your edge disappears in the afternoon", "C. Trade more in the afternoon to improve your afternoon win rate", "D. Switch entirely to afternoon trading to force improvement"],
     answer: 1,
     explanation: "This is exactly what journaling is for. Your data clearly shows a time-of-day edge. Cutting out afternoon trading isn't quitting — it's optimizing. Professional traders ruthlessly eliminate low-edge periods. Trading more in the afternoon to 'get better' at it means trading with a negative edge while paying commissions and taking losses. Use your edge when it exists; stop when it doesn't."
+  },
+  {
+    situation: "You have a $8,000 account. You want to risk 1% per trade ($80). A setup has a $0.40 stop. How many shares should you buy?",
+    options: ["A. 20 shares", "B. 200 shares", "C. 80 shares", "D. 400 shares"],
+    answer: 1,
+    explanation: "Position sizing formula: Max Risk ÷ Stop Distance = Shares. $80 ÷ $0.40 = 200 shares. This is the only correct answer. 20 shares would only risk $8 (0.1% of account — undersized). 80 shares risks $32. 400 shares risks $160 (2% — double your limit). Getting this math automatic is one of the highest-leverage skills in trading."
+  },
+  {
+    situation: "You're in a profitable long trade. The stock just printed a shooting star candle at a major resistance level with volume spiking on the candle.",
+    options: ["A. Hold — one candle doesn't change the trend", "B. Take partial profits or tighten your stop — the shooting star is a strong reversal warning", "C. Add to the position — volume confirms the move", "D. Set a hard stop at breakeven and ignore the signal"],
+    answer: 1,
+    explanation: "A shooting star at resistance with volume is one of the most reliable reversal signals in candlestick analysis. The long upper wick shows buyers pushed up but sellers overwhelmed them. Taking partial profits respects the signal while keeping exposure if you're wrong. Ignoring it because 'one candle doesn't matter' is how you give back winners."
+  },
+  {
+    situation: "You enter a long at $50. The stock quickly drops to $49.40, triggering your stop. You're out at $49.40 with a $60 loss on 100 shares. Two hours later the stock is at $53. How do you feel?",
+    options: ["A. Angry — you should have held through the stop", "B. Neutral — your stop was correct, the outcome doesn't change the decision quality", "C. Relieved — the stop saved you from a bigger loss initially", "D. Motivated to never use stops again so you can hold through dips"],
+    answer: 1,
+    explanation: "This is the most important mindset test in trading. A stopped-out trade that 'would have worked' feels like a mistake but it wasn't. You made the right decision with the information available at entry. You cannot judge trade decisions by outcomes — only by process. The stop was placed correctly. The fact it bounced is irrelevant to whether the stop was right. Outcome bias is what makes traders abandon good systems."
+  },
+  {
+    situation: "Your account is up 18% this month — your best ever. With one week left in the month, you want to push for 25%.",
+    options: ["A. Increase size to reach 25% — you're clearly in a hot streak", "B. Protect the 18% — reduce size for the final week and lock in the month", "C. Trade the same as always — no adjustment needed", "D. Only take the very best setups at normal size"],
+    answer: 3,
+    explanation: "Option D is the disciplined approach that doesn't chase but also doesn't quit. Your edge is working — keep running it at normal size with your normal criteria. Option B (protect the month) is also valid psychology for developing traders. Option A is the trap: increasing size after a hot streak means when the inevitable losing trade hits, it hits bigger. The 18% is real — don't give it back to ego."
+  },
+  {
+    situation: "A momentum stock runs up 40% in 3 days. On day 4 it gaps up another 8% at open. This is the parabolic phase. You want to buy.",
+    options: ["A. Buy — parabolic stocks keep going parabolic", "B. Avoid the long — parabolic 4th-day moves have very high reversal risk", "C. Short it immediately — it's definitely topping", "D. Buy half size with a very tight stop"],
+    answer: 1,
+    explanation: "The 4th or 5th day of a parabolic move is where retail FOMO peaks and smart money sells. Volume is often climactic — massive, then suddenly dry. The risk/reward of buying day 4 of a parabolic is poor: you're entering where professional traders are exiting. If you want to trade it, wait for the reversal and short the first red candle after the exhaustion — don't chase the last leg up."
+  },
+  {
+    situation: "You're watching a stock that keeps bouncing between $20 support and $25 resistance for 6 weeks. It's currently at $20.10.",
+    options: ["A. Buy now — it's at support and will bounce to $25 again", "B. Wait for a confirmed bounce candle before entering long", "C. Short it — range-bound stocks eventually break down", "D. The range is too tight to trade profitably"],
+    answer: 1,
+    explanation: "Support in a range is real but not guaranteed. The stock has respected it 6 times — but this touch could be the breakdown. Waiting for a confirmed bullish candle (hammer, engulfing, doji reversal) before entering gives confirmation that buyers are stepping in again. Buying at the first touch of support without confirmation means you might catch a knife if the range breaks down."
+  },
+  {
+    situation: "You missed your entry on a setup. The stock ran 3% without you. You're now watching it consolidate just below resistance. Do you enter?",
+    options: ["A. Yes — it's pausing before the next leg up", "B. No — you missed the entry. Wait for a new setup to form", "C. Enter half size since you missed the ideal entry", "D. Enter if volume picks up during the consolidation"],
+    answer: 1,
+    explanation: "Chasing a missed entry is one of the most common errors. Your original entry criteria existed for a reason — the setup met your rules at that price. Now the stock has moved 3%, your risk/reward is completely different, and you're entering from a position of FOMO rather than analysis. The best response to a missed entry is: mark it in your journal, move on, and find the next setup."
+  },
+  {
+    situation: "It's earnings season. Every morning there are 5–10 high-volume, news-driven stocks moving 15%+. You feel like you should be trading them all.",
+    options: ["A. Trade as many as possible — earnings season is the best time of year", "B. Pick 1–2 that fit your strategy best and ignore the rest", "C. Avoid trading during earnings season entirely", "D. Trade all of them with smaller size to diversify"],
+    answer: 1,
+    explanation: "Earnings season creates noise disguised as opportunity. Chasing multiple earnings movers simultaneously splits your focus, increases your error rate, and leads to overtrading. Professional traders identify 1–2 setups that match their specific strategy and execute those well. FOMO about all the other moves is what causes undisciplined trades. More opportunities doesn't mean more profit — it usually means more mistakes."
+  },
+  {
+    situation: "You're watching a falling wedge form over 2 weeks on a stock that's been in a downtrend. The wedge is tightening. Volume has declined throughout.",
+    options: ["A. Short it — the downtrend continues inside the wedge", "B. Watch for a breakout above the upper trendline — falling wedges are bullish reversal patterns", "C. Buy immediately — the wedge is almost complete", "D. Ignore it — wedge patterns are unreliable"],
+    answer: 1,
+    explanation: "A falling wedge is a bullish continuation or reversal pattern. Declining volume during the wedge formation is confirmation — sellers are losing conviction. The trigger is a breakout above the upper descending trendline on increased volume. Shorting into a falling wedge trades against the pattern's directional bias. Buying before the breakout means you're guessing — wait for the trigger."
+  },
+  {
+    situation: "Your broker sends a warning: you've made 3 day trades this week in a margin account under $25,000. One more and you'll be flagged as a Pattern Day Trader.",
+    options: ["A. Take the 4th trade — PDT designation doesn't actually restrict anything", "B. Stop day trading for the rest of the week to avoid the PDT flag", "C. Immediately deposit $25,000 to avoid the restriction", "D. Close your margin account and open a cash account"],
+    answer: 1,
+    explanation: "PDT designation restricts your account to 3 round-trip day trades per 5 business days until you have $25,000. Once flagged, you must either deposit $25k or wait out the restriction. Stopping day trades for the week is the practical short-term move. Long-term: a cash account has no PDT restriction (funds just need to settle T+1 for options, T+2 for stocks), which is often better for smaller accounts."
+  },
+  {
+    situation: "You've been tracking a stock for 2 weeks building a thesis. You enter. 5 minutes later your friend texts you a news article saying the stock is in trouble. What do you do?",
+    options: ["A. Immediately sell — your friend's article changes everything", "B. Evaluate the article's source and relevance before making any decision", "C. Hold — you did your own research and trust your thesis", "D. Sell half to hedge the uncertainty"],
+    answer: 1,
+    explanation: "Knee-jerk reactions to unverified news is how traders get whipsawed. First: what's the source? Is it credible? Is it new information or old news being recirculated? Does it materially change your thesis? A clickbait article is different from an SEC filing. Evaluate first, react second. That said — if the article contains genuinely new material negative information you didn't know, that changes the picture and exiting is valid."
+  },
+  {
+    situation: "You've had your best month ever — up $4,200. Your partner asks where the money came from. They're worried about you 'gambling.' How do you respond to yourself?",
+    options: ["A. They're wrong — trading is a skill, not gambling", "B. Honestly assess: are you following a repeatable process with defined risk, or are you getting lucky?", "C. Show them your P&L to prove it's working", "D. Keep it to yourself — they don't understand trading"],
+    answer: 1,
+    explanation: "One good month doesn't prove a system. The most important question is whether you can articulate exactly why each trade was taken and whether you followed your rules. If you can't, your partner might be more right than you want to admit. The distinction between trading and gambling is process: defined entry criteria, defined risk, defined exit. A great month built on luck will reverse. A great month built on process is a foundation."
+  },
+  {
+    situation: "A stock you want to short has a high short borrow rate (15% annualized). You plan to hold the short for 2 weeks.",
+    options: ["A. The borrow rate doesn't matter for a 2-week trade", "B. Factor the borrow cost into your expected profit — it eats into your return", "C. Avoid all trades with borrow fees", "D. The borrow fee only applies if you lose the trade"],
+    answer: 1,
+    explanation: "Short borrow fees are charged daily on the value of shares you've borrowed. At 15% annually, a 2-week hold costs roughly 0.58% of the position value in fees alone. On a $10,000 short, that's $58 you need to earn just to break even on the fee. Always factor borrow costs into your target price. High borrow rates also signal heavy short interest, which increases squeeze risk."
+  },
+  {
+    situation: "You see two identical setups: one on a $5 stock, one on a $500 stock. Both have the same percentage stop (1%). Which do you trade?",
+    options: ["A. The $5 stock — it's cheaper per share", "B. Either can be traded — with proper position sizing, the dollar risk is the same", "C. The $500 stock — more expensive stocks are more reliable", "D. Neither — the setups need to be evaluated on more than price"],
+    answer: 1,
+    explanation: "Price per share is irrelevant when you size by risk. A 1% stop on a $5 stock = $0.05/share. A 1% stop on a $500 stock = $5/share. With a $100 risk budget: $0.05 stop = 2,000 shares; $5 stop = 20 shares. Both risk exactly $100. The decision should be based on the quality of the setup, liquidity, and your execution comfort — not the nominal share price."
+  },
+  {
+    situation: "It's been 3 weeks since you had a winning trade. You're down $800 overall. You're starting to question everything.",
+    options: ["A. Quit trading — 3 bad weeks proves it doesn't work for you", "B. Step back, audit your last 20 trades for rule violations, then decide", "C. Double your size to recover faster", "D. Switch to a completely different strategy immediately"],
+    answer: 1,
+    explanation: "Three losing weeks is painful but not automatically a sign the strategy is broken. Before any decision, audit your last 20 trades: Did you follow your rules? Were there clear external conditions (high VIX, no trend, earnings season)? What's your actual win rate vs. your expected win rate? Data tells you whether to persist, adjust, or pause. Emotional reactions — quitting, doubling size, or wholesale strategy changes — rarely fix the actual problem."
+  },
+  {
+    situation: "You buy a stock that then drops 8% in one session. Your original stop was at -3%. You held through the stop because you 'knew' it would bounce.",
+    options: ["A. Holding was correct since it may still bounce", "B. You made a critical error — overriding your stop is the behavior that blows accounts", "C. The stop was too tight — your analysis about the bounce was right", "D. This only matters if you end up losing money on the trade"],
+    answer: 1,
+    explanation: "Overriding your stop is the single most account-destroying behavior in trading. The stop was placed when you had clear thinking and a defined maximum loss. Holding through it — especially because you 'knew' it would bounce — is the definition of hope over process. The fact it might still work out is irrelevant. If you override your stop once, you'll do it again. One bad override can wipe months of gains."
+  },
+  {
+    situation: "You want to trade NVDA but the chart looks extended on the daily. On the 5-minute chart there's a perfect bull flag setup. What should you do?",
+    options: ["A. Take the 5-min bull flag — the setup is clear", "B. Check if the daily context supports the 5-min direction before entering", "C. Only trade daily charts — intraday is too noisy", "D. The 5-min is the only chart that matters for day trading"],
+    answer: 1,
+    explanation: "Multi-timeframe alignment dramatically increases setup quality. A bull flag on the 5-min has much better follow-through if the daily chart is also in an uptrend or consolidating, not extended and overbought. Trading a 5-min long setup into daily resistance is fighting two timeframes. The daily gives context; the 5-min gives entry. Both should agree."
+  },
+  {
+    situation: "You're consistently profitable but your biggest wins are small and your biggest losses are large — you're running a negative skew. Your overall P&L is still positive but barely.",
+    options: ["A. Keep going — positive P&L is all that matters", "B. Fix the skew: cut losses faster and let winners run longer — your edge exists but you're undermining it", "C. Increase trade frequency to average out the skew", "D. The skew doesn't matter as long as win rate is above 50%"],
+    answer: 1,
+    explanation: "Negative skew — small wins, large losses — is unsustainable even with positive P&L. One or two large losses can wipe a month of small wins. The fix is behavioral: honor stops precisely and use trailing stops on winners instead of exiting at the first profit. Your edge exists (you have a positive P&L) but you're systematically leaving it on the table. Fixing the skew turns a marginal system into a robust one."
+  },
+  {
+    situation: "You want to buy AAPL but it reports earnings in 3 days. The setup is technically perfect. Should you enter now or wait?",
+    options: ["A. Enter now — the setup is perfect and three days is plenty of time", "B. Wait for post-earnings if you want a clean directional trade", "C. Buy now with a stop very close to entry to limit earnings risk", "D. Buy half now and add after earnings"],
+    answer: 1,
+    explanation: "Entering a clean technical setup 3 days before earnings means you're taking on binary event risk regardless of how good the chart looks. Earnings can gap the stock 10% in either direction overnight, bypassing any stop. Either wait for the post-earnings reaction (which often creates better setups anyway) or treat it as a very short-term trade with the intention to close before earnings. Never unknowingly hold through earnings."
+  },
+  {
+    situation: "You're in a trade. Your profit is $200. You've been holding for 2 hours and the stock hasn't moved in 45 minutes. Your original target was $400.",
+    options: ["A. Hold until the target — you planned $400", "B. Consider exiting or tightening your stop — a stalled trade in profit is better closed than reversed", "C. Add to the position to force it to your target", "D. Lower your target to $200 since that's what it wants to give you"],
+    answer: 1,
+    explanation: "A stalled trade with open profit is a risk management decision, not a patience test. Two hours holding for a target that's 45 minutes of stuck price away means your thesis isn't playing out on schedule. Tightening your stop to lock in $150-180 of the $200 gains lets the trade breathe while guaranteeing you keep most of the profit. Holding rigidly to an original target when price is stalling often means giving back gains."
+  },
+  {
+    situation: "A veteran trader you respect says 'never short a stock under $5.' You see a perfect technical short setup on a $3 stock.",
+    options: ["A. Short it — the setup is the setup, price doesn't matter", "B. Respect the rule — sub-$5 stocks are manipulated and unpredictable for shorting", "C. Half size to compromise between the rule and the setup", "D. Ask the veteran why before deciding"],
+    answer: 1,
+    explanation: "Rules from experienced traders usually exist because of painful lessons. Sub-$5 stocks are often harder to borrow, have wide spreads, low liquidity, can be halted by exchanges more easily, and are frequent targets of pump-and-dump manipulation. A short squeeze on a $3 stock with tiny float can be catastrophic. Respecting risk-based rules even when you think you have the right setup is part of longevity. Test the rule on paper first."
+  },
+  {
+    situation: "You're watching a stock that has been rejected at $100 three times. It's approaching $100 again. Your momentum indicator is flashing bullish.",
+    options: ["A. Buy — the bullish indicator means it'll break through this time", "B. Wait for a confirmed close above $100 before taking a long position", "C. Short at $100 — triple rejection means it'll fail again", "D. The indicator outweighs the price resistance"],
+    answer: 1,
+    explanation: "Triple rejection at a level means $100 is significant resistance. A bullish momentum indicator approaching that level doesn't guarantee a breakout — it means buyers are attempting it. The clean trade is waiting for a confirmed close above $100 (ideally with volume). That's your evidence the resistance has flipped to support. Buying before the break means you may be holding through another rejection."
+  },
+  {
+    situation: "You've been paper trading for 4 months with strong results. You go live with $2,000. On your 3rd live trade you make a significant error — you bought 10x too many shares by mistake.",
+    options: ["A. Hold — maybe it'll work out anyway", "B. Immediately close the entire position regardless of P&L — a sizing error is never a trade", "C. Sell enough shares to get back to your intended position size", "D. Hold half and sell half"],
+    answer: 1,
+    explanation: "A position entered by mistake is not a trade — it's an error. Close it immediately and completely, regardless of whether it's currently profitable. Option C sounds logical, but you're now making trading decisions based on an error, not a setup. The reason to close everything: you have no thesis for that position size, no planned stop at that size, and no defined exit. Treat errors as errors, not opportunities."
+  },
+  {
+    situation: "It's 9:28 AM. You have 2 minutes before the open. You see a perfect setup forming. You rush to enter before the bell rings.",
+    options: ["A. Enter now — getting in early gives you a better price", "B. Wait for the open — pre-open orders can get filled at unpredictable prices", "C. Set a limit order to trigger exactly at 9:30:00", "D. Skip it — setups that form before open are unreliable"],
+    answer: 1,
+    explanation: "Entering a stock position in the last 2 minutes before the bell is risky — liquidity is thin, spreads are wide, and your order may fill at a price far from where you expect. At the open, order flow normalizes within seconds and you get better execution. Waiting 30 seconds for the market to open is almost always the better choice over a chaotic pre-open fill."
+  },
+  {
+    situation: "You've been watching a stock consolidate tightly for 5 days. Today it breaks out on 4x average volume. You're not in the trade. What do you do?",
+    options: ["A. Chase it immediately — volume confirms the breakout", "B. Add it to your watchlist and wait for a pullback to the breakout level", "C. It's too late — breakouts that you miss should always be ignored", "D. Buy in after market close when it's calmer"],
+    answer: 1,
+    explanation: "Missing the initial breakout doesn't mean the trade is over. The textbook move after a volume breakout is for price to pull back and retest the breakout level, which now becomes support. That pullback is often the cleanest, lowest-risk entry. Adding to your watchlist and waiting for the retest puts you in the trade with a defined stop (below the breakout level) rather than chasing into a spike."
+  },
+  {
+    situation: "Your trading account has grown from $5,000 to $12,000 over 6 months. Should you increase your position sizes?",
+    options: ["A. Yes — proportionally scale size to account size immediately", "B. Scale size gradually as you confirm your consistency holds at the new level", "C. Keep the exact same dollar amount per trade forever", "D. Double your size immediately to accelerate growth"],
+    answer: 1,
+    explanation: "Scaling is correct — but gradually and with confirmation. When your account grows, your 1% risk dollar amount grows too. The risk is that traders scale too fast after a hot streak and give back gains when the inevitable drawdown comes. The right approach: increase size in small increments (10-20%), trade that size for 2-3 weeks, confirm your win rate and process hold, then increment again. Never jump from $100/trade to $500/trade overnight."
+  },
+  {
+    situation: "You're analyzing a chart. The stock is above its 20 EMA, above VWAP, and RSI is 58. Volume is average. There's no news. Is there a trade?",
+    options: ["A. Yes — all indicators are bullish, buy immediately", "B. Not necessarily — indicators confirm trend but you still need a specific trigger and defined risk", "C. No — RSI under 70 means it hasn't confirmed strength", "D. Yes — VWAP above is all you need"],
+    answer: 1,
+    explanation: "Indicators being 'bullish' is context, not a trade signal. You still need a specific entry trigger: a breakout, a pullback to a level, a candlestick reversal. Without a trigger, you're buying into randomness with no defined stop. 'Everything looks good' is not an entry criterion. Define exactly what price action would trigger your entry and where your stop would be — if you can't, there's no trade yet."
+  },
+  {
+    situation: "You take a trade. It immediately moves in your favor by $150. You feel great. Then it gives back $80 and you're now up $70. You feel worse than when you were flat.",
+    options: ["A. Exit immediately — you can't handle the emotional swings", "B. This is normal loss aversion — manage the trade with your original plan, not the ghost of the $150", "C. Set your stop to lock in the $70 immediately", "D. Add to the position since the dip is a buying opportunity"],
+    answer: 1,
+    explanation: "What you experienced is loss aversion applied to unrealized gains — the $80 drawdown from $150 felt like a loss even though you're still up $70. This is one of the most destructive cognitive biases in trading. Your decision should be based on your original plan: is price still above your stop? Is the setup still valid? Not on how it felt to go from $150 to $70. The ghost of the peak gain is not your benchmark."
+  },
+  {
+    situation: "A stock in your watchlist just broke out. You're at the gym and see it on your phone. You can't monitor it properly. Do you enter?",
+    options: ["A. Enter — you'll monitor from your phone", "B. Skip it — trading requires full attention; entering a trade you can't manage is reckless", "C. Enter with a wider stop so you don't need to watch it closely", "D. Enter half size since you're distracted"],
+    answer: 1,
+    explanation: "Active day trading requires full attention. You need to be able to react within seconds to news, price action, or technical changes. Trading from a phone at the gym while distracted is how small losses become large ones — you can't manage the position. Skip the trade. There will always be another setup when you're properly set up to trade. The cost of missing one trade is far less than the cost of a poorly managed one."
+  },
+  {
+    situation: "You bought a stock based on a tip from a trading Discord. It immediately went up 5% and you're in profit. The tipster now says 'take profits.' What do you do?",
+    options: ["A. Follow the tipster's exit since you followed their entry", "B. Evaluate the exit based on your own technical analysis, not the tipster's instruction", "C. Hold — you don't exit profitable trades on other people's advice", "D. Exit only half since you're uncertain"],
+    answer: 1,
+    explanation: "If you entered without your own analysis, you can't manage the trade intelligently. You have no thesis, no technical level to hold, and no stop logic of your own. In this case, taking the profit and exiting when the tipster says so is actually the pragmatic choice — but the lesson is: never enter a trade you can't manage independently. You're the one risking real money. You need to own every entry and exit decision."
+  },
+  {
+    situation: "It's November and the market has been in a strong uptrend all year. You've been mostly long and profitable. December approaches and you hear about 'tax-loss harvesting season.'",
+    options: ["A. Ignore it — seasonal patterns don't affect individual stocks", "B. Be aware: institutions sell losers in December for tax reasons, which can pressure weak stocks", "C. Sell everything in November to avoid the December selling", "D. Buy everything aggressively in December since prices drop"],
+    answer: 1,
+    explanation: "Tax-loss harvesting is real and affects market microstructure in November-December. Institutions sell their biggest losing positions to realize losses before year-end. This creates selling pressure on already-weak stocks. Being aware doesn't mean you change everything — it means you're more cautious holding beaten-down names near year-end and you understand why certain stocks may see unusual selling. Then in January, many of these names bounce back (the January effect)."
+  },
+  {
+    situation: "You've built a trading strategy that works in trending markets. You've been running it for 3 months with good results. Suddenly the market enters a choppy, range-bound environment and your strategy stops working.",
+    options: ["A. Keep trading it — the trend will return", "B. Recognize that market conditions changed — reduce size or pause the strategy until trending conditions return", "C. Abandon the strategy entirely and find a new one", "D. Increase size to force the strategy to work"],
+    answer: 1,
+    explanation: "All strategies have regime dependence — they work in certain market conditions and fail in others. A trend-following strategy in a choppy market will generate losses consistently. This isn't strategy failure; it's condition mismatch. The correct response is to reduce size dramatically or pause until trending conditions return, not to force it or abandon it entirely. Learning to identify your strategy's optimal market condition is an advanced but crucial skill."
+  },
+  {
+    situation: "You find a backtested strategy online with a claimed 80% win rate over 1,000 trades. The developer is selling it for $299.",
+    options: ["A. Buy it — 80% win rate on 1,000 trades is statistically significant", "B. Be skeptical — backtested results suffer from overfitting and don't account for real execution", "C. Buy it and test it on paper for 1 week before going live", "D. Only buy it if the developer shows audited live trading results"],
+    answer: 3,
+    explanation: "Backtested results are almost always optimistic. Overfitting (tuning the strategy to past data), survivorship bias, and ignoring execution costs (spread, slippage, commissions) inflate backtested win rates. The only meaningful proof is live audited results over a significant period. Even then, you need to verify those results are real. Paying $299 for a backtested strategy is paying for someone's hindsight. Learn the principles instead."
+  },
+  {
+    situation: "You've been trading the same stock (TSLA) every day for 3 months. You feel like you 'know' it better than any other stock. A setup forms on NVDA that looks cleaner. What do you do?",
+    options: ["A. Take the NVDA setup — a better setup is a better setup regardless of stock", "B. Stick to TSLA — familiarity with one stock is a real edge and shouldn't be abandoned casually", "C. Trade both — diversification in setups is good", "D. Paper trade NVDA for a week before going live on it"],
+    answer: 1,
+    explanation: "Stock familiarity is genuinely valuable — knowing a stock's average daily range, how it reacts to market moves, its tendency to spike or grind, its typical spread. This is real edge. Abandoning that to chase a 'cleaner' setup on an unfamiliar stock introduces unknown variables. The better approach: stick to TSLA unless you've spent time studying NVDA's behavior specifically. Edge built on familiarity compounds over time."
   }
 ];
 
@@ -2580,6 +2790,12 @@ function scShowResults() {
 
 function scRestart() {
   scBuildDeck();
+}
+
+function scShuffle() {
+  scBuildDeck();
+  const area = document.getElementById('sc-area');
+  if (area) { area.classList.add('shuffle-pulse'); setTimeout(() => area.classList.remove('shuffle-pulse'), 400); }
 }
 
 // Init scenarios

@@ -550,6 +550,7 @@
           <button class="fc-filter-btn" data-cat="Rule" onclick="setFcFilter(this,'Rule')">Rule</button>
           <button class="fc-filter-btn" data-cat="Strategy" onclick="setFcFilter(this,'Strategy')">Strategy</button>
           <button class="fc-filter-btn" data-cat="Psychology" onclick="setFcFilter(this,'Psychology')">Psychology</button>
+          <button class="fc-shuffle-btn" onclick="fcShuffle()" title="Shuffle & restart deck">🔀 Shuffle</button>
         </div>
 
         <!-- Flashcard UI -->
@@ -593,7 +594,8 @@
 
         <!-- Section 2: Scenario Drills -->
         <div class="section-header" style="margin-top:32px">🎯 Scenario Drills</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Apply your knowledge. These are situational — there's no formula, use your judgment.</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Apply your knowledge. These are situational — there's no formula, use your judgment.</div>
+        <div style="margin-bottom:14px"><button class="fc-shuffle-btn" onclick="scShuffle()" title="Shuffle & restart scenarios">🔀 Shuffle</button></div>
 
         <div id="sc-area">
           <div class="sc-progress-row">
