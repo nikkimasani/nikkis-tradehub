@@ -3297,10 +3297,10 @@ let _libEpubRendition = null;
 let _libDynCourses = null; // courses discovered from connected folder
 let _libDynBooks   = null; // books discovered from connected folder
 
-// Always show LIB_COURSES as the base; append discovered folder courses at the end.
-// This way connecting a folder adds your local videos without hiding the static library.
+// When a folder is connected and has courses, show ONLY those (they have real playable files).
+// Fall back to static LIB_COURSES only when no folder is connected (catalog/preview mode).
 function _getCourseList() {
-  if (_libDynCourses && _libDynCourses.length) return [...LIB_COURSES, ..._libDynCourses];
+  if (_libDynCourses && _libDynCourses.length) return _libDynCourses;
   return LIB_COURSES;
 }
 
@@ -3390,9 +3390,9 @@ function _deriveDynamicLib() {
     }
   }
 
-  // Find the shallowest depth where more than one unique folder name exists.
-  // That's the "course level" — the depth where courses live.
-  // Everything one level deeper becomes sections within those courses.
+  // Find the course level: the shallowest depth where we either find multiple courses (>1 key)
+  // OR find exactly one folder (that single folder IS the course — don't go deeper).
+  // This correctly handles TG/PMP/Section1/video.mp4 → PMP is the course, sections are sections.
   let courseDepth = 0;
   for (let d = 0; d <= 7; d++) {
     const keys = new Set();
@@ -3400,8 +3400,10 @@ function _deriveDynamicLib() {
       const k = (info.pathArr && info.pathArr[d]);
       if (k) keys.add(k);
     }
-    if (keys.size > 1) { courseDepth = d; break; }
-    if (keys.size === 1) courseDepth = d; // only 1 group so far — keep going deeper
+    courseDepth = d;
+    if (keys.size === 0) break;  // no more folder levels
+    if (keys.size === 1) break;  // single folder at this depth = this IS the course level
+    if (keys.size > 1) break;    // multiple courses found at this depth
   }
 
   // Group into courses at courseDepth, then sections at courseDepth+1
@@ -3450,69 +3452,71 @@ async function connectLibraryFolder() {
 
     renderLibrary();
 
-    // Deep diagnostic: scan every top-level entry and report what was found
-    const outEl = document.getElementById('lib-scan-output');
-    const listEl = document.getElementById('lib-scan-list');
-    if (outEl && listEl) {
-      outEl.style.display = '';
-      listEl.innerHTML = '<em style="color:var(--muted)">Scanning top-level folders...</em>';
+    // Diagnostic panel — wrapped in its own try/catch so it can never abort the connection
+    try {
+      const outEl = document.getElementById('lib-scan-output');
+      const listEl = document.getElementById('lib-scan-list');
+      if (outEl && listEl) {
+        outEl.style.display = '';
 
-      const rows = [];
-      try {
-        for await (const entry of _libDirHandle.values()) {
-          if (entry.kind !== 'directory') continue;
-          let subCount = 0, readable = true;
-          try {
-            for await (const sub of entry.values()) subCount++;
-          } catch(e) { readable = false; }
-          rows.push({ name: entry.name, subCount, readable });
+        const rows = [];
+        try {
+          for await (const entry of _libDirHandle.values()) {
+            if (entry.kind !== 'directory') continue;
+            let subCount = 0, readable = true;
+            try {
+              for await (const sub of entry.values()) subCount++;
+            } catch(e) { readable = false; }
+            rows.push({ name: entry.name, subCount, readable });
+          }
+        } catch(e) {}
+
+        rows.sort((a,b) => a.name.localeCompare(b.name));
+        const vCount = (_libDynCourses || []).reduce((s, c) => s + (c.sections && c.sections[0] ? c.sections[0].videos.length : 0), 0);
+
+        const VID_EXT_D = new Set(['mp4','mov','webm','mkv','m4v']);
+        const samplePaths = [];
+        const depthCounts = [];
+        for (let d = 0; d <= 6; d++) {
+          const dm = new Map();
+          for (const [, info] of _libFileIndex) {
+            const ext = info.handle.name.toLowerCase().split('.').pop();
+            if (!VID_EXT_D.has(ext)) continue;
+            const key = (info.pathArr && info.pathArr[d]) || '(none)';
+            dm.set(key, (dm.get(key) || 0) + 1);
+          }
+          if (dm.size > 0) depthCounts.push('d' + d + ':' + dm.size + ' groups [' + [...dm.keys()].slice(0,3).join(', ') + (dm.size > 3 ? '...' : '') + ']');
         }
-      } catch(e) {}
-
-      rows.sort((a,b) => a.name.localeCompare(b.name));
-      const vCount = _libDynCourses.reduce((s, c) => s + c.sections[0].videos.length, 0);
-
-      // Sample up to 8 video paths + depth-group counts so we can diagnose course grouping
-      const VID_EXT_D = new Set(['mp4','mov','webm','mkv','m4v']);
-      const samplePaths = [];
-      const depthCounts = [];
-      for (let d = 0; d <= 6; d++) {
-        const dm = new Map();
         for (const [, info] of _libFileIndex) {
           const ext = info.handle.name.toLowerCase().split('.').pop();
-          if (!VID_EXT_D.has(ext)) continue;
-          const key = (info.pathArr && info.pathArr[d]) || '(none)';
-          dm.set(key, (dm.get(key) || 0) + 1);
+          if (VID_EXT_D.has(ext) && samplePaths.length < 8) {
+            samplePaths.push((info.pathArr || []).join(' / ') + ' / ' + info.handle.name);
+          }
         }
-        if (dm.size > 0) depthCounts.push('d' + d + ':' + dm.size + ' groups [' + [...dm.keys()].slice(0,3).join(', ') + (dm.size > 3 ? '...' : '') + ']');
-      }
-      for (const [, info] of _libFileIndex) {
-        const ext = info.handle.name.toLowerCase().split('.').pop();
-        if (VID_EXT_D.has(ext) && samplePaths.length < 8) {
-          samplePaths.push((info.pathArr || []).join(' / ') + ' / ' + info.handle.name);
+
+        const html = '<div style="margin-bottom:8px;color:var(--accent);font-weight:700">'
+          + _libFileIndex.size + ' total files indexed &nbsp;|&nbsp; '
+          + vCount + ' videos in ' + (_libDynCourses || []).length + ' courses &nbsp;|&nbsp; '
+          + (_libDynBooks || []).length + ' books</div>'
+          + '<div style="color:var(--gold);font-size:11px;margin-bottom:4px">📊 Depth group counts:</div>'
+          + depthCounts.map(d => '<div class="lib-scan-item" style="font-size:11px;color:var(--accent)">' + d + '</div>').join('')
+          + '<div style="color:var(--gold);font-size:11px;margin:6px 0 4px">📋 Sample video paths:</div>'
+          + samplePaths.map(p => '<div class="lib-scan-item" style="font-size:11px;color:var(--muted)">' + p + '</div>').join('')
+          + (rows.length ? '<div style="color:var(--gold);font-size:11px;margin:8px 0 4px">📁 Top-level folders:</div>' : '')
+          + rows.map(r =>
+              '<div class="lib-scan-item" style="color:' + (r.readable ? 'var(--text)' : 'var(--warn)') + '">'
+              + (r.readable ? '📁' : '🔒') + ' ' + r.name
+              + ' <span style="color:var(--muted)">(' + r.subCount + ' items' + (r.readable ? '' : ' — cannot read') + ')</span></div>'
+            ).join('');
+        listEl.innerHTML = html;
+
+        if (vCount < 50) {
+          const note = document.getElementById('lib-onedrive-note');
+          if (note) note.style.display = '';
         }
       }
-
-      const html = '<div style="margin-bottom:8px;color:var(--accent);font-weight:700">'
-        + _libFileIndex.size + ' total files indexed &nbsp;|&nbsp; '
-        + vCount + ' videos in ' + _libDynCourses.length + ' courses &nbsp;|&nbsp; '
-        + _libDynBooks.length + ' books</div>'
-        + '<div style="color:var(--gold);font-size:11px;margin-bottom:4px">📊 Depth group counts (share these!):</div>'
-        + depthCounts.map(d => '<div class="lib-scan-item" style="font-size:11px;color:var(--accent)">' + d + '</div>').join('')
-        + '<div style="color:var(--gold);font-size:11px;margin:6px 0 4px">📋 Sample video paths (share these too):</div>'
-        + samplePaths.map(p => '<div class="lib-scan-item" style="font-size:11px;color:var(--muted)">' + p + '</div>').join('')
-        + (rows.length ? '<div style="color:var(--gold);font-size:11px;margin:8px 0 4px">📁 Top-level folders:</div>' : '')
-        + rows.map(r =>
-            '<div class="lib-scan-item" style="color:' + (r.readable ? 'var(--text)' : 'var(--warn)') + '">'
-            + (r.readable ? '📁' : '🔒') + ' ' + r.name
-            + ' <span style="color:var(--muted)">(' + r.subCount + ' items' + (r.readable ? '' : ' — cannot read') + ')</span></div>'
-          ).join('');
-      listEl.innerHTML = html;
-
-      if (vCount < 50) {
-        const note = document.getElementById('lib-onedrive-note');
-        if (note) note.style.display = '';
-      }
+    } catch(diagErr) {
+      console.warn('Diagnostic panel error (non-fatal):', diagErr);
     }
   } catch(e) {
     if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
@@ -3553,13 +3557,20 @@ const _libMimeMap = {
 // Open a file in the embedded viewer
 async function openLibraryFile(relPath) {
   if (!_libDirHandle) { alert('Connect your TG folder first.'); return; }
+  console.log('[Library] Play clicked:', relPath, '| inIndex:', _libInIndex(relPath));
   try {
     const file = await _libTraverse(relPath);
+    console.log('[Library] Found:', relPath, '| size:', file.size, 'bytes | type:', file.type);
     if (_libViewerBlobUrl) URL.revokeObjectURL(_libViewerBlobUrl);
 
     const ext = relPath.split('.').pop().toLowerCase();
     const rawName = relPath.split('/').pop().replace(/\.[^.]+$/, '');
     const title = rawName.replace(/[-_]/g, ' ').replace(/^\d+\s*/, '');
+
+    if (file.size === 0) {
+      alert('This file has 0 bytes — it\'s an OneDrive placeholder and hasn\'t downloaded yet.\n\nRight-click the file in File Explorer → "Always keep on this device", wait for it to sync, then try again.');
+      return;
+    }
 
     // Force correct MIME type so browser renders inline instead of downloading
     const mime = _libMimeMap[ext] || file.type || 'application/octet-stream';
@@ -3574,11 +3585,26 @@ async function openLibraryFile(relPath) {
     document.getElementById('lib-viewer-title').textContent = title;
 
     if (['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi'].includes(ext)) {
+      videoEl.onerror = () => {
+        videoEl.style.display = 'none';
+        const errEl = document.getElementById('lib-viewer-video-err');
+        if (errEl) {
+          errEl.style.display = '';
+          const isUnsupported = ['mkv', 'avi', 'mov'].includes(ext);
+          errEl.innerHTML = (isUnsupported
+            ? '⚠️ <b>.' + ext.toUpperCase() + ' files can\'t play in the browser.</b><br><br>Download it and open in VLC or Windows Media Player instead:'
+            : '⚠️ <b>Video can\'t be played.</b> The file may not be fully downloaded from OneDrive.<br><br>Try downloading and opening it directly:')
+            + '<br><br><a href="' + _libViewerBlobUrl + '" download="' + file.name + '" '
+            + 'style="display:inline-block;padding:8px 18px;background:var(--accent);color:#fff;border-radius:6px;text-decoration:none;font-weight:600;margin-top:4px">⬇ Download to Watch</a>';
+        }
+      };
       videoEl.src = _libViewerBlobUrl;
       videoEl.style.display = '';
       iframeEl.style.display = 'none';
       iframeEl.src = '';
       if (dlRow) dlRow.style.display = 'none';
+      const errEl = document.getElementById('lib-viewer-video-err');
+      if (errEl) errEl.style.display = 'none';
       viewer.style.display = 'flex';
       videoEl.focus();
     } else if (ext === 'pdf') {
@@ -3637,8 +3663,7 @@ async function openLibraryFile(relPath) {
   } catch(e) {
     const isNotFound = e.message && e.message.includes('not found in index');
     if (isNotFound) {
-      // File not in connected folder — show a small toast, don't open the big viewer overlay
-      _libToast('📂 "' + relPath.split('/').pop() + '" isn\'t in your connected folder. Connect the folder that contains this course to play it.');
+      // File not in connected folder — silently do nothing (static catalog courses aren't downloaded)
       return;
     }
     // Real error — show inside the viewer
@@ -3964,13 +3989,6 @@ function renderLibrary() {
   if (coursesList) {
     coursesList.innerHTML = '';
     courses.forEach((course, idx) => {
-      // Insert a divider before the first dynamic (folder) course
-      if (course._isDynamic && (idx === 0 || !courses[idx - 1]._isDynamic)) {
-        const divider = document.createElement('div');
-        divider.style.cssText = 'padding:10px 4px 6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--accent); border-top:1px solid var(--border); margin-top:8px;';
-        divider.textContent = '📁 From Your Connected Folder';
-        coursesList.appendChild(divider);
-      }
       coursesList.appendChild(_buildCourseCard(course, idx));
     });
   }
