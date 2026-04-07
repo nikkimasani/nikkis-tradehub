@@ -3316,15 +3316,36 @@ async function connectLibraryFolder() {
   }
 }
 
+// Case-insensitive directory lookup — iterates parent if exact match fails
+async function _libGetDir(parent, name) {
+  try { return await parent.getDirectoryHandle(name); } catch(e) {}
+  const lc = name.toLowerCase().trim();
+  for await (const entry of parent.values()) {
+    if (entry.kind === 'directory' && entry.name.toLowerCase().trim() === lc) return entry;
+  }
+  throw new Error('Folder not found: "' + name + '"');
+}
+
+// Case-insensitive file lookup
+async function _libGetFile(parent, name) {
+  try { return await (await parent.getFileHandle(name)).getFile(); } catch(e) {}
+  const lc = name.toLowerCase().trim();
+  for await (const entry of parent.values()) {
+    if (entry.kind === 'file' && entry.name.toLowerCase().trim() === lc) {
+      return await (await parent.getFileHandle(entry.name)).getFile();
+    }
+  }
+  throw new Error('File not found: "' + name + '"');
+}
+
 // Traverse a relative path (forward slashes) from TG root
 async function _libTraverse(pathStr) {
-  const parts = pathStr.split('/');
+  const parts = pathStr.split('/').filter(p => p.length > 0);
   let handle = _libDirHandle;
   for (let i = 0; i < parts.length - 1; i++) {
-    handle = await handle.getDirectoryHandle(parts[i]);
+    handle = await _libGetDir(handle, parts[i]);
   }
-  const fileHandle = await handle.getFileHandle(parts[parts.length - 1]);
-  return await fileHandle.getFile();
+  return await _libGetFile(handle, parts[parts.length - 1]);
 }
 
 // MIME type map for reliable inline rendering
