@@ -1759,6 +1759,7 @@
   <div class="lib-viewer-content">
     <video id="lib-viewer-video" class="lib-viewer-media" controls playsinline style="display:none"></video>
     <iframe id="lib-viewer-iframe" class="lib-viewer-media" style="display:none" allowfullscreen></iframe>
+    <div id="lib-viewer-epub" class="lib-viewer-epub" style="display:none"></div>
     <div id="lib-viewer-dl-row" class="lib-viewer-dl-row" style="display:none">
       <div class="lib-viewer-dl-msg">EPUB files can't be rendered in-browser — download it and open in any e-reader (Apple Books, Calibre, Kindle).</div>
       <a id="lib-viewer-dl-link" class="lib-viewer-dl-btn" href="#" download>⬇ Download EPUB</a>
@@ -1767,6 +1768,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 <script src="script.js"></script>
 
 </body>

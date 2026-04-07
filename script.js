@@ -3290,8 +3290,10 @@ const LIB_COURSES = [
 let _libDirHandle = null;
 let _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
 const _libExpanded = new Set();
-let _libDynamicLoaded = new Set(); // track which dynamic courses have been loaded
+let _libDynamicLoaded = new Set();
 let _libViewerBlobUrl = null;
+let _libFileIndex = new Map(); // lowercased filename → FileSystemFileHandle
+let _libEpubRendition = null;
 
 // Helper: count total hardcoded videos (excluding dynamic course)
 function _libTotalVideos() {
@@ -3305,68 +3307,51 @@ function _libWatchedCount() {
   return Object.values(_libWatched).filter(Boolean).length;
 }
 
+// Recursively build a filename → handle index so we never rely on exact folder paths
+async function _buildFileIndex(dirHandle, depth) {
+  if (depth > 8) return;
+  try {
+    for await (const entry of dirHandle.values()) {
+      if (entry.kind === 'file') {
+        _libFileIndex.set(entry.name.toLowerCase(), entry);
+      } else if (entry.kind === 'directory') {
+        await _buildFileIndex(entry, depth + 1);
+      }
+    }
+  } catch(e) { /* skip inaccessible subfolders */ }
+}
+
 // Connect folder via File System Access API
 async function connectLibraryFolder() {
   try {
     _libDirHandle = await window.showDirectoryPicker({ mode: 'read' });
     localStorage.setItem('td_lib_connected_name', _libDirHandle.name);
+
+    const statusEl = document.getElementById('lib-status');
+    if (statusEl) { statusEl.className = 'lib-status-connected'; statusEl.textContent = '⏳ Indexing files...'; }
+
+    _libFileIndex = new Map();
+    await _buildFileIndex(_libDirHandle, 0);
+
     renderLibrary();
-    await scanLibraryFolder();
+
+    const outEl = document.getElementById('lib-scan-output');
+    const listEl = document.getElementById('lib-scan-list');
+    if (outEl && listEl) {
+      outEl.style.display = '';
+      listEl.textContent = _libFileIndex.size + ' files indexed from ' + _libDirHandle.name;
+    }
   } catch(e) {
     if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
   }
 }
 
-// Scan top-level folder contents for diagnostics
-async function scanLibraryFolder() {
-  if (!_libDirHandle) return;
-  const outEl = document.getElementById('lib-scan-output');
-  const listEl = document.getElementById('lib-scan-list');
-  if (!outEl || !listEl) return;
-  outEl.style.display = '';
-  listEl.innerHTML = '<em style="color:var(--muted)">Scanning...</em>';
-  try {
-    const items = [];
-    for await (const entry of _libDirHandle.values()) {
-      items.push((entry.kind === 'directory' ? '📁 ' : '📄 ') + entry.name);
-    }
-    items.sort();
-    listEl.innerHTML = items.map(i => '<div class="lib-scan-item">' + i + '</div>').join('');
-  } catch(e) {
-    listEl.innerHTML = '<em style="color:var(--warn)">Scan failed: ' + e.message + '</em>';
-  }
-}
-
-// Case-insensitive directory lookup — iterates parent if exact match fails
-async function _libGetDir(parent, name) {
-  try { return await parent.getDirectoryHandle(name); } catch(e) {}
-  const lc = name.toLowerCase().trim();
-  for await (const entry of parent.values()) {
-    if (entry.kind === 'directory' && entry.name.toLowerCase().trim() === lc) return entry;
-  }
-  throw new Error('Folder not found: "' + name + '"');
-}
-
-// Case-insensitive file lookup
-async function _libGetFile(parent, name) {
-  try { return await (await parent.getFileHandle(name)).getFile(); } catch(e) {}
-  const lc = name.toLowerCase().trim();
-  for await (const entry of parent.values()) {
-    if (entry.kind === 'file' && entry.name.toLowerCase().trim() === lc) {
-      return await (await parent.getFileHandle(entry.name)).getFile();
-    }
-  }
-  throw new Error('File not found: "' + name + '"');
-}
-
-// Traverse a relative path (forward slashes) from TG root
+// Look up a file by its filename (last path segment) — ignores folder structure entirely
 async function _libTraverse(pathStr) {
-  const parts = pathStr.split('/').filter(p => p.length > 0);
-  let handle = _libDirHandle;
-  for (let i = 0; i < parts.length - 1; i++) {
-    handle = await _libGetDir(handle, parts[i]);
-  }
-  return await _libGetFile(handle, parts[parts.length - 1]);
+  const filename = pathStr.split('/').pop();
+  const handle = _libFileIndex.get(filename.toLowerCase());
+  if (!handle) throw new Error('File not found in index: "' + filename + '"');
+  return await handle.getFile();
 }
 
 // MIME type map for reliable inline rendering
@@ -3415,22 +3400,45 @@ async function openLibraryFile(relPath) {
       videoEl.src = '';
       if (dlRow) dlRow.style.display = 'none';
       viewer.style.display = 'flex';
+    } else if (ext === 'epub') {
+      // Render EPUB in-browser using epub.js
+      const epubEl = document.getElementById('lib-viewer-epub');
+      videoEl.style.display = 'none';
+      iframeEl.style.display = 'none';
+      if (dlRow) dlRow.style.display = 'none';
+      if (epubEl) {
+        epubEl.style.display = '';
+        epubEl.innerHTML = '';
+        if (_libEpubRendition) { try { _libEpubRendition.destroy(); } catch(ex) {} _libEpubRendition = null; }
+        // epub.js reads the file as an ArrayBuffer
+        const buf = await file.arrayBuffer();
+        const book = ePub(buf);
+        _libEpubRendition = book.renderTo(epubEl, { width: '100%', height: '100%', spread: 'none', flow: 'scrolled-doc' });
+        _libEpubRendition.display();
+        // Add keyboard/click navigation
+        _libEpubRendition.on('keydown', (e) => {
+          if (e.key === 'ArrowRight') _libEpubRendition.next();
+          if (e.key === 'ArrowLeft') _libEpubRendition.prev();
+        });
+      }
+      viewer.style.display = 'flex';
     } else {
-      // EPUB or unknown — trigger programmatic download, don't navigate
+      // Unknown format — download
       const a = document.createElement('a');
       a.href = _libViewerBlobUrl;
       a.download = file.name;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // Show viewer with info message
       videoEl.style.display = 'none';
       iframeEl.style.display = 'none';
+      const epubEl = document.getElementById('lib-viewer-epub');
+      if (epubEl) epubEl.style.display = 'none';
       if (dlRow) {
         const msg = dlRow.querySelector('.lib-viewer-dl-msg');
-        if (msg) msg.textContent = '"' + file.name + '" is downloading — open it in Calibre, Apple Books, or Kindle.';
+        if (msg) msg.textContent = '"' + file.name + '" downloaded.';
         const btn = dlRow.querySelector('.lib-viewer-dl-btn');
-        if (btn) { btn.href = _libViewerBlobUrl; btn.download = file.name; btn.textContent = '⬇ Download Again'; }
+        if (btn) { btn.href = _libViewerBlobUrl; btn.download = file.name; btn.style.display = ''; btn.textContent = '⬇ Download Again'; }
         dlRow.style.display = '';
       }
       viewer.style.display = 'flex';
@@ -3462,10 +3470,13 @@ function closeLibViewer() {
   const viewer = document.getElementById('lib-viewer');
   const videoEl = document.getElementById('lib-viewer-video');
   const iframeEl = document.getElementById('lib-viewer-iframe');
+  const epubEl = document.getElementById('lib-viewer-epub');
   viewer.style.display = 'none';
   videoEl.pause();
   videoEl.src = '';
   iframeEl.src = '';
+  if (epubEl) { epubEl.style.display = 'none'; epubEl.innerHTML = ''; }
+  if (_libEpubRendition) { try { _libEpubRendition.destroy(); } catch(e) {} _libEpubRendition = null; }
   if (_libViewerBlobUrl) { URL.revokeObjectURL(_libViewerBlobUrl); _libViewerBlobUrl = null; }
 }
 
