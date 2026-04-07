@@ -3339,7 +3339,7 @@ function _deriveDynamicLib() {
     const name = info.handle.name;
     if (key !== name.toLowerCase()) continue; // skip any legacy fuzzy keys
 
-    const ext = lc.split('.').pop();
+    const ext = name.toLowerCase().split('.').pop();
     if (['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi'].includes(ext)) {
       const folder = info.topFolder || 'Uncategorized';
       if (!courseMap.has(folder)) courseMap.set(folder, []);
