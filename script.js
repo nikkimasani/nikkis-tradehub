@@ -3318,15 +3318,20 @@ function _libNorm(s) {
 // Only exact lowercase keys — no fuzzy keys here to prevent collision/overwrite
 async function _buildFileIndex(dirHandle, depth, topFolder) {
   if (depth > 8) return;
+  let entries = [];
   try {
-    for await (const entry of dirHandle.values()) {
+    for await (const entry of dirHandle.values()) entries.push(entry);
+  } catch(e) { return; } // can't list this directory — skip it
+
+  for (const entry of entries) {
+    try {
       if (entry.kind === 'file') {
         _libFileIndex.set(entry.name.toLowerCase(), { handle: entry, topFolder: topFolder || '' });
       } else if (entry.kind === 'directory') {
         await _buildFileIndex(entry, depth + 1, topFolder || entry.name);
       }
-    }
-  } catch(e) { /* skip inaccessible subfolders */ }
+    } catch(e) { /* skip this individual entry and continue */ }
+  }
 }
 
 // Build _libDynCourses and _libDynBooks from the index — no hardcoded names
@@ -3387,7 +3392,14 @@ async function connectLibraryFolder() {
     if (outEl && listEl) {
       outEl.style.display = '';
       const vCount = _libDynCourses.reduce((s, c) => s + c.sections[0].videos.length, 0);
-      listEl.textContent = vCount + ' videos and ' + _libDynBooks.length + ' books found in ' + _libDirHandle.name;
+      const cCount = _libDynCourses.length;
+      let msg = vCount + ' videos across ' + cCount + ' courses, ' + _libDynBooks.length + ' books found.';
+      if (vCount < 50) {
+        msg += ' ⚠ Low count — most files may be OneDrive cloud-only. See note below.';
+        const note = document.getElementById('lib-onedrive-note');
+        if (note) note.style.display = '';
+      }
+      listEl.textContent = msg;
     }
   } catch(e) {
     if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);

@@ -1726,8 +1726,16 @@
 
         <!-- Folder scan output (diagnostic) -->
         <div id="lib-scan-output" class="lib-scan-output" style="display:none">
-          <div class="lib-scan-title">📂 Contents of connected folder — <span style="color:var(--warn);font-size:11px">Share this list if videos won't open</span></div>
+          <div class="lib-scan-title">📂 Folder Index</div>
           <div id="lib-scan-list" class="lib-scan-list"></div>
+        </div>
+
+        <!-- OneDrive offline warning -->
+        <div id="lib-onedrive-note" class="lib-onedrive-note" style="display:none">
+          <strong>📡 OneDrive cloud-only files detected</strong><br>
+          Files marked "online-only" in OneDrive are not physically on disk and can't be read by this app.
+          To fix: open <strong>Windows Explorer → right-click your TG folder → "Always keep on this device"</strong>.
+          Wait for OneDrive to download everything, then reconnect.
         </div>
 
         <!-- Books section -->

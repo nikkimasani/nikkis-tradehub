@@ -726,6 +726,11 @@
   }
   .lib-play-btn:hover { background: rgba(74,222,128,.1); border-color: var(--accent2); }
 
+  .lib-onedrive-note {
+    background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.35);
+    color: var(--gold); border-radius: 8px; padding: 12px 16px;
+    font-size: 12px; line-height: 1.6; margin-bottom: 16px;
+  }
   .lib-scan-output {
     background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
     padding: 12px 16px; margin-bottom: 20px; font-size: 12px;
