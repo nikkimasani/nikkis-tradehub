@@ -3292,7 +3292,7 @@ let _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
 const _libExpanded = new Set();
 let _libDynamicLoaded = new Set();
 let _libViewerBlobUrl = null;
-let _libFileIndex = new Map(); // key → { handle, topFolder }
+let _libFileIndex = new Map(); // key → { handle, pathArr }
 let _libEpubRendition = null;
 let _libDynCourses = null; // built dynamically from disk; null = use static LIB_COURSES
 let _libDynBooks   = null; // built dynamically from disk; null = use static LIB_BOOKS
@@ -3314,55 +3314,66 @@ function _libNorm(s) {
   return s.toLowerCase().replace(/[\s\-_\.]+/g, '');
 }
 
-// Recursively index all files; topFolder = first-level subfolder name (= course name)
-// Only exact lowercase keys — no fuzzy keys here to prevent collision/overwrite
-async function _buildFileIndex(dirHandle, depth, topFolder) {
-  if (depth > 8) return;
+// Recursively index all files; pathArr = array of ancestor folder names from TG root
+async function _buildFileIndex(dirHandle, depth, pathArr) {
+  if (depth > 10) return;
   let entries = [];
   try {
     for await (const entry of dirHandle.values()) entries.push(entry);
-  } catch(e) { return; } // can't list this directory — skip it
+  } catch(e) { return; }
 
   for (const entry of entries) {
     try {
       if (entry.kind === 'file') {
-        _libFileIndex.set(entry.name.toLowerCase(), { handle: entry, topFolder: topFolder || '' });
+        _libFileIndex.set(entry.name.toLowerCase(), { handle: entry, pathArr: pathArr });
       } else if (entry.kind === 'directory') {
-        await _buildFileIndex(entry, depth + 1, topFolder || entry.name);
+        await _buildFileIndex(entry, depth + 1, [...pathArr, entry.name]);
       }
-    } catch(e) { /* skip this individual entry and continue */ }
+    } catch(e) { /* skip this individual entry */ }
   }
 }
 
-// Build _libDynCourses and _libDynBooks from the index — no hardcoded names
+// Build _libDynCourses and _libDynBooks from the index — adaptive depth grouping
 function _deriveDynamicLib() {
-  const courseMap = new Map();
+  const VID_EXT = new Set(['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi']);
+  const BOOK_EXT = new Set(['pdf', 'epub']);
+
+  const videoInfos = [];
   const books = [];
 
-  // Iterate only exact-key entries (key === lowercased filename)
   for (const [key, info] of _libFileIndex) {
-    const name = info.handle.name;
-    if (key !== name.toLowerCase()) continue; // skip any legacy fuzzy keys
-
-    const ext = name.toLowerCase().split('.').pop();
-    if (['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi'].includes(ext)) {
-      const folder = info.topFolder || 'Uncategorized';
-      if (!courseMap.has(folder)) courseMap.set(folder, []);
-      courseMap.get(folder).push(name);
-    } else if (['pdf', 'epub'].includes(ext)) {
+    if (key !== info.handle.name.toLowerCase()) continue; // exact keys only
+    const ext = info.handle.name.toLowerCase().split('.').pop();
+    if (VID_EXT.has(ext)) {
+      videoInfos.push(info);
+    } else if (BOOK_EXT.has(ext)) {
       books.push({
-        title: name.replace(/\.[^.]+$/, '').replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim(),
+        title: info.handle.name.replace(/\.[^.]+$/, '').replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim(),
         format: ext.toUpperCase(),
-        path: name
+        path: info.handle.name
       });
     }
   }
 
+  // Try grouping videos at each path depth (0–5).
+  // Pick the depth that yields the MOST distinct groups (= best course separation).
+  let bestMap = new Map([['All Videos', videoInfos.map(i => i.handle.name)]]);
+  for (let d = 0; d <= 5; d++) {
+    const m = new Map();
+    for (const info of videoInfos) {
+      const key = (info.pathArr && info.pathArr[d]) || 'Uncategorized';
+      if (!m.has(key)) m.set(key, []);
+      m.get(key).push(info.handle.name);
+    }
+    if (m.size > bestMap.size) bestMap = m;
+    if (m.size >= 10) break; // good enough
+  }
+
   _libDynBooks = books.sort((a, b) => a.title.localeCompare(b.title));
   _libDynCourses = [];
-  for (const [folder, videos] of courseMap) {
+  for (const [folder, videos] of bestMap) {
     _libDynCourses.push({
-      title: folder.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim(),
+      title: folder.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim() || 'Uncategorized',
       root: folder,
       sections: [{ title: 'Videos', videos: videos.sort() }]
     });
@@ -3382,7 +3393,7 @@ async function connectLibraryFolder() {
     _libFileIndex = new Map();
     _libDynCourses = null;
     _libDynBooks = null;
-    await _buildFileIndex(_libDirHandle, 0, '');
+    await _buildFileIndex(_libDirHandle, 0, []);
     _deriveDynamicLib();
 
     renderLibrary();
