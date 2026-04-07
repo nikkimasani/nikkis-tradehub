@@ -3297,10 +3297,10 @@ let _libEpubRendition = null;
 let _libDynCourses = null; // courses discovered from connected folder
 let _libDynBooks   = null; // books discovered from connected folder
 
-// When a folder is connected and has courses, show ONLY those (they have real playable files).
-// Fall back to static LIB_COURSES only when no folder is connected (catalog/preview mode).
+// Always show static LIB_COURSES as the catalog.
+// When folder is connected, prepend dynamic courses (your local downloads) at the top.
 function _getCourseList() {
-  if (_libDynCourses && _libDynCourses.length) return _libDynCourses;
+  if (_libDynCourses && _libDynCourses.length) return [..._libDynCourses, ...LIB_COURSES];
   return LIB_COURSES;
 }
 
@@ -3447,10 +3447,13 @@ async function connectLibraryFolder() {
     _libFileIndex = new Map();
     _libDynCourses = null;
     _libDynBooks = null;
+    console.log('[Library] Scanning folder:', _libDirHandle.name);
     await _buildFileIndex(_libDirHandle, 0, []);
+    console.log('[Library] Indexed', _libFileIndex.size, 'files');
     _deriveDynamicLib();
-
+    console.log('[Library] Built', (_libDynCourses||[]).length, 'courses');
     renderLibrary();
+    console.log('[Library] Render complete');
 
     // Diagnostic panel — wrapped in its own try/catch so it can never abort the connection
     try {
@@ -3519,7 +3522,10 @@ async function connectLibraryFolder() {
       console.warn('Diagnostic panel error (non-fatal):', diagErr);
     }
   } catch(e) {
-    if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
+    if (e.name !== 'AbortError') {
+      console.error('[Library] Connect failed:', e.name, e.message, e.stack);
+      alert('Could not connect folder: ' + e.message);
+    }
   }
 }
 
