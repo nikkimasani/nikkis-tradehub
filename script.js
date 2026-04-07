@@ -3387,19 +3387,41 @@ async function connectLibraryFolder() {
 
     renderLibrary();
 
+    // Deep diagnostic: scan every top-level entry and report what was found
     const outEl = document.getElementById('lib-scan-output');
     const listEl = document.getElementById('lib-scan-list');
     if (outEl && listEl) {
       outEl.style.display = '';
+      listEl.innerHTML = '<em style="color:var(--muted)">Scanning top-level folders...</em>';
+
+      const rows = [];
+      try {
+        for await (const entry of _libDirHandle.values()) {
+          if (entry.kind !== 'directory') continue;
+          let subCount = 0, readable = true;
+          try {
+            for await (const sub of entry.values()) subCount++;
+          } catch(e) { readable = false; }
+          rows.push({ name: entry.name, subCount, readable });
+        }
+      } catch(e) {}
+
+      rows.sort((a,b) => a.name.localeCompare(b.name));
       const vCount = _libDynCourses.reduce((s, c) => s + c.sections[0].videos.length, 0);
-      const cCount = _libDynCourses.length;
-      let msg = vCount + ' videos across ' + cCount + ' courses, ' + _libDynBooks.length + ' books found.';
+      const html = '<div style="margin-bottom:8px;color:var(--accent);font-weight:700">'
+        + vCount + ' videos in ' + _libDynCourses.length + ' courses, '
+        + _libDynBooks.length + ' books indexed</div>'
+        + rows.map(r =>
+            '<div class="lib-scan-item" style="color:' + (r.readable ? 'var(--text)' : 'var(--warn)') + '">'
+            + (r.readable ? '📁' : '🔒') + ' ' + r.name
+            + ' <span style="color:var(--muted)">(' + r.subCount + ' items' + (r.readable ? '' : ' — cannot read') + ')</span></div>'
+          ).join('');
+      listEl.innerHTML = html;
+
       if (vCount < 50) {
-        msg += ' ⚠ Low count — most files may be OneDrive cloud-only. See note below.';
         const note = document.getElementById('lib-onedrive-note');
         if (note) note.style.display = '';
       }
-      listEl.textContent = msg;
     }
   } catch(e) {
     if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
