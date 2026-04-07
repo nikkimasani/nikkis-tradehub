@@ -3425,12 +3425,23 @@ async function connectLibraryFolder() {
       rows.sort((a,b) => a.name.localeCompare(b.name));
       const vCount = _libDynCourses.reduce((s, c) => s + c.sections[0].videos.length, 0);
 
-      // Sample up to 8 video paths so we can see the real folder structure
-      const VID_EXT = new Set(['mp4','mov','webm','mkv','m4v']);
+      // Sample up to 8 video paths + depth-group counts so we can diagnose course grouping
+      const VID_EXT_D = new Set(['mp4','mov','webm','mkv','m4v']);
       const samplePaths = [];
+      const depthCounts = [];
+      for (let d = 0; d <= 6; d++) {
+        const dm = new Map();
+        for (const [, info] of _libFileIndex) {
+          const ext = info.handle.name.toLowerCase().split('.').pop();
+          if (!VID_EXT_D.has(ext)) continue;
+          const key = (info.pathArr && info.pathArr[d]) || '(none)';
+          dm.set(key, (dm.get(key) || 0) + 1);
+        }
+        if (dm.size > 0) depthCounts.push('d' + d + ':' + dm.size + ' groups [' + [...dm.keys()].slice(0,3).join(', ') + (dm.size > 3 ? '...' : '') + ']');
+      }
       for (const [, info] of _libFileIndex) {
         const ext = info.handle.name.toLowerCase().split('.').pop();
-        if (VID_EXT.has(ext) && samplePaths.length < 8) {
+        if (VID_EXT_D.has(ext) && samplePaths.length < 8) {
           samplePaths.push((info.pathArr || []).join(' / ') + ' / ' + info.handle.name);
         }
       }
@@ -3439,7 +3450,9 @@ async function connectLibraryFolder() {
         + _libFileIndex.size + ' total files indexed &nbsp;|&nbsp; '
         + vCount + ' videos in ' + _libDynCourses.length + ' courses &nbsp;|&nbsp; '
         + _libDynBooks.length + ' books</div>'
-        + '<div style="color:var(--gold);font-size:11px;margin-bottom:6px">📋 Sample video paths (share these if courses look wrong):</div>'
+        + '<div style="color:var(--gold);font-size:11px;margin-bottom:4px">📊 Depth group counts (share these!):</div>'
+        + depthCounts.map(d => '<div class="lib-scan-item" style="font-size:11px;color:var(--accent)">' + d + '</div>').join('')
+        + '<div style="color:var(--gold);font-size:11px;margin:6px 0 4px">📋 Sample video paths (share these too):</div>'
         + samplePaths.map(p => '<div class="lib-scan-item" style="font-size:11px;color:var(--muted)">' + p + '</div>').join('')
         + (rows.length ? '<div style="color:var(--gold);font-size:11px;margin:8px 0 4px">📁 Top-level folders:</div>' : '')
         + rows.map(r =>
