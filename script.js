@@ -3325,7 +3325,9 @@ async function _buildFileIndex(dirHandle, depth, pathArr) {
   for (const entry of entries) {
     try {
       if (entry.kind === 'file') {
-        _libFileIndex.set(entry.name.toLowerCase(), { handle: entry, pathArr: pathArr });
+        // Key by full relative path so same-named files in different courses don't collide
+        const fullKey = [...pathArr, entry.name].join('/').toLowerCase();
+        _libFileIndex.set(fullKey, { handle: entry, pathArr: pathArr });
       } else if (entry.kind === 'directory') {
         await _buildFileIndex(entry, depth + 1, [...pathArr, entry.name]);
       }
@@ -3341,29 +3343,32 @@ function _deriveDynamicLib() {
   const videoInfos = [];
   const books = [];
 
-  for (const [key, info] of _libFileIndex) {
-    if (key !== info.handle.name.toLowerCase()) continue; // exact keys only
+  for (const [, info] of _libFileIndex) {
+    // Keys are full paths now; process every entry (no filter needed)
     const ext = info.handle.name.toLowerCase().split('.').pop();
     if (VID_EXT.has(ext)) {
-      videoInfos.push(info);
+      // Store full relative path so openLibraryFile can look it up precisely
+      const fullPath = [...(info.pathArr || []), info.handle.name].join('/');
+      videoInfos.push({ ...info, fullPath });
     } else if (BOOK_EXT.has(ext)) {
+      const fullPath = [...(info.pathArr || []), info.handle.name].join('/');
       books.push({
         title: info.handle.name.replace(/\.[^.]+$/, '').replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim(),
         format: ext.toUpperCase(),
-        path: info.handle.name
+        path: fullPath
       });
     }
   }
 
   // Try grouping videos at each path depth (0–5).
   // Pick the depth that yields the MOST distinct groups (= best course separation).
-  let bestMap = new Map([['All Videos', videoInfos.map(i => i.handle.name)]]);
+  let bestMap = new Map([['All Videos', videoInfos.map(i => i.fullPath)]]);
   for (let d = 0; d <= 5; d++) {
     const m = new Map();
     for (const info of videoInfos) {
       const key = (info.pathArr && info.pathArr[d]) || 'Uncategorized';
       if (!m.has(key)) m.set(key, []);
-      m.get(key).push(info.handle.name);
+      m.get(key).push(info.fullPath); // store full path
     }
     if (m.size > bestMap.size) bestMap = m;
     if (m.size >= 10) break; // good enough
@@ -3374,7 +3379,7 @@ function _deriveDynamicLib() {
   for (const [folder, videos] of bestMap) {
     _libDynCourses.push({
       title: folder.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim() || 'Uncategorized',
-      root: folder,
+      root: '',   // videos already carry full paths; no prefix needed
       sections: [{ title: 'Videos', videos: videos.sort() }]
     });
   }
@@ -3419,9 +3424,24 @@ async function connectLibraryFolder() {
 
       rows.sort((a,b) => a.name.localeCompare(b.name));
       const vCount = _libDynCourses.reduce((s, c) => s + c.sections[0].videos.length, 0);
+
+      // Sample up to 8 video paths so we can see the real folder structure
+      const VID_EXT = new Set(['mp4','mov','webm','mkv','m4v']);
+      const samplePaths = [];
+      for (const [, info] of _libFileIndex) {
+        const ext = info.handle.name.toLowerCase().split('.').pop();
+        if (VID_EXT.has(ext) && samplePaths.length < 8) {
+          samplePaths.push((info.pathArr || []).join(' / ') + ' / ' + info.handle.name);
+        }
+      }
+
       const html = '<div style="margin-bottom:8px;color:var(--accent);font-weight:700">'
-        + vCount + ' videos in ' + _libDynCourses.length + ' courses, '
-        + _libDynBooks.length + ' books indexed</div>'
+        + _libFileIndex.size + ' total files indexed &nbsp;|&nbsp; '
+        + vCount + ' videos in ' + _libDynCourses.length + ' courses &nbsp;|&nbsp; '
+        + _libDynBooks.length + ' books</div>'
+        + '<div style="color:var(--gold);font-size:11px;margin-bottom:6px">📋 Sample video paths (share these if courses look wrong):</div>'
+        + samplePaths.map(p => '<div class="lib-scan-item" style="font-size:11px;color:var(--muted)">' + p + '</div>').join('')
+        + (rows.length ? '<div style="color:var(--gold);font-size:11px;margin:8px 0 4px">📁 Top-level folders:</div>' : '')
         + rows.map(r =>
             '<div class="lib-scan-item" style="color:' + (r.readable ? 'var(--text)' : 'var(--warn)') + '">'
             + (r.readable ? '📁' : '🔒') + ' ' + r.name
@@ -3439,12 +3459,19 @@ async function connectLibraryFolder() {
   }
 }
 
-// Look up a file by filename from the index
+// Look up a file by path from the index
 async function _libTraverse(pathStr) {
   const filename = pathStr.split('/').pop();
-  // 1. Exact match
-  let info = _libFileIndex.get(filename.toLowerCase());
-  // 2. Fuzzy linear scan fallback (only for static LIB_BOOKS/LIB_COURSES paths)
+  // 1. Full path match (dynamic courses — most precise, no false positives)
+  let info = _libFileIndex.get(pathStr.toLowerCase());
+  // 2. Exact filename linear scan (static LIB_COURSES use approximate paths)
+  if (!info) {
+    const lc = filename.toLowerCase();
+    for (const [, v] of _libFileIndex) {
+      if (v.handle.name.toLowerCase() === lc) { info = v; break; }
+    }
+  }
+  // 3. Fuzzy linear scan (handles minor name differences)
   if (!info) {
     const norm = _libNorm(filename);
     for (const [, v] of _libFileIndex) {
@@ -3499,7 +3526,14 @@ async function openLibraryFile(relPath) {
       iframeEl.style.display = '';
       videoEl.style.display = 'none';
       videoEl.src = '';
-      if (dlRow) dlRow.style.display = 'none';
+      // Always show download fallback for PDFs — Chrome sometimes won't render blob: URLs inline
+      if (dlRow) {
+        const msg = dlRow.querySelector('.lib-viewer-dl-msg');
+        if (msg) msg.textContent = 'PDF not displaying? Download it instead:';
+        const btn = dlRow.querySelector('.lib-viewer-dl-btn');
+        if (btn) { btn.href = _libViewerBlobUrl; btn.download = file.name; btn.style.display = ''; btn.textContent = '⬇ Download PDF'; }
+        dlRow.style.display = '';
+      }
       viewer.style.display = 'flex';
     } else if (ext === 'epub') {
       // Render EPUB in-browser using epub.js
@@ -3610,9 +3644,11 @@ function toggleCourseAccordion(idx) {
   }
 }
 
-// Dynamic video loading for No-Coding Algorithmic course
+// Dynamic video loading for static LIB_COURSES entries with _dynamicLoad flag
+// Not used when folder is connected (_libDynCourses is set from index scan)
 async function loadCourseVideos(courseIdx) {
   if (!_libDirHandle) return;
+  if (_libDynCourses) return; // dynamic courses already built from index; skip path traversal
   const course = LIB_COURSES[courseIdx];
   const container = document.getElementById('lib-courses-list');
   const card = container ? container.querySelector('[data-course-idx="' + courseIdx + '"]') : null;
@@ -3753,7 +3789,8 @@ function _buildCourseCard(course, idx) {
             const videoId = idx + '::' + si + '::' + fname;
             const isWatched = !!_libWatched[videoId];
             const displayTitle = _cleanVideoTitle(fname);
-            const fullPath = course.root + '/' + v;
+            // Dynamic courses store full paths in v; static courses need course.root prefix
+            const fullPath = course.root ? course.root + '/' + v : v;
 
             const row = document.createElement('div');
             row.className = 'lib-video-row';
