@@ -3335,7 +3335,7 @@ async function _buildFileIndex(dirHandle, depth, pathArr) {
   }
 }
 
-// Build _libDynCourses and _libDynBooks from the index — adaptive depth grouping
+// Build _libDynCourses and _libDynBooks from the index — 2-level hierarchy
 function _deriveDynamicLib() {
   const VID_EXT = new Set(['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi']);
   const BOOK_EXT = new Set(['pdf', 'epub']);
@@ -3344,10 +3344,8 @@ function _deriveDynamicLib() {
   const books = [];
 
   for (const [, info] of _libFileIndex) {
-    // Keys are full paths now; process every entry (no filter needed)
     const ext = info.handle.name.toLowerCase().split('.').pop();
     if (VID_EXT.has(ext)) {
-      // Store full relative path so openLibraryFile can look it up precisely
       const fullPath = [...(info.pathArr || []), info.handle.name].join('/');
       videoInfos.push({ ...info, fullPath });
     } else if (BOOK_EXT.has(ext)) {
@@ -3360,27 +3358,43 @@ function _deriveDynamicLib() {
     }
   }
 
-  // Try grouping videos at each path depth (0–5).
-  // Pick the depth that yields the MOST distinct groups (= best course separation).
-  let bestMap = new Map([['All Videos', videoInfos.map(i => i.fullPath)]]);
-  for (let d = 0; d <= 5; d++) {
-    const m = new Map();
+  // Find the shallowest depth where more than one unique folder name exists.
+  // That's the "course level" — the depth where courses live.
+  // Everything one level deeper becomes sections within those courses.
+  let courseDepth = 0;
+  for (let d = 0; d <= 7; d++) {
+    const keys = new Set();
     for (const info of videoInfos) {
-      const key = (info.pathArr && info.pathArr[d]) || 'Uncategorized';
-      if (!m.has(key)) m.set(key, []);
-      m.get(key).push(info.fullPath); // store full path
+      const k = (info.pathArr && info.pathArr[d]);
+      if (k) keys.add(k);
     }
-    if (m.size > bestMap.size) bestMap = m;
-    if (m.size >= 10) break; // good enough
+    if (keys.size > 1) { courseDepth = d; break; }
+    if (keys.size === 1) courseDepth = d; // only 1 group so far — keep going deeper
+  }
+
+  // Group into courses at courseDepth, then sections at courseDepth+1
+  const courseMap = new Map(); // courseKey → Map(sectionKey → [fullPaths])
+  for (const info of videoInfos) {
+    const courseKey = (info.pathArr && info.pathArr[courseDepth]) || 'Uncategorized';
+    const secKey    = (info.pathArr && info.pathArr[courseDepth + 1]) || 'Videos';
+    if (!courseMap.has(courseKey)) courseMap.set(courseKey, new Map());
+    const secMap = courseMap.get(courseKey);
+    if (!secMap.has(secKey)) secMap.set(secKey, []);
+    secMap.get(secKey).push(info.fullPath);
   }
 
   _libDynBooks = books.sort((a, b) => a.title.localeCompare(b.title));
   _libDynCourses = [];
-  for (const [folder, videos] of bestMap) {
+  for (const [courseKey, secMap] of courseMap) {
+    const sections = [];
+    for (const [secTitle, videos] of secMap) {
+      sections.push({ title: secTitle, videos: videos.sort() });
+    }
+    sections.sort((a, b) => a.title.localeCompare(b.title));
     _libDynCourses.push({
-      title: folder.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim() || 'Uncategorized',
-      root: '',   // videos already carry full paths; no prefix needed
-      sections: [{ title: 'Videos', videos: videos.sort() }]
+      title: courseKey.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim() || 'Uncategorized',
+      root: '',
+      sections
     });
   }
   _libDynCourses.sort((a, b) => a.title.localeCompare(b.title));
