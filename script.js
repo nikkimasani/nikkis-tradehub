@@ -3292,12 +3292,14 @@ let _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
 const _libExpanded = new Set();
 let _libDynamicLoaded = new Set();
 let _libViewerBlobUrl = null;
-let _libFileIndex = new Map(); // lowercased filename → FileSystemFileHandle
+let _libFileIndex = new Map(); // key → { handle, topFolder }
 let _libEpubRendition = null;
+let _libDynCourses = null; // built dynamically from disk; null = use static LIB_COURSES
+let _libDynBooks   = null; // built dynamically from disk; null = use static LIB_BOOKS
 
-// Helper: count total hardcoded videos (excluding dynamic course)
 function _libTotalVideos() {
-  return LIB_COURSES.reduce((sum, c) => {
+  const courses = _libDynCourses || LIB_COURSES;
+  return courses.reduce((sum, c) => {
     if (c._dynamicLoad) return sum;
     return sum + c.sections.reduce((s2, sec) => s2 + sec.videos.length, 0);
   }, 0);
@@ -3312,19 +3314,58 @@ function _libNorm(s) {
   return s.toLowerCase().replace(/[\s\-_\.]+/g, '');
 }
 
-// Recursively build a filename → handle index so we never rely on exact folder paths
-async function _buildFileIndex(dirHandle, depth) {
+// Recursively index all files; topFolder = first-level subfolder name (= course name)
+async function _buildFileIndex(dirHandle, depth, topFolder) {
   if (depth > 8) return;
   try {
     for await (const entry of dirHandle.values()) {
       if (entry.kind === 'file') {
-        _libFileIndex.set(entry.name.toLowerCase(), entry);           // exact
-        _libFileIndex.set(_libNorm(entry.name), entry);               // fuzzy (no spaces/dashes)
+        const info = { handle: entry, topFolder: topFolder || '' };
+        _libFileIndex.set(entry.name.toLowerCase(), info);
+        _libFileIndex.set(_libNorm(entry.name), info);
       } else if (entry.kind === 'directory') {
-        await _buildFileIndex(entry, depth + 1);
+        await _buildFileIndex(entry, depth + 1, topFolder || entry.name);
       }
     }
   } catch(e) { /* skip inaccessible subfolders */ }
+}
+
+// Build _libDynCourses and _libDynBooks from the index — no hardcoded names
+function _deriveDynamicLib() {
+  const courseMap = new Map();
+  const books = [];
+  const seen = new Set();
+
+  for (const [, info] of _libFileIndex) {
+    const name = info.handle.name;
+    const lc = name.toLowerCase();
+    if (seen.has(lc)) continue; // skip fuzzy-key duplicates
+    seen.add(lc);
+
+    const ext = lc.split('.').pop();
+    if (['mp4', 'mov', 'webm', 'mkv', 'm4v', 'avi'].includes(ext)) {
+      const folder = info.topFolder || 'Uncategorized';
+      if (!courseMap.has(folder)) courseMap.set(folder, []);
+      courseMap.get(folder).push(name);
+    } else if (['pdf', 'epub'].includes(ext)) {
+      books.push({
+        title: name.replace(/\.[^.]+$/, '').replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim(),
+        format: ext.toUpperCase(),
+        path: name
+      });
+    }
+  }
+
+  _libDynBooks = books.sort((a, b) => a.title.localeCompare(b.title));
+  _libDynCourses = [];
+  for (const [folder, videos] of courseMap) {
+    _libDynCourses.push({
+      title: folder.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim(),
+      root: folder,
+      sections: [{ title: 'Videos', videos: videos.sort() }]
+    });
+  }
+  _libDynCourses.sort((a, b) => a.title.localeCompare(b.title));
 }
 
 // Connect folder via File System Access API
@@ -3337,7 +3378,10 @@ async function connectLibraryFolder() {
     if (statusEl) { statusEl.className = 'lib-status-connected'; statusEl.textContent = '⏳ Indexing files...'; }
 
     _libFileIndex = new Map();
-    await _buildFileIndex(_libDirHandle, 0);
+    _libDynCourses = null;
+    _libDynBooks = null;
+    await _buildFileIndex(_libDirHandle, 0, '');
+    _deriveDynamicLib();
 
     renderLibrary();
 
@@ -3345,20 +3389,20 @@ async function connectLibraryFolder() {
     const listEl = document.getElementById('lib-scan-list');
     if (outEl && listEl) {
       outEl.style.display = '';
-      listEl.textContent = _libFileIndex.size + ' files indexed from ' + _libDirHandle.name;
+      const vCount = _libDynCourses.reduce((s, c) => s + c.sections[0].videos.length, 0);
+      listEl.textContent = vCount + ' videos and ' + _libDynBooks.length + ' books found in ' + _libDirHandle.name;
     }
   } catch(e) {
     if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
   }
 }
 
-// Look up a file by its filename (last path segment) — ignores folder structure entirely
+// Look up a file by filename from the index
 async function _libTraverse(pathStr) {
   const filename = pathStr.split('/').pop();
-  const handle = _libFileIndex.get(filename.toLowerCase())   // exact match
-             || _libFileIndex.get(_libNorm(filename));       // fuzzy fallback
-  if (!handle) throw new Error('File not found in index: "' + filename + '"');
-  return await handle.getFile();
+  const info = _libFileIndex.get(filename.toLowerCase()) || _libFileIndex.get(_libNorm(filename));
+  if (!info) throw new Error('File not found in index: "' + filename + '"');
+  return await info.handle.getFile();
 }
 
 // MIME type map for reliable inline rendering
@@ -3498,20 +3542,20 @@ function toggleLibWatched(videoId) {
 
 // Toggle accordion open/close for a course
 function toggleCourseAccordion(idx) {
+  const courses = _libDynCourses || LIB_COURSES;
   if (_libExpanded.has(idx)) {
     _libExpanded.delete(idx);
   } else {
     _libExpanded.add(idx);
-    if (LIB_COURSES[idx]._dynamicLoad && !_libDynamicLoaded.has(idx)) {
+    if (courses[idx]._dynamicLoad && !_libDynamicLoaded.has(idx)) {
       loadCourseVideos(idx);
     }
   }
-  // Re-render just the course card
   const container = document.getElementById('lib-courses-list');
   if (!container) return;
   const card = container.querySelector('[data-course-idx="' + idx + '"]');
   if (card) {
-    const newCard = _buildCourseCard(LIB_COURSES[idx], idx);
+    const newCard = _buildCourseCard(courses[idx], idx);
     card.replaceWith(newCard);
   }
 }
@@ -3693,7 +3737,7 @@ function updateLibProgress() {
   // Refresh all open course cards' progress bars
   const container = document.getElementById('lib-courses-list');
   if (!container) return;
-  LIB_COURSES.forEach((course, idx) => {
+  (_libDynCourses || LIB_COURSES).forEach((course, idx) => {
     if (!_libExpanded.has(idx)) return;
     const card = container.querySelector('[data-course-idx="' + idx + '"]');
     if (!card) return;
@@ -3741,17 +3785,19 @@ function renderLibrary() {
   if (summaryEl) summaryEl.textContent = watched + ' / ' + total + ' videos watched';
 
   // Books grid
+  const books = _libDynBooks || LIB_BOOKS;
   const booksGrid = document.getElementById('lib-books-grid');
   if (booksGrid) {
-    booksGrid.innerHTML = LIB_BOOKS.map(book => {
+    booksGrid.innerHTML = books.map(book => {
       const fmtClass = book.format === 'PDF' ? 'lib-format-pdf' : 'lib-format-epub';
+      const path = (book.path || book.filename || '').replace(/'/g, "\\'");
       return `
         <div class="lib-book-card">
           <div class="lib-book-title">${book.title}</div>
           ${book.author ? '<div class="lib-book-author">by ' + book.author + '</div>' : ''}
           <div class="lib-book-footer">
             <span class="lib-format-badge ${fmtClass}">${book.format}</span>
-            <button class="lib-open-btn" onclick="openLibraryFile('${book.path.replace(/'/g, "\\'")}')" title="Open ${book.title}">Open &#8594;</button>
+            <button class="lib-open-btn" onclick="openLibraryFile('${path}')">Open &#8594;</button>
           </div>
         </div>
       `;
@@ -3763,10 +3809,11 @@ function renderLibrary() {
   if (videosCountEl) videosCountEl.textContent = total + ' videos';
 
   // Course list
+  const courses = _libDynCourses || LIB_COURSES;
   const coursesList = document.getElementById('lib-courses-list');
   if (coursesList) {
     coursesList.innerHTML = '';
-    LIB_COURSES.forEach((course, idx) => {
+    courses.forEach((course, idx) => {
       coursesList.appendChild(_buildCourseCard(course, idx));
     });
   }
