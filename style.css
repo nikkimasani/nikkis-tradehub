@@ -751,6 +751,14 @@
     font-size: 14px; font-weight: 600; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1;
   }
+  .lib-viewer-bar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .lib-epub-nav { display: flex; gap: 6px; }
+  .lib-epub-btn {
+    background: none; border: 1px solid var(--border); color: var(--accent);
+    font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    transition: all .12s;
+  }
+  .lib-epub-btn:hover { background: rgba(96,180,255,.1); border-color: var(--accent); }
   .lib-viewer-close {
     background: none; border: 1px solid var(--border); color: var(--muted);
     font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 6px; cursor: pointer;

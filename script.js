@@ -3307,13 +3307,19 @@ function _libWatchedCount() {
   return Object.values(_libWatched).filter(Boolean).length;
 }
 
+// Strip spaces/dashes/underscores for fuzzy name comparison
+function _libNorm(s) {
+  return s.toLowerCase().replace(/[\s\-_\.]+/g, '');
+}
+
 // Recursively build a filename → handle index so we never rely on exact folder paths
 async function _buildFileIndex(dirHandle, depth) {
   if (depth > 8) return;
   try {
     for await (const entry of dirHandle.values()) {
       if (entry.kind === 'file') {
-        _libFileIndex.set(entry.name.toLowerCase(), entry);
+        _libFileIndex.set(entry.name.toLowerCase(), entry);           // exact
+        _libFileIndex.set(_libNorm(entry.name), entry);               // fuzzy (no spaces/dashes)
       } else if (entry.kind === 'directory') {
         await _buildFileIndex(entry, depth + 1);
       }
@@ -3349,7 +3355,8 @@ async function connectLibraryFolder() {
 // Look up a file by its filename (last path segment) — ignores folder structure entirely
 async function _libTraverse(pathStr) {
   const filename = pathStr.split('/').pop();
-  const handle = _libFileIndex.get(filename.toLowerCase());
+  const handle = _libFileIndex.get(filename.toLowerCase())   // exact match
+             || _libFileIndex.get(_libNorm(filename));       // fuzzy fallback
   if (!handle) throw new Error('File not found in index: "' + filename + '"');
   return await handle.getFile();
 }
@@ -3403,23 +3410,19 @@ async function openLibraryFile(relPath) {
     } else if (ext === 'epub') {
       // Render EPUB in-browser using epub.js
       const epubEl = document.getElementById('lib-viewer-epub');
+      const epubNav = document.getElementById('lib-epub-nav');
       videoEl.style.display = 'none';
       iframeEl.style.display = 'none';
       if (dlRow) dlRow.style.display = 'none';
+      if (epubNav) epubNav.style.display = '';
       if (epubEl) {
         epubEl.style.display = '';
         epubEl.innerHTML = '';
         if (_libEpubRendition) { try { _libEpubRendition.destroy(); } catch(ex) {} _libEpubRendition = null; }
-        // epub.js reads the file as an ArrayBuffer
         const buf = await file.arrayBuffer();
         const book = ePub(buf);
-        _libEpubRendition = book.renderTo(epubEl, { width: '100%', height: '100%', spread: 'none', flow: 'scrolled-doc' });
+        _libEpubRendition = book.renderTo(epubEl, { width: '100%', height: '100%', spread: 'none' });
         _libEpubRendition.display();
-        // Add keyboard/click navigation
-        _libEpubRendition.on('keydown', (e) => {
-          if (e.key === 'ArrowRight') _libEpubRendition.next();
-          if (e.key === 'ArrowLeft') _libEpubRendition.prev();
-        });
       }
       viewer.style.display = 'flex';
     } else {
@@ -3466,12 +3469,17 @@ async function openLibraryFile(relPath) {
   }
 }
 
+function libEpubPrev() { if (_libEpubRendition) _libEpubRendition.prev(); }
+function libEpubNext() { if (_libEpubRendition) _libEpubRendition.next(); }
+
 function closeLibViewer() {
   const viewer = document.getElementById('lib-viewer');
   const videoEl = document.getElementById('lib-viewer-video');
   const iframeEl = document.getElementById('lib-viewer-iframe');
   const epubEl = document.getElementById('lib-viewer-epub');
+  const epubNav = document.getElementById('lib-epub-nav');
   viewer.style.display = 'none';
+  if (epubNav) epubNav.style.display = 'none';
   videoEl.pause();
   videoEl.src = '';
   iframeEl.src = '';

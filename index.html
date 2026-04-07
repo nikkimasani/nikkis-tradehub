@@ -1754,7 +1754,13 @@
 <div id="lib-viewer" class="lib-viewer" style="display:none">
   <div class="lib-viewer-bar">
     <span id="lib-viewer-title" class="lib-viewer-title"></span>
-    <button class="lib-viewer-close" onclick="closeLibViewer()">✕ Close</button>
+    <div class="lib-viewer-bar-right">
+      <div id="lib-epub-nav" class="lib-epub-nav" style="display:none">
+        <button class="lib-epub-btn" onclick="libEpubPrev()">&#8592; Prev</button>
+        <button class="lib-epub-btn" onclick="libEpubNext()">Next &#8594;</button>
+      </div>
+      <button class="lib-viewer-close" onclick="closeLibViewer()">✕ Close</button>
+    </div>
   </div>
   <div class="lib-viewer-content">
     <video id="lib-viewer-video" class="lib-viewer-media" controls playsinline style="display:none"></video>
