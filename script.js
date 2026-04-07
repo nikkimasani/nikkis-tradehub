@@ -3315,6 +3315,20 @@ function _libWatchedCount() {
   return Object.values(_libWatched).filter(Boolean).length;
 }
 
+// Small non-blocking toast for soft errors (file not found, etc.)
+function _libToast(msg) {
+  let t = document.getElementById('lib-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'lib-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('lib-toast-show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('lib-toast-show'), 4000);
+}
+
 // Quick check: is a given filename findable in the current index?
 function _libInIndex(pathStr) {
   if (!_libDirHandle || _libFileIndex.size === 0) return false;
@@ -3621,7 +3635,13 @@ async function openLibraryFile(relPath) {
       viewer.style.display = 'flex';
     }
   } catch(e) {
-    // Show error inside the viewer (not alert) so user doesn't lose context
+    const isNotFound = e.message && e.message.includes('not found in index');
+    if (isNotFound) {
+      // File not in connected folder — show a small toast, don't open the big viewer overlay
+      _libToast('📂 "' + relPath.split('/').pop() + '" isn\'t in your connected folder. Connect the folder that contains this course to play it.');
+      return;
+    }
+    // Real error — show inside the viewer
     const viewer = document.getElementById('lib-viewer');
     const videoEl = document.getElementById('lib-viewer-video');
     const iframeEl = document.getElementById('lib-viewer-iframe');
@@ -3631,12 +3651,7 @@ async function openLibraryFile(relPath) {
     if (iframeEl) { iframeEl.style.display = 'none'; iframeEl.src = ''; }
     if (dlRow) {
       const msg = dlRow.querySelector('.lib-viewer-dl-msg');
-      const isNotFound = e.message && e.message.includes('not found in index');
-      if (msg) msg.innerHTML =
-        '<strong style="color:var(--warn)">Could not open:</strong> ' + relPath.split('/').pop() +
-        '<br><br>' + (isNotFound
-          ? 'This video isn\'t in your connected folder. The course it belongs to may be stored in a different location on your computer — connect that folder instead, or download the course to your TG folder first.'
-          : '<strong>Error:</strong> ' + e.message);
+      if (msg) msg.innerHTML = '<strong style="color:var(--warn)">Could not open:</strong> ' + relPath.split('/').pop() + '<br><br><strong>Error:</strong> ' + e.message;
       const btn = dlRow.querySelector('.lib-viewer-dl-btn');
       if (btn) btn.style.display = 'none';
       dlRow.style.display = '';
