@@ -3840,8 +3840,6 @@ function _buildCourseCard(course, idx) {
             // Dynamic courses store full paths in v; static courses need course.root prefix
             const fullPath = course.root ? course.root + '/' + v : v;
 
-            // Show play button only if file is in the connected folder (or no folder connected = static library mode)
-            const inFolder = !_libDirHandle || _libInIndex(fullPath);
             const row = document.createElement('div');
             row.className = 'lib-video-row';
             row.innerHTML = `
@@ -3849,10 +3847,7 @@ function _buildCourseCard(course, idx) {
               <span class="lib-video-title${isWatched ? ' watched' : ''}" title="${displayTitle}">${displayTitle}</span>
               <input type="checkbox" class="lib-watch-cb" ${isWatched ? 'checked' : ''}
                 onchange="toggleLibWatched('${videoId.replace(/'/g, "\\'")}')" title="Mark watched">
-              ${inFolder
-                ? `<button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Play">&#9654; Play</button>`
-                : `<span class="lib-not-in-folder" title="Not in connected folder">&#128274; Not downloaded</span>`
-              }
+              <button class="lib-play-btn" onclick="openLibraryFile('${fullPath.replace(/'/g, "\\'")}')" title="Play">&#9654; Play</button>
             `;
             group.appendChild(row);
           });
