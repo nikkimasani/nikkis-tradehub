@@ -42,6 +42,13 @@ async function dbInit() {
     if (aKey) { const bar = document.getElementById('ai-key-bar'); if(bar) bar.style.display = 'none'; const inp = document.getElementById('anthropic-key'); if(inp) inp.value = aKey; }
     const ytKey = localStorage.getItem('td_yt_key');
     if (ytKey) { const el = document.getElementById('yt-api-key-inp'); if(el) el.value = ytKey; }
+    // KB upgrades
+    kbMastery = JSON.parse(localStorage.getItem('td_kb_mastery') || '{}');
+    kbTags    = JSON.parse(localStorage.getItem('td_kb_tags')    || '{}');
+    applyKbState();
+    strategyNotes = JSON.parse(localStorage.getItem('td_strategy_notes') || '[]');
+    renderStrategyNotes();
+    _fcWeakSpots = JSON.parse(localStorage.getItem('td_flashcard_weak') || '[]');
   } catch(e) {
     console.warn('Supabase sync failed, using localStorage only:', e);
   }
@@ -1734,6 +1741,413 @@ Rules:
   _quizHistory = JSON.parse(localStorage.getItem('td_quiz_history') || '[]');
   renderQuizHistory();
 })();
+
+// ==================== KNOWLEDGE BASE ====================
+
+// ---- Mastery tracking ----
+let kbMastery = JSON.parse(localStorage.getItem('td_kb_mastery') || '{}');
+let kbTags    = JSON.parse(localStorage.getItem('td_kb_tags')    || '{}');
+
+function applyKbState() {
+  document.querySelectorAll('.learn-card-collapsible').forEach(card => {
+    const title = card.dataset.title;
+    if (!title) return;
+
+    // Mastery button state
+    const btn = card.querySelector('.lc-mastery-btn');
+    if (btn) {
+      if (kbMastery[title]) {
+        btn.textContent = '✓ Known';
+        btn.classList.add('known');
+        card.classList.add('lc-known');
+      } else {
+        btn.textContent = 'Mark as Known';
+        btn.classList.remove('known');
+        card.classList.remove('lc-known');
+      }
+    }
+
+    // Tag badge
+    const tagBadge = document.getElementById('lc-tag-' + title);
+    const tagInput = card.querySelector('.lc-tag-input');
+    if (kbTags[title]) {
+      if (tagBadge) { tagBadge.textContent = kbTags[title]; tagBadge.style.display = ''; }
+      if (tagInput) tagInput.value = kbTags[title];
+    } else {
+      if (tagBadge) tagBadge.style.display = 'none';
+    }
+  });
+}
+
+function toggleLearnCard(headerEl) {
+  const card = headerEl.closest('.learn-card-collapsible');
+  const body = card.querySelector('.lc-body');
+  const isOpen = card.classList.contains('lc-open');
+  if (isOpen) {
+    card.classList.remove('lc-open');
+    body.classList.remove('open');
+  } else {
+    card.classList.add('lc-open');
+    body.classList.add('open');
+  }
+}
+
+function toggleMastery(btn, title) {
+  kbMastery[title] = !kbMastery[title];
+  dbSet('td_kb_mastery', kbMastery);
+  applyKbState();
+}
+
+function saveKbTag(btn, title) {
+  const inp = btn.previousElementSibling;
+  const val = inp.value.trim().toUpperCase();
+  if (val) kbTags[title] = val;
+  else delete kbTags[title];
+  dbSet('td_kb_tags', kbTags);
+  applyKbState();
+}
+
+function kbSearch() {
+  const query = document.getElementById('kb-search').value.toLowerCase();
+  const cards = document.querySelectorAll('#kb-cards-grid .learn-card-collapsible');
+  let anyVisible = false;
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    const match = !query || text.includes(query);
+    card.style.display = match ? '' : 'none';
+    if (match) anyVisible = true;
+  });
+  const noRes = document.getElementById('kb-no-results');
+  if (noRes) noRes.style.display = anyVisible ? 'none' : '';
+}
+
+// ---- Cheat sheet modal ----
+function openCheatSheet() {
+  document.getElementById('cheat-sheet-modal').style.display = '';
+}
+function closeCheatSheet(e) {
+  if (!e || e.target === document.getElementById('cheat-sheet-modal')) {
+    document.getElementById('cheat-sheet-modal').style.display = 'none';
+  }
+}
+
+// ---- Strategy Notes ----
+let strategyNotes = JSON.parse(localStorage.getItem('td_strategy_notes') || '[]');
+
+function addStrategyNote() {
+  const text = document.getElementById('kb-note-text').value.trim();
+  if (!text) return;
+  const cat = document.getElementById('kb-note-cat').value;
+  strategyNotes.unshift({ text, category: cat, date: new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}) });
+  dbSet('td_strategy_notes', strategyNotes);
+  document.getElementById('kb-note-text').value = '';
+  renderStrategyNotes();
+}
+
+function deleteStrategyNote(i) {
+  strategyNotes.splice(i, 1);
+  dbSet('td_strategy_notes', strategyNotes);
+  renderStrategyNotes();
+}
+
+function renderStrategyNotes() {
+  const container = document.getElementById('kb-notes-list');
+  if (!container) return;
+  if (!strategyNotes.length) {
+    container.innerHTML = '<div class="empty-state">No notes yet. Add your first one above.</div>';
+    return;
+  }
+  container.innerHTML = strategyNotes.map((n, i) => `
+    <div class="kb-note-card">
+      <div class="kb-note-card-top">
+        <span class="kb-note-cat cat-${n.category.toLowerCase()}">${n.category}</span>
+        <span class="kb-note-date">${n.date}</span>
+        <button class="del-btn" onclick="deleteStrategyNote(${i})" style="margin-left:6px">×</button>
+      </div>
+      <div class="kb-note-text">${n.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`).join('');
+}
+
+// Init KB state on load
+applyKbState();
+renderStrategyNotes();
+
+// ==================== FLASHCARD DRILL ====================
+
+const FLASHCARDS = [
+  {front:'Long', back:'Buying, betting price goes up', category:'Glossary'},
+  {front:'Short', back:'Selling borrowed shares, betting price drops', category:'Glossary'},
+  {front:'Float', back:'Shares available to trade. Low float = more volatile moves', category:'Glossary'},
+  {front:'Spread', back:'Difference between bid and ask. Wide spread = harder to profit', category:'Glossary'},
+  {front:'Support', back:'Price level where buying tends to emerge. Price bounces up from here', category:'Glossary'},
+  {front:'Resistance', back:'Price level where selling tends to emerge. Price gets rejected here', category:'Glossary'},
+  {front:'Breakout', back:'Price moves through a key level with above-average volume. Confirms move', category:'Glossary'},
+  {front:'Gap Up/Down', back:'Price opens above/below previous close. Often driven by news or earnings', category:'Glossary'},
+  {front:'VWAP', back:'Volume Weighted Average Price. Institutional benchmark. Price above = bullish bias', category:'Indicator'},
+  {front:'EMA 9/20', back:'Fast moving averages. Price above both = uptrend. Cross below = warning', category:'Indicator'},
+  {front:'RSI', back:'Momentum oscillator 0-100. Above 70 = overbought. Below 30 = oversold', category:'Indicator'},
+  {front:'Volume', back:'Number of shares traded. High volume confirms breakouts and reversals', category:'Indicator'},
+  {front:'ATR', back:'Average True Range. Measures volatility. Use to set stop-loss distance', category:'Indicator'},
+  {front:'MACD', back:'Moving Average Convergence Divergence. Crossover above signal line = bullish', category:'Indicator'},
+  {front:'Bull Flag', back:'Strong move up (pole), brief consolidation (flag), then continuation up', category:'Pattern'},
+  {front:'Bear Flag', back:'Strong drop (pole), brief rally (flag), then continuation down', category:'Pattern'},
+  {front:'Cup & Handle', back:'U-shaped base + small pullback = bullish breakout setup', category:'Pattern'},
+  {front:'Head & Shoulders', back:'3-peak pattern (left shoulder, head, right shoulder) = trend reversal signal', category:'Pattern'},
+  {front:'Doji', back:'Open ≈ Close, small body. Shows indecision. Often signals reversal', category:'Pattern'},
+  {front:'Hammer', back:'Long lower wick, small body at top. Buyers pushed back sellers. Bullish reversal', category:'Pattern'},
+  {front:'PDT Rule', back:'4+ day trades in 5 business days requires $25,000 minimum account balance', category:'Rule'},
+  {front:'1-2% Risk Rule', back:'Never risk more than 1-2% of your total account on any single trade', category:'Rule'},
+  {front:'1:2 R/R', back:'Minimum risk/reward ratio. If risking $100, target at least $200 gain', category:'Rule'},
+  {front:'Opening Range', back:'First 15-30 min candle high/low. Mark these levels — breakout from range is a key entry signal', category:'Strategy'},
+];
+
+let _fcDeck = [];
+let _fcIdx = 0;
+let _fcGotIt = 0;
+let _fcTotal = 0;
+let _fcWeakCounts = {};
+let _fcFlipped = false;
+let _fcFilter = 'All';
+let _fcWeakSpots = JSON.parse(localStorage.getItem('td_flashcard_weak') || '[]');
+
+function setFcFilter(btn, cat) {
+  _fcFilter = cat;
+  document.querySelectorAll('.fc-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  fcBuildDeck();
+}
+
+function fcBuildDeck(deckOverride) {
+  if (deckOverride) {
+    _fcDeck = deckOverride.slice();
+  } else {
+    _fcDeck = (_fcFilter === 'All' ? FLASHCARDS : FLASHCARDS.filter(c => c.category === _fcFilter)).slice();
+    // shuffle
+    for (let i = _fcDeck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [_fcDeck[i], _fcDeck[j]] = [_fcDeck[j], _fcDeck[i]];
+    }
+  }
+  _fcIdx = 0;
+  _fcGotIt = 0;
+  _fcTotal = _fcDeck.length;
+  _fcWeakCounts = {};
+  _fcFlipped = false;
+  document.getElementById('fc-results').style.display = 'none';
+  document.getElementById('fc-drill-area').style.display = '';
+  fcRenderCard();
+}
+
+function fcRenderCard() {
+  if (_fcIdx >= _fcDeck.length) { fcShowResults(); return; }
+  const card = _fcDeck[_fcIdx];
+  _fcFlipped = false;
+  const inner = document.getElementById('card-inner');
+  inner.classList.remove('flipped');
+  document.getElementById('fc-front-term').textContent = card.front;
+  document.getElementById('fc-back-def').textContent = card.back;
+  const catBadge = document.getElementById('fc-cat-badge');
+  catBadge.textContent = card.category;
+  catBadge.style.background = {Glossary:'rgba(96,180,255,.15)',Indicator:'rgba(192,132,252,.15)',Pattern:'rgba(74,222,128,.15)',Rule:'rgba(251,91,82,.15)',Strategy:'rgba(251,191,36,.15)'}[card.category] || 'rgba(96,180,255,.15)';
+  catBadge.style.color = {Glossary:'var(--accent)',Indicator:'var(--purple)',Pattern:'var(--accent2)',Rule:'var(--warn)',Strategy:'var(--gold)'}[card.category] || 'var(--accent)';
+  document.getElementById('fc-btn-row').style.display = '';
+  document.getElementById('fc-answer-row').style.display = 'none';
+  document.getElementById('fc-flip-btn').textContent = 'Flip ▾';
+  // progress
+  document.getElementById('fc-progress-text').textContent = `Card ${_fcIdx + 1} of ${_fcDeck.length}`;
+  document.getElementById('fc-progress-bar').style.width = (_fcDeck.length > 0 ? (_fcIdx / _fcDeck.length * 100) : 0) + '%';
+}
+
+function fcFlip() {
+  _fcFlipped = true;
+  document.getElementById('card-inner').classList.add('flipped');
+  document.getElementById('fc-btn-row').style.display = 'none';
+  document.getElementById('fc-answer-row').style.display = '';
+}
+
+function fcGotIt() {
+  if (!_fcFlipped) return;
+  _fcGotIt++;
+  _fcIdx++;
+  fcRenderCard();
+}
+
+function fcReviewAgain() {
+  if (!_fcFlipped) return;
+  const card = _fcDeck[_fcIdx];
+  _fcWeakCounts[card.front] = (_fcWeakCounts[card.front] || 0) + 1;
+  // put card at end of deck
+  _fcDeck.push(_fcDeck.splice(_fcIdx, 1)[0]);
+  fcRenderCard();
+}
+
+function fcShowResults() {
+  document.getElementById('fc-drill-area').style.display = 'none';
+  document.getElementById('fc-results').style.display = '';
+  const weakCards = Object.entries(_fcWeakCounts).filter(([k,v]) => v >= 2).map(([k]) => k);
+  _fcWeakSpots = weakCards;
+  dbSet('td_flashcard_weak', _fcWeakSpots);
+  document.getElementById('fc-results-score').textContent = `${_fcGotIt} / ${_fcTotal} Got it`;
+  const weakEl = document.getElementById('fc-results-weak');
+  if (weakCards.length) {
+    weakEl.innerHTML = '<strong style="color:var(--warn)">Weak spots (reviewed 2+ times):</strong><br>' + weakCards.join(', ');
+  } else {
+    weakEl.textContent = 'No weak spots — great work!';
+  }
+  document.getElementById('fc-progress-text').textContent = `Done! ${_fcGotIt}/${_fcTotal}`;
+  document.getElementById('fc-progress-bar').style.width = '100%';
+}
+
+function fcRetryWeak() {
+  if (!_fcWeakSpots.length) { alert('No weak spots saved yet!'); return; }
+  const deck = FLASHCARDS.filter(c => _fcWeakSpots.includes(c.front));
+  if (!deck.length) { alert('No matching cards found.'); return; }
+  fcBuildDeck(deck);
+}
+
+function fcRestartAll() {
+  fcBuildDeck();
+}
+
+// Init flashcards
+fcBuildDeck();
+
+// ==================== SCENARIO DRILLS ====================
+
+const SCENARIOS = [
+  {
+    situation: "AAPL gaps up 3% at open on earnings beat. Volume in first 5 min is 4x average. RSI is 74. Price is above VWAP.",
+    options: ["A. Buy immediately — strong momentum", "B. Wait for first pullback to VWAP before entering long", "C. Short it — RSI is overbought", "D. Avoid — earnings gaps are always traps"],
+    answer: 1,
+    explanation: "RSI 74 means overbought in the short term. Waiting for a pullback to VWAP gives a better entry with a defined stop. Buying into a gap with RSI that high is chasing. Shorting against a strong earnings gap is high risk."
+  },
+  {
+    situation: "You're long 200 shares of TSLA. Your stop is -$2.00 from entry. The stock drops $1.80. It bounces slightly. You're down $360.",
+    options: ["A. Hold — it bounced, the stop was too tight", "B. Add more shares to lower your average cost", "C. Honor your stop if it breaks — you set it for a reason", "D. Move your stop lower to give it more room"],
+    answer: 2,
+    explanation: "Your pre-trade stop was set with logic. Moving it or averaging down are both ways of letting losers run. Averaging down on a losing trade violates core risk management. Honor your stop."
+  },
+  {
+    situation: "A low-float stock (2M float) news-spikes up 80% in pre-market. It's now 9:35 AM and it's still climbing with no pullback.",
+    options: ["A. Chase it — momentum is real", "B. Wait for a pullback and VWAP test before considering entry", "C. Short it — it's up 80%, it has to come back", "D. Scan for the next mover instead"],
+    answer: 1,
+    explanation: "Low-float parabolic moves are extremely dangerous to chase or short without confirmation. Waiting for a VWAP test or consolidation gives you a real setup with defined risk. Shorting a momentum stock into the move without a reversal signal is very high risk."
+  },
+  {
+    situation: "You've already taken 3 trades today. Two were losers. Your account is down 2.5%. You see a strong setup forming.",
+    options: ["A. Take it — you need to make back the losses", "B. Size down to half your normal position", "C. Stop trading for the day — you've hit your daily loss limit", "D. Take it at full size — the setup looks perfect"],
+    answer: 2,
+    explanation: "3 losing trades = stop for the day is a core discipline rule. Trading to 'make back' losses is revenge trading — one of the most dangerous mindsets. Protecting capital on bad days is what keeps you in the game long-term."
+  },
+  {
+    situation: "SPY opens below yesterday's close. RSI is 28. Pre-market volume is 3x normal. Futures were down all night.",
+    options: ["A. Buy the open — RSI is oversold, bounce incoming", "B. Wait — confirm stabilization before entering long", "C. Short everything at open", "D. It doesn't matter — RSI always works"],
+    answer: 1,
+    explanation: "RSI oversold doesn't mean buy immediately. In a strong downtrend, RSI can stay oversold for extended periods. Waiting for confirmation (price stabilizing, volume drying up, a reversal candle) is the correct approach."
+  },
+  {
+    situation: "You enter a bull flag breakout on NVDA. It breaks out, then immediately reverses below your entry. Volume is light on the breakout.",
+    options: ["A. Hold — breakouts always need time to develop", "B. Exit at your stop — light volume breakout was a warning sign", "C. Add more — the pattern is still valid", "D. Move your stop below the next support"],
+    answer: 1,
+    explanation: "A breakout on light volume is a red flag — it lacks conviction. Your stop exists for exactly this scenario. Exiting and preserving capital is correct. The pattern failing is new information; your stop should be honored."
+  },
+  {
+    situation: "It's 3:45 PM. You have no positions. You spot a setup that looks solid. The market closes in 15 minutes.",
+    options: ["A. Take it — 15 minutes is plenty of time", "B. Skip it — not enough time to manage the trade properly", "C. Take it but with double your normal size to maximize the short time", "D. Only take it if it's a short position"],
+    answer: 1,
+    explanation: "End-of-day trades with 15 minutes left give you almost no time to manage risk. Spreads widen near close, volatility is erratic, and you can't respond to moves properly. Skipping marginal end-of-day setups is discipline, not missed opportunity."
+  },
+  {
+    situation: "A stock you've been watching forms a perfect technical setup. But there's a Fed announcement in 30 minutes.",
+    options: ["A. Take the trade — the setup is too good to pass", "B. Wait until after the announcement to trade", "C. Take it with a wider stop to account for volatility", "D. Take it — Fed announcements don't affect individual stocks"],
+    answer: 1,
+    explanation: "Fed announcements can swing the entire market 1-3% in seconds. Even a perfect technical setup gets destroyed by macro volatility. Waiting for the announcement to pass before taking new positions is standard risk management."
+  },
+  {
+    situation: "You're paper trading and having a great week — up 12%. You're thinking about switching to real money.",
+    options: ["A. Switch now — you're ready, the results prove it", "B. One good week in paper trading doesn't mean you're ready", "C. Double your paper position sizes to simulate real pressure", "D. Start with a $50k real account to match your paper results"],
+    answer: 1,
+    explanation: "Paper trading success doesn't translate directly to live trading. Real money adds psychological pressure that changes decision-making. Most traders need consistent paper trading results over weeks, a clear strategy, and strict risk management before going live — and should start very small."
+  },
+  {
+    situation: "MSTR is up 12% and you have a profit of $800 in the trade. Your target was $600. You're thinking of holding for more.",
+    options: ["A. Hold indefinitely — let your winners run", "B. Take partial profits at target, move stop to breakeven on remainder", "C. Exit fully — you exceeded your target", "D. Add to the position since it's working"],
+    answer: 1,
+    explanation: "Locking in partial profits at your target while letting a portion ride with a breakeven stop is the professional approach. It guarantees a win while giving upside. Both 'hold forever' and 'exit fully' ignore the partial profit strategy that manages risk and captures extended moves."
+  }
+];
+
+let _scDeck = [];
+let _scIdx = 0;
+let _scScore = 0;
+let _scAnswered = false;
+
+function scBuildDeck() {
+  _scDeck = SCENARIOS.slice();
+  // shuffle
+  for (let i = _scDeck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [_scDeck[i], _scDeck[j]] = [_scDeck[j], _scDeck[i]];
+  }
+  _scIdx = 0;
+  _scScore = 0;
+  _scAnswered = false;
+  document.getElementById('sc-results').style.display = 'none';
+  document.getElementById('sc-area').style.display = '';
+  scRenderScenario();
+}
+
+function scRenderScenario() {
+  if (_scIdx >= _scDeck.length) { scShowResults(); return; }
+  const sc = _scDeck[_scIdx];
+  _scAnswered = false;
+  document.getElementById('sc-situation').textContent = sc.situation;
+  document.getElementById('sc-progress-text').textContent = `Scenario ${_scIdx + 1} of ${_scDeck.length}`;
+  document.getElementById('sc-progress-bar').style.width = (_scIdx / _scDeck.length * 100) + '%';
+  const optsEl = document.getElementById('sc-options');
+  optsEl.innerHTML = sc.options.map((o, i) => `
+    <button class="sc-opt" onclick="scChoose(${i})">${o}</button>`).join('');
+  document.getElementById('sc-explanation').style.display = 'none';
+  document.getElementById('sc-next-row').style.display = 'none';
+}
+
+function scChoose(idx) {
+  if (_scAnswered) return;
+  _scAnswered = true;
+  const sc = _scDeck[_scIdx];
+  const btns = document.querySelectorAll('.sc-opt');
+  btns.forEach((b, i) => {
+    b.classList.add('disabled');
+    if (i === sc.answer) b.classList.add('correct');
+    else if (i === idx && idx !== sc.answer) b.classList.add('wrong');
+  });
+  if (idx === sc.answer) _scScore++;
+  const expEl = document.getElementById('sc-explanation');
+  expEl.textContent = sc.explanation;
+  expEl.style.display = '';
+  document.getElementById('sc-next-row').style.display = '';
+}
+
+function scNext() {
+  _scIdx++;
+  scRenderScenario();
+}
+
+function scShowResults() {
+  document.getElementById('sc-area').style.display = 'none';
+  document.getElementById('sc-results').style.display = '';
+  const pct = Math.round((_scScore / _scDeck.length) * 100);
+  document.getElementById('sc-results-score').textContent = `${_scScore} / ${_scDeck.length} correct (${pct}%)`;
+  document.getElementById('sc-progress-bar').style.width = '100%';
+  document.getElementById('sc-progress-text').textContent = `Done! ${_scScore}/${_scDeck.length}`;
+}
+
+function scRestart() {
+  scBuildDeck();
+}
+
+// Init scenarios
+scBuildDeck();
 
 // ---- Load from Supabase (overwrites localStorage if newer data exists) ----
 dbInit();

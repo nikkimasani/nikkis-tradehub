@@ -41,6 +41,7 @@
   <div class="tab" data-tab="classroom">🎓 Classroom</div>
   <div class="tab" data-tab="quiz">🧠 Quiz</div>
   <div class="tab" data-tab="learn">📚 Knowledge Base</div>
+  <div class="tab" data-tab="practice">🃏 Practice</div>
   <div class="tab" data-tab="resources">🔗 Resources</div>
 </nav>
 
@@ -361,73 +362,347 @@
 
     <!-- ============ KNOWLEDGEBASE ============ -->
     <div class="panel" id="panel-learn">
-      <div class="section-header">📖 Beginner Foundations</div>
-      <div class="learn-grid">
-        <div class="learn-card">
-          <h3>🧠 What Is Day Trading?</h3>
-          <p>Day trading means buying and selling financial instruments within the same trading day. The goal is to profit from short-term price movements.</p>
-          <ul>
-            <li>Pattern Day Trader Rule: 4+ trades/5 days needs $25k <span class="badge badge-red">PDT Rule</span></li>
-            <li>Most beginners start with paper trading <span class="badge badge-green">Start Here</span></li>
-            <li>Risk management is more important than strategy <span class="badge badge-gold">Critical</span></li>
-          </ul>
+      <!-- KB Top Bar: Search + Cheat Sheet -->
+      <div class="kb-topbar">
+        <input type="text" id="kb-search" placeholder="Search concepts, patterns, terms..." oninput="kbSearch()" class="kb-search-input">
+        <button class="btn btn-ghost" onclick="openCheatSheet()">⚡ Cheat Sheet</button>
+      </div>
+
+      <div class="kb-scroll-body">
+        <div class="section-header" style="margin-bottom:8px">📖 Beginner Foundations</div>
+        <div id="kb-no-results" style="display:none" class="empty-state">No results found. Try a different search term.</div>
+        <div class="learn-grid" id="kb-cards-grid">
+
+          <!-- Card 1 -->
+          <div class="learn-card learn-card-collapsible" data-title="What Is Day Trading?">
+            <div class="lc-header" onclick="toggleLearnCard(this)">
+              <div class="lc-header-left">
+                <span class="lc-title">🧠 What Is Day Trading?</span>
+                <span class="lc-tag-badge" id="lc-tag-What Is Day Trading?" style="display:none"></span>
+              </div>
+              <div class="lc-header-right">
+                <button class="lc-mastery-btn" onclick="event.stopPropagation();toggleMastery(this,'What Is Day Trading?')">Mark as Known</button>
+                <span class="lc-chevron">▸</span>
+              </div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-tag-row">
+                <input type="text" class="lc-tag-input" placeholder="Tag ticker e.g. AAPL" value="">
+                <button class="btn-sm btn-ghost" onclick="saveKbTag(this,'What Is Day Trading?')">Save</button>
+              </div>
+              <p>Day trading means buying and selling financial instruments within the same trading day. The goal is to profit from short-term price movements.</p>
+              <ul>
+                <li>Pattern Day Trader Rule: 4+ trades/5 days needs $25k <span class="badge badge-red">PDT Rule</span></li>
+                <li>Most beginners start with paper trading <span class="badge badge-green">Start Here</span></li>
+                <li>Risk management is more important than strategy <span class="badge badge-gold">Critical</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="learn-card learn-card-collapsible" data-title="Key Chart Patterns">
+            <div class="lc-header" onclick="toggleLearnCard(this)">
+              <div class="lc-header-left">
+                <span class="lc-title">📊 Key Chart Patterns</span>
+                <span class="lc-tag-badge" id="lc-tag-Key Chart Patterns" style="display:none"></span>
+              </div>
+              <div class="lc-header-right">
+                <button class="lc-mastery-btn" onclick="event.stopPropagation();toggleMastery(this,'Key Chart Patterns')">Mark as Known</button>
+                <span class="lc-chevron">▸</span>
+              </div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-tag-row">
+                <input type="text" class="lc-tag-input" placeholder="Tag ticker e.g. AAPL" value="">
+                <button class="btn-sm btn-ghost" onclick="saveKbTag(this,'Key Chart Patterns')">Save</button>
+              </div>
+              <div class="glossary-grid">
+                <div class="glossary-item"><div class="term">Bull Flag</div><div class="def">Strong move up, brief consolidation, continuation</div></div>
+                <div class="glossary-item"><div class="term">Bear Flag</div><div class="def">Strong drop, brief rally, continuation down</div></div>
+                <div class="glossary-item"><div class="term">Cup &amp; Handle</div><div class="def">U-shaped base + small pullback = bullish breakout</div></div>
+                <div class="glossary-item"><div class="term">Head &amp; Shoulders</div><div class="def">3-peak pattern — signals trend reversal</div></div>
+                <div class="glossary-item"><div class="term">Doji</div><div class="def">Open ≈ Close — indecision, possible reversal</div></div>
+                <div class="glossary-item"><div class="term">Hammer</div><div class="def">Long lower wick — buyers pushed back sellers</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="learn-card learn-card-collapsible" data-title="Risk Management Rules">
+            <div class="lc-header" onclick="toggleLearnCard(this)">
+              <div class="lc-header-left">
+                <span class="lc-title">📏 Risk Management Rules</span>
+                <span class="lc-tag-badge" id="lc-tag-Risk Management Rules" style="display:none"></span>
+              </div>
+              <div class="lc-header-right">
+                <button class="lc-mastery-btn" onclick="event.stopPropagation();toggleMastery(this,'Risk Management Rules')">Mark as Known</button>
+                <span class="lc-chevron">▸</span>
+              </div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-tag-row">
+                <input type="text" class="lc-tag-input" placeholder="Tag ticker e.g. AAPL" value="">
+                <button class="btn-sm btn-ghost" onclick="saveKbTag(this,'Risk Management Rules')">Save</button>
+              </div>
+              <ul>
+                <li>Never risk more than 1–2% per trade <span class="badge badge-red">Rule #1</span></li>
+                <li>Always set a stop-loss before entering <span class="badge badge-red">Required</span></li>
+                <li>Risk/reward ratio minimum 1:2 <span class="badge badge-gold">Target</span></li>
+                <li>Don't average down on losing trades <span class="badge badge-red">Avoid</span></li>
+                <li>Max 3 losing trades = stop for the day <span class="badge badge-blue">Discipline</span></li>
+                <li>Size position to the stop, not your gut <span class="badge badge-green">Pro tip</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="learn-card learn-card-collapsible" data-title="Key Indicators">
+            <div class="lc-header" onclick="toggleLearnCard(this)">
+              <div class="lc-header-left">
+                <span class="lc-title">📐 Key Indicators</span>
+                <span class="lc-tag-badge" id="lc-tag-Key Indicators" style="display:none"></span>
+              </div>
+              <div class="lc-header-right">
+                <button class="lc-mastery-btn" onclick="event.stopPropagation();toggleMastery(this,'Key Indicators')">Mark as Known</button>
+                <span class="lc-chevron">▸</span>
+              </div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-tag-row">
+                <input type="text" class="lc-tag-input" placeholder="Tag ticker e.g. AAPL" value="">
+                <button class="btn-sm btn-ghost" onclick="saveKbTag(this,'Key Indicators')">Save</button>
+              </div>
+              <div class="glossary-grid">
+                <div class="glossary-item"><div class="term">VWAP</div><div class="def">Volume Weighted Avg Price — institutional benchmark</div></div>
+                <div class="glossary-item"><div class="term">EMA 9/20</div><div class="def">Fast moving averages for trend and dynamic support</div></div>
+                <div class="glossary-item"><div class="term">RSI</div><div class="def">Momentum oscillator. Over 70 overbought, under 30 oversold</div></div>
+                <div class="glossary-item"><div class="term">Volume</div><div class="def">Confirms breakouts. High volume = real move</div></div>
+                <div class="glossary-item"><div class="term">ATR</div><div class="def">Average True Range — helps set stop levels</div></div>
+                <div class="glossary-item"><div class="term">MACD</div><div class="def">Trend + momentum crossover signal</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="learn-card learn-card-collapsible" data-title="Trading Glossary">
+            <div class="lc-header" onclick="toggleLearnCard(this)">
+              <div class="lc-header-left">
+                <span class="lc-title">🔤 Trading Glossary</span>
+                <span class="lc-tag-badge" id="lc-tag-Trading Glossary" style="display:none"></span>
+              </div>
+              <div class="lc-header-right">
+                <button class="lc-mastery-btn" onclick="event.stopPropagation();toggleMastery(this,'Trading Glossary')">Mark as Known</button>
+                <span class="lc-chevron">▸</span>
+              </div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-tag-row">
+                <input type="text" class="lc-tag-input" placeholder="Tag ticker e.g. AAPL" value="">
+                <button class="btn-sm btn-ghost" onclick="saveKbTag(this,'Trading Glossary')">Save</button>
+              </div>
+              <div class="glossary-grid">
+                <div class="glossary-item"><div class="term">Long</div><div class="def">Buying, betting price goes up</div></div>
+                <div class="glossary-item"><div class="term">Short</div><div class="def">Selling borrowed shares, betting price drops</div></div>
+                <div class="glossary-item"><div class="term">Float</div><div class="def">Shares available to trade. Low float = volatile</div></div>
+                <div class="glossary-item"><div class="term">Spread</div><div class="def">Difference between bid and ask price</div></div>
+                <div class="glossary-item"><div class="term">Support</div><div class="def">Price level where buying tends to emerge</div></div>
+                <div class="glossary-item"><div class="term">Resistance</div><div class="def">Price level where selling tends to emerge</div></div>
+                <div class="glossary-item"><div class="term">Breakout</div><div class="def">Price moves through key level with volume</div></div>
+                <div class="glossary-item"><div class="term">Gap Up/Down</div><div class="def">Price opens above/below previous close</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6 -->
+          <div class="learn-card learn-card-collapsible" data-title="Opening Range Breakout Strategy">
+            <div class="lc-header" onclick="toggleLearnCard(this)">
+              <div class="lc-header-left">
+                <span class="lc-title">🎯 Opening Range Breakout Strategy</span>
+                <span class="lc-tag-badge" id="lc-tag-Opening Range Breakout Strategy" style="display:none"></span>
+              </div>
+              <div class="lc-header-right">
+                <button class="lc-mastery-btn" onclick="event.stopPropagation();toggleMastery(this,'Opening Range Breakout Strategy')">Mark as Known</button>
+                <span class="lc-chevron">▸</span>
+              </div>
+            </div>
+            <div class="lc-body">
+              <div class="lc-tag-row">
+                <input type="text" class="lc-tag-input" placeholder="Tag ticker e.g. AAPL" value="">
+                <button class="btn-sm btn-ghost" onclick="saveKbTag(this,'Opening Range Breakout Strategy')">Save</button>
+              </div>
+              <ul>
+                <li><strong>Wait</strong> for first 15–30 min candle to close</li>
+                <li><strong>Mark</strong> the high and low of that range</li>
+                <li><strong>Enter</strong> on breakout above (long) or below (short)</li>
+                <li><strong>Stop</strong> below the range low (for longs)</li>
+                <li><strong>Target</strong> 2x the range height minimum</li>
+                <li><strong>Confirm</strong> with above-average volume</li>
+              </ul>
+            </div>
+          </div>
+
+        </div><!-- /.learn-grid -->
+
+        <!-- Strategy Notes Section -->
+        <div style="margin-top:28px">
+          <div class="section-header">📝 My Strategy Notes</div>
+          <div class="kb-notes-form">
+            <textarea id="kb-note-text" placeholder="Document your setups, rules, or lessons learned..." rows="3"></textarea>
+            <div class="kb-notes-form-row">
+              <select id="kb-note-cat">
+                <option value="Setup">Setup</option>
+                <option value="Rule">Rule</option>
+                <option value="Lesson">Lesson</option>
+                <option value="Mindset">Mindset</option>
+              </select>
+              <button class="btn" onclick="addStrategyNote()">Add Note</button>
+            </div>
+          </div>
+          <div id="kb-notes-list" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
         </div>
-        <div class="learn-card">
-          <h3>📊 Key Chart Patterns</h3>
-          <div class="glossary-grid">
-            <div class="glossary-item"><div class="term">Bull Flag</div><div class="def">Strong move up, brief consolidation, continuation</div></div>
-            <div class="glossary-item"><div class="term">Bear Flag</div><div class="def">Strong drop, brief rally, continuation down</div></div>
-            <div class="glossary-item"><div class="term">Cup & Handle</div><div class="def">U-shaped base + small pullback = bullish breakout</div></div>
-            <div class="glossary-item"><div class="term">Head & Shoulders</div><div class="def">3-peak pattern — signals trend reversal</div></div>
-            <div class="glossary-item"><div class="term">Doji</div><div class="def">Open ≈ Close — indecision, possible reversal</div></div>
-            <div class="glossary-item"><div class="term">Hammer</div><div class="def">Long lower wick — buyers pushed back sellers</div></div>
+
+      </div><!-- /.kb-scroll-body -->
+    </div>
+
+    <!-- ============ PRACTICE TAB ============ -->
+    <div class="panel" id="panel-practice">
+      <div class="practice-scroll">
+
+        <!-- Section 1: Flashcard Drill -->
+        <div class="section-header">🃏 Flashcard Drill</div>
+
+        <!-- Filter buttons -->
+        <div class="fc-filter-row" id="fc-filters">
+          <button class="fc-filter-btn active" data-cat="All" onclick="setFcFilter(this,'All')">All</button>
+          <button class="fc-filter-btn" data-cat="Glossary" onclick="setFcFilter(this,'Glossary')">Glossary</button>
+          <button class="fc-filter-btn" data-cat="Indicator" onclick="setFcFilter(this,'Indicator')">Indicator</button>
+          <button class="fc-filter-btn" data-cat="Pattern" onclick="setFcFilter(this,'Pattern')">Pattern</button>
+          <button class="fc-filter-btn" data-cat="Rule" onclick="setFcFilter(this,'Rule')">Rule</button>
+          <button class="fc-filter-btn" data-cat="Strategy" onclick="setFcFilter(this,'Strategy')">Strategy</button>
+        </div>
+
+        <!-- Flashcard UI -->
+        <div id="fc-drill-area">
+          <div class="fc-progress-row">
+            <span id="fc-progress-text" class="fc-progress-text">Card 1 of 24</span>
+            <div class="fc-progress-bar-wrap"><div class="fc-progress-bar" id="fc-progress-bar" style="width:0%"></div></div>
+          </div>
+          <div class="flashcard" id="flashcard-wrap">
+            <div class="card-inner" id="card-inner">
+              <div class="card-face card-front">
+                <div class="fc-cat-badge" id="fc-cat-badge">Glossary</div>
+                <div class="fc-front-term" id="fc-front-term">Term</div>
+                <div class="fc-hint">Click "Flip" to reveal the answer</div>
+              </div>
+              <div class="card-face card-back">
+                <div class="fc-back-label">Answer</div>
+                <div class="fc-back-def" id="fc-back-def">Definition</div>
+              </div>
+            </div>
+          </div>
+          <div class="fc-btn-row" id="fc-btn-row">
+            <button class="btn" id="fc-flip-btn" onclick="fcFlip()">Flip ▾</button>
+          </div>
+          <div class="fc-answer-row" id="fc-answer-row" style="display:none">
+            <button class="btn" style="background:var(--accent2);color:#0d1117" onclick="fcGotIt()">✓ Got it</button>
+            <button class="btn" style="background:var(--warn);color:#fff" onclick="fcReviewAgain()">✗ Review Again</button>
           </div>
         </div>
-        <div class="learn-card">
-          <h3>📏 Risk Management Rules</h3>
-          <ul>
-            <li>Never risk more than 1–2% per trade <span class="badge badge-red">Rule #1</span></li>
-            <li>Always set a stop-loss before entering <span class="badge badge-red">Required</span></li>
-            <li>Risk/reward ratio minimum 1:2 <span class="badge badge-gold">Target</span></li>
-            <li>Don't average down on losing trades <span class="badge badge-red">Avoid</span></li>
-            <li>Max 3 losing trades = stop for the day <span class="badge badge-blue">Discipline</span></li>
-            <li>Size position to the stop, not your gut <span class="badge badge-green">Pro tip</span></li>
-          </ul>
-        </div>
-        <div class="learn-card">
-          <h3>📐 Key Indicators</h3>
-          <div class="glossary-grid">
-            <div class="glossary-item"><div class="term">VWAP</div><div class="def">Volume Weighted Avg Price — institutional benchmark</div></div>
-            <div class="glossary-item"><div class="term">EMA 9/20</div><div class="def">Fast moving averages for trend and dynamic support</div></div>
-            <div class="glossary-item"><div class="term">RSI</div><div class="def">Momentum oscillator. Over 70 overbought, under 30 oversold</div></div>
-            <div class="glossary-item"><div class="term">Volume</div><div class="def">Confirms breakouts. High volume = real move</div></div>
-            <div class="glossary-item"><div class="term">ATR</div><div class="def">Average True Range — helps set stop levels</div></div>
-            <div class="glossary-item"><div class="term">MACD</div><div class="def">Trend + momentum crossover signal</div></div>
+
+        <!-- Flashcard Results (hidden until done) -->
+        <div id="fc-results" style="display:none" class="fc-results-card">
+          <div class="fc-results-title">Session Complete!</div>
+          <div class="fc-results-score" id="fc-results-score"></div>
+          <div class="fc-results-weak" id="fc-results-weak"></div>
+          <div class="fc-results-btns">
+            <button class="btn" onclick="fcRetryWeak()">Retry Weak Cards</button>
+            <button class="btn btn-ghost" onclick="fcRestartAll()">Restart All</button>
           </div>
         </div>
-        <div class="learn-card">
-          <h3>🔤 Trading Glossary</h3>
-          <div class="glossary-grid">
-            <div class="glossary-item"><div class="term">Long</div><div class="def">Buying, betting price goes up</div></div>
-            <div class="glossary-item"><div class="term">Short</div><div class="def">Selling borrowed shares, betting price drops</div></div>
-            <div class="glossary-item"><div class="term">Float</div><div class="def">Shares available to trade. Low float = volatile</div></div>
-            <div class="glossary-item"><div class="term">Spread</div><div class="def">Difference between bid and ask price</div></div>
-            <div class="glossary-item"><div class="term">Support</div><div class="def">Price level where buying tends to emerge</div></div>
-            <div class="glossary-item"><div class="term">Resistance</div><div class="def">Price level where selling tends to emerge</div></div>
-            <div class="glossary-item"><div class="term">Breakout</div><div class="def">Price moves through key level with volume</div></div>
-            <div class="glossary-item"><div class="term">Gap Up/Down</div><div class="def">Price opens above/below previous close</div></div>
+
+        <!-- Section 2: Scenario Drills -->
+        <div class="section-header" style="margin-top:32px">🎯 Scenario Drills</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Apply your knowledge. These are situational — there's no formula, use your judgment.</div>
+
+        <div id="sc-area">
+          <div class="sc-progress-row">
+            <span id="sc-progress-text" class="fc-progress-text">Scenario 1 of 10</span>
+            <div class="fc-progress-bar-wrap"><div class="fc-progress-bar" id="sc-progress-bar" style="width:0%"></div></div>
+          </div>
+          <div class="sc-card" id="sc-card">
+            <div class="sc-situation" id="sc-situation"></div>
+            <div class="sc-options" id="sc-options"></div>
+            <div class="sc-explanation" id="sc-explanation" style="display:none"></div>
+            <div style="margin-top:14px;display:none" id="sc-next-row">
+              <button class="btn" onclick="scNext()">Next Scenario →</button>
+            </div>
           </div>
         </div>
-        <div class="learn-card">
-          <h3>🎯 Opening Range Breakout Strategy</h3>
-          <ul>
-            <li><strong>Wait</strong> for first 15–30 min candle to close</li>
-            <li><strong>Mark</strong> the high and low of that range</li>
-            <li><strong>Enter</strong> on breakout above (long) or below (short)</li>
-            <li><strong>Stop</strong> below the range low (for longs)</li>
-            <li><strong>Target</strong> 2x the range height minimum</li>
-            <li><strong>Confirm</strong> with above-average volume</li>
+
+        <!-- Scenario Results -->
+        <div id="sc-results" style="display:none" class="fc-results-card">
+          <div class="fc-results-title">Scenarios Complete!</div>
+          <div class="fc-results-score" id="sc-results-score"></div>
+          <div style="margin-top:14px">
+            <button class="btn btn-ghost" onclick="scRestart()">↻ Restart &amp; Shuffle</button>
+          </div>
+        </div>
+
+      </div><!-- /.practice-scroll -->
+    </div>
+
+    <!-- ============ CHEAT SHEET MODAL ============ -->
+    <div id="cheat-sheet-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.8);overflow-y:auto" onclick="closeCheatSheet(event)">
+      <div class="cheat-sheet-card" onclick="event.stopPropagation()">
+        <div class="cs-header">
+          <span class="cs-title">⚡ Quick-Reference Cheat Sheet</span>
+          <button class="btn-sm btn-ghost" onclick="closeCheatSheet()">✕ Close</button>
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-title">📏 6 Risk Management Rules</div>
+          <ul class="cs-list">
+            <li>Never risk more than 1–2% per trade</li>
+            <li>Always set a stop-loss before entering</li>
+            <li>Risk/reward ratio minimum 1:2</li>
+            <li>Don't average down on losing trades</li>
+            <li>Max 3 losing trades = stop for the day</li>
+            <li>Size position to the stop, not your gut</li>
           </ul>
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-title">📐 6 Key Indicators</div>
+          <ul class="cs-list">
+            <li><strong>VWAP</strong> — Institutional benchmark. Price above = bullish bias</li>
+            <li><strong>EMA 9/20</strong> — Fast MAs. Price above both = uptrend</li>
+            <li><strong>RSI</strong> — Momentum 0–100. &gt;70 overbought, &lt;30 oversold</li>
+            <li><strong>Volume</strong> — High volume confirms breakouts and reversals</li>
+            <li><strong>ATR</strong> — Measures volatility. Use to set stop-loss distance</li>
+            <li><strong>MACD</strong> — Crossover above signal line = bullish</li>
+          </ul>
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-title">🔤 8 Glossary Terms</div>
+          <ul class="cs-list">
+            <li><strong>Long</strong> — Buying, betting price goes up</li>
+            <li><strong>Short</strong> — Selling borrowed shares, betting price drops</li>
+            <li><strong>Float</strong> — Shares available to trade. Low float = more volatile</li>
+            <li><strong>Spread</strong> — Bid/ask difference. Wide spread = harder to profit</li>
+            <li><strong>Support</strong> — Price bounces up from here</li>
+            <li><strong>Resistance</strong> — Price gets rejected here</li>
+            <li><strong>Breakout</strong> — Price moves through key level with volume</li>
+            <li><strong>Gap Up/Down</strong> — Opens above/below prior close (news/earnings)</li>
+          </ul>
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-title">🎯 ORB Strategy Steps</div>
+          <ol class="cs-list cs-ol">
+            <li>Wait for first 15–30 min candle to close</li>
+            <li>Mark the high and low of that range</li>
+            <li>Enter on breakout above (long) or below (short)</li>
+            <li>Stop below the range low (for longs)</li>
+            <li>Target 2x the range height minimum</li>
+            <li>Confirm with above-average volume</li>
+          </ol>
         </div>
       </div>
     </div>
