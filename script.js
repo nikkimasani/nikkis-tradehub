@@ -1,3 +1,52 @@
+// ==================== SUPABASE SYNC ====================
+const _sbClient = supabase.createClient(
+  'https://bazjlrualnmbanmhiuau.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhempscnVhbG5tYmFubWhpdWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTkyNDQsImV4cCI6MjA5MTA5NTI0NH0.R8f7yEhxVHIcjwSS3H1b3tLj5jpuRP1pR4jiyVFEbmE'
+);
+
+function dbSet(key, value) {
+  const stored = typeof value === 'string' ? value : JSON.stringify(value);
+  localStorage.setItem(key, stored);
+  const dbVal = typeof value === 'string' ? value : value;
+  _sbClient.from('user_data').upsert({ key, value: dbVal, updated_at: new Date().toISOString() }).then(() => {});
+}
+
+function dbRemove(key) {
+  localStorage.removeItem(key);
+  _sbClient.from('user_data').delete().eq('key', key).then(() => {});
+}
+
+async function dbInit() {
+  try {
+    const { data, error } = await _sbClient.from('user_data').select('*');
+    if (error || !data || !data.length) return;
+    data.forEach(row => {
+      const val = (row.value !== null && typeof row.value === 'object') ? JSON.stringify(row.value) : row.value;
+      localStorage.setItem(row.key, val);
+    });
+    // Re-render all components with synced data
+    watchlist = JSON.parse(localStorage.getItem('td_watchlist') || '[]');
+    renderWatchlist();
+    trades = JSON.parse(localStorage.getItem('td_trades') || '[]');
+    renderTradeLog(); renderJournalStats();
+    paperData = JSON.parse(localStorage.getItem('td_paper') || 'null');
+    renderPaperCalendar();
+    clsNotes = JSON.parse(localStorage.getItem('td_cls_notes') || '[]');
+    renderClsNotes();
+    loadChecks();
+    _quizHistory = JSON.parse(localStorage.getItem('td_quiz_history') || '[]');
+    renderQuizHistory();
+    const fKey = localStorage.getItem('td_finnhub_key');
+    if (fKey) { const el = document.getElementById('finnhub-key'); if(el) el.value = fKey; loadNews(fKey); }
+    const aKey = localStorage.getItem('td_anthropic_key');
+    if (aKey) { const bar = document.getElementById('ai-key-bar'); if(bar) bar.style.display = 'none'; const inp = document.getElementById('anthropic-key'); if(inp) inp.value = aKey; }
+    const ytKey = localStorage.getItem('td_yt_key');
+    if (ytKey) { const el = document.getElementById('yt-api-key-inp'); if(el) el.value = ytKey; }
+  } catch(e) {
+    console.warn('Supabase sync failed, using localStorage only:', e);
+  }
+}
+
 // ==================== TABS ====================
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -63,7 +112,7 @@ renderChart();
 
 // ==================== WATCHLIST ====================
 let watchlist = JSON.parse(localStorage.getItem('td_watchlist') || '[]');
-function saveWatchlist() { localStorage.setItem('td_watchlist', JSON.stringify(watchlist)); }
+function saveWatchlist() { dbSet('td_watchlist', watchlist); }
 function renderWatchlist() {
   const c = document.getElementById('watchlist-items');
   if (!watchlist.length) { c.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0">Add tickers above</div>'; return; }
@@ -152,7 +201,7 @@ calcPosition();
 
 // ==================== P&L JOURNAL ====================
 let trades = JSON.parse(localStorage.getItem('td_trades') || '[]');
-function saveTrades() { localStorage.setItem('td_trades', JSON.stringify(trades)); }
+function saveTrades() { dbSet('td_trades', trades); }
 
 function logTrade() {
   const date     = document.getElementById('tj-date').value.trim();
@@ -309,7 +358,7 @@ if (savedKey) document.getElementById('finnhub-key').value = savedKey;
 function saveFinnhubKey() {
   const key = document.getElementById('finnhub-key').value.trim();
   if (!key) { alert('Enter your Finnhub API key'); return; }
-  localStorage.setItem('td_finnhub_key', key);
+  dbSet('td_finnhub_key', key);
   loadNews(key);
 }
 
@@ -417,7 +466,7 @@ let briefSaveTimer = null;
 function saveBrief() {
   clearTimeout(briefSaveTimer);
   briefSaveTimer = setTimeout(() => {
-    localStorage.setItem(briefKey(), document.getElementById('brief-text').value);
+    dbSet(briefKey(), document.getElementById('brief-text').value);
     const msg = document.getElementById('brief-saved-msg');
     msg.style.display = 'inline';
     setTimeout(() => msg.style.display = 'none', 2000);
@@ -523,7 +572,7 @@ function getTradingTake(item) {
 function saveAnthropicKey() {
   const key = document.getElementById('anthropic-key').value.trim();
   if (!key) { alert('Enter your Anthropic API key'); return; }
-  localStorage.setItem('td_anthropic_key', key);
+  dbSet('td_anthropic_key', key);
   document.getElementById('ai-key-bar').style.display = 'none';
   document.getElementById('ai-brief-btn').style.background = 'var(--accent2)';
   document.getElementById('ai-brief-btn').textContent = '🤖 Generate AI Brief';
@@ -688,7 +737,7 @@ let paperData = JSON.parse(localStorage.getItem('td_paper') || 'null');
 function startPaperChallenge() {
   if (paperData && !confirm('A challenge is already running. Start a new one?')) return;
   paperData = { startDate: new Date().toISOString().split('T')[0], days: {} };
-  localStorage.setItem('td_paper', JSON.stringify(paperData));
+  dbSet('td_paper', paperData);
   renderPaperCalendar();
   document.getElementById('paper-start-btn').textContent = '✓ Challenge Running';
 }
@@ -696,7 +745,7 @@ function startPaperChallenge() {
 function resetPaperChallenge() {
   if (!confirm('Reset the 90-day challenge? All data will be lost.')) return;
   paperData = null;
-  localStorage.removeItem('td_paper');
+  dbRemove('td_paper');
   renderPaperCalendar();
   document.getElementById('paper-start-btn').textContent = '🚀 Start 90-Day Challenge';
 }
@@ -712,7 +761,7 @@ function logPaperDay() {
 
   const type = count === 0 ? 'rules' : pnl >= 0 ? 'win' : 'loss';
   paperData.days[today] = { pnl, count, notes, rules, type };
-  localStorage.setItem('td_paper', JSON.stringify(paperData));
+  dbSet('td_paper', paperData);
   renderPaperCalendar();
 
   document.getElementById('paper-pnl').value = '';
@@ -969,7 +1018,7 @@ let clsVideos = { pl1: null, pl2: null }; // null = not loaded yet
 function saveYtKey() {
   const key = document.getElementById('yt-api-key-inp').value.trim();
   if (!key) return;
-  localStorage.setItem('td_yt_key', key);
+  dbSet('td_yt_key', key);
   loadPlaylistVideos(clsCurrentPl);
 }
 
@@ -1173,14 +1222,14 @@ function addClassroomNote() {
   if (!text) return;
   const now = new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
   clsNotes.unshift({ text, tag, date: now });
-  localStorage.setItem('td_cls_notes', JSON.stringify(clsNotes));
+  dbSet('td_cls_notes', clsNotes);
   document.getElementById('cls-note-input').value = '';
   renderClsNotes();
 }
 
 function deleteClsNote(i) {
   clsNotes.splice(i, 1);
-  localStorage.setItem('td_cls_notes', JSON.stringify(clsNotes));
+  dbSet('td_cls_notes', clsNotes);
   renderClsNotes();
 }
 
@@ -1222,7 +1271,7 @@ function saveChecks() {
   for (let i = 1; i <= 12; i++) {
     checks['chk'+i] = document.getElementById('chk'+i).checked;
   }
-  localStorage.setItem('td_cls_checks', JSON.stringify(checks));
+  dbSet('td_cls_checks', checks);
   updateCheckProgress();
 }
 
@@ -1550,12 +1599,12 @@ function showResults() {
     saved[cat].correct += s.correct;
     saved[cat].total   += s.total;
   });
-  localStorage.setItem('td_quiz_catstats', JSON.stringify(saved));
+  dbSet('td_quiz_catstats', saved);
 
   // Save to history
   _quizHistory.unshift({ date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}), mode:_quizMode, score:pct, correct:_quizScore, total });
   if (_quizHistory.length > 10) _quizHistory.pop();
-  localStorage.setItem('td_quiz_history', JSON.stringify(_quizHistory));
+  dbSet('td_quiz_history', _quizHistory);
 }
 
 function retryQuiz() { startQuiz(_lastMode); }
@@ -1685,3 +1734,6 @@ Rules:
   _quizHistory = JSON.parse(localStorage.getItem('td_quiz_history') || '[]');
   renderQuizHistory();
 })();
+
+// ---- Load from Supabase (overwrites localStorage if newer data exists) ----
+dbInit();
