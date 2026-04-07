@@ -3294,12 +3294,18 @@ let _libDynamicLoaded = new Set();
 let _libViewerBlobUrl = null;
 let _libFileIndex = new Map(); // key → { handle, pathArr }
 let _libEpubRendition = null;
-let _libDynCourses = null; // built dynamically from disk; null = use static LIB_COURSES
-let _libDynBooks   = null; // built dynamically from disk; null = use static LIB_BOOKS
+let _libDynCourses = null; // courses discovered from connected folder
+let _libDynBooks   = null; // books discovered from connected folder
+
+// Always show LIB_COURSES as the base; append discovered folder courses at the end.
+// This way connecting a folder adds your local videos without hiding the static library.
+function _getCourseList() {
+  if (_libDynCourses && _libDynCourses.length) return [...LIB_COURSES, ..._libDynCourses];
+  return LIB_COURSES;
+}
 
 function _libTotalVideos() {
-  const courses = _libDynCourses || LIB_COURSES;
-  return courses.reduce((sum, c) => {
+  return _getCourseList().reduce((sum, c) => {
     if (c._dynamicLoad) return sum;
     return sum + c.sections.reduce((s2, sec) => s2 + sec.videos.length, 0);
   }, 0);
@@ -3394,6 +3400,7 @@ function _deriveDynamicLib() {
     _libDynCourses.push({
       title: courseKey.replace(/[-_~]/g, ' ').replace(/\s+/g, ' ').trim() || 'Uncategorized',
       root: '',
+      _isDynamic: true,   // marks this as discovered from connected folder
       sections
     });
   }
@@ -3653,7 +3660,7 @@ function toggleLibWatched(videoId) {
 
 // Toggle accordion open/close for a course
 function toggleCourseAccordion(idx) {
-  const courses = _libDynCourses || LIB_COURSES;
+  const courses = _getCourseList();
   if (_libExpanded.has(idx)) {
     _libExpanded.delete(idx);
   } else {
@@ -3851,7 +3858,7 @@ function updateLibProgress() {
   // Refresh all open course cards' progress bars
   const container = document.getElementById('lib-courses-list');
   if (!container) return;
-  (_libDynCourses || LIB_COURSES).forEach((course, idx) => {
+  _getCourseList().forEach((course, idx) => {
     if (!_libExpanded.has(idx)) return;
     const card = container.querySelector('[data-course-idx="' + idx + '"]');
     if (!card) return;
@@ -3923,11 +3930,18 @@ function renderLibrary() {
   if (videosCountEl) videosCountEl.textContent = total + ' videos';
 
   // Course list
-  const courses = _libDynCourses || LIB_COURSES;
+  const courses = _getCourseList();
   const coursesList = document.getElementById('lib-courses-list');
   if (coursesList) {
     coursesList.innerHTML = '';
     courses.forEach((course, idx) => {
+      // Insert a divider before the first dynamic (folder) course
+      if (course._isDynamic && (idx === 0 || !courses[idx - 1]._isDynamic)) {
+        const divider = document.createElement('div');
+        divider.style.cssText = 'padding:10px 4px 6px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--accent); border-top:1px solid var(--border); margin-top:8px;';
+        divider.textContent = '📁 From Your Connected Folder';
+        coursesList.appendChild(divider);
+      }
       coursesList.appendChild(_buildCourseCard(course, idx));
     });
   }
