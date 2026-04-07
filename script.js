@@ -1899,6 +1899,42 @@ const FLASHCARDS = [
   {front:'1-2% Risk Rule', back:'Never risk more than 1-2% of your total account on any single trade', category:'Rule'},
   {front:'1:2 R/R', back:'Minimum risk/reward ratio. If risking $100, target at least $200 gain', category:'Rule'},
   {front:'Opening Range', back:'First 15-30 min candle high/low. Mark these levels — breakout from range is a key entry signal', category:'Strategy'},
+  // Additional Glossary
+  {front:'Bid', back:'Highest price a buyer is willing to pay. You sell at the bid', category:'Glossary'},
+  {front:'Ask', back:'Lowest price a seller will accept. You buy at the ask', category:'Glossary'},
+  {front:'Market Order', back:'Buy or sell immediately at current market price. Fast execution, no price guarantee', category:'Glossary'},
+  {front:'Limit Order', back:'Buy or sell only at your specified price or better. Price guarantee, no fill guarantee', category:'Glossary'},
+  {front:'Stop Loss', back:'Order that triggers a sell if price falls to a specified level. Limits your maximum loss', category:'Glossary'},
+  {front:'Margin', back:'Borrowed money from your broker to buy more than your cash allows. Amplifies both gains and losses', category:'Glossary'},
+  {front:'Leverage', back:'Using borrowed capital or derivatives to control a larger position. 2:1 leverage = double exposure', category:'Glossary'},
+  {front:'Scalping', back:'Very short-term trading strategy — holding seconds to minutes, targeting small gains repeatedly', category:'Glossary'},
+  {front:'Swing Trade', back:'Holding positions for days to weeks to capture larger price swings. Opposite of day trading', category:'Glossary'},
+  {front:'Pre-Market', back:'Trading before the 9:30 AM open (4–9:30 AM ET). Lower volume, wider spreads, more volatile', category:'Glossary'},
+  {front:'Level 2', back:'Shows real-time bid/ask orders and sizes from all market makers. Reveals depth of buying and selling pressure', category:'Glossary'},
+  {front:'Short Squeeze', back:'When short sellers are forced to buy to cover losses, rapidly driving price up. Often explosive and fast', category:'Glossary'},
+  {front:'Catalyst', back:'News or event that triggers a significant price move: earnings, FDA approval, partnership announcement', category:'Glossary'},
+  {front:'Halt', back:'Trading on a stock is paused by exchange. Can be news-related or volatility circuit breaker. Unpredictable resumption', category:'Glossary'},
+  {front:'Wash Sale', back:'Selling a security at a loss then rebuying within 30 days — IRS disallows the tax deduction', category:'Glossary'},
+  {front:'Relative Volume', back:'Current volume vs average volume for that time of day. RVOL 2.0 = 2x normal — signals unusual activity', category:'Glossary'},
+  // Additional Indicators
+  {front:'Bollinger Bands', back:'Moving average + 2 standard deviation bands. Price at upper band = overbought. At lower band = oversold', category:'Indicator'},
+  {front:'Stochastic', back:'Momentum oscillator comparing close to range over N periods. Above 80 = overbought, below 20 = oversold', category:'Indicator'},
+  {front:'OBV', back:'On Balance Volume. Adds volume on up days, subtracts on down days. Divergence from price signals trend change', category:'Indicator'},
+  {front:'RVOL', back:'Relative Volume = current volume ÷ average volume. Above 2.0 confirms breakouts and news moves', category:'Indicator'},
+  // Additional Patterns
+  {front:'Double Top', back:'Two peaks at same resistance level. Neckline break = bearish reversal. Stronger with volume decline on 2nd peak', category:'Pattern'},
+  {front:'Double Bottom', back:'Two troughs at same support level. Neckline break = bullish reversal. Signals end of downtrend', category:'Pattern'},
+  {front:'Ascending Triangle', back:'Flat resistance + rising support. Bullish continuation. Break above resistance = entry signal', category:'Pattern'},
+  {front:'Falling Wedge', back:'Narrowing price action with downward slope. Bullish reversal pattern. Breakout above upper trendline = entry', category:'Pattern'},
+  {front:'Inside Bar', back:'Candle that fits entirely within the prior candle\'s range. Shows consolidation. Breakout of prior candle = entry', category:'Pattern'},
+  {front:'Bullish Engulfing', back:'Large green candle fully engulfs prior red candle body. Strong bullish reversal signal, especially at support', category:'Pattern'},
+  // Additional Rules & Strategy
+  {front:'Wash Sale Rule', back:'Can\'t claim a tax loss if you rebuy the same security within 30 days before or after the sale', category:'Rule'},
+  {front:'3-Strike Rule', back:'After 3 losing trades in a day, stop trading. Prevents emotional overtrading and account blow-ups', category:'Rule'},
+  {front:'Risk of Ruin', back:'The probability of losing your entire account. Increases sharply when risking more than 2% per trade', category:'Rule'},
+  {front:'VWAP Reclaim', back:'Price dips below VWAP then closes back above it with volume. Bullish signal — buyers regained control', category:'Strategy'},
+  {front:'Gap Fill', back:'Price tends to return to pre-gap levels. Stocks that gap up often "fill the gap" by pulling back to prior close', category:'Strategy'},
+  {front:'Parabolic Short', back:'Short selling a stock that has gone parabolic. Only valid after clear topping signs and volume exhaustion', category:'Strategy'},
 ];
 
 let _fcDeck = [];
@@ -2074,6 +2110,96 @@ const SCENARIOS = [
     options: ["A. Hold indefinitely — let your winners run", "B. Take partial profits at target, move stop to breakeven on remainder", "C. Exit fully — you exceeded your target", "D. Add to the position since it's working"],
     answer: 1,
     explanation: "Locking in partial profits at your target while letting a portion ride with a breakeven stop is the professional approach. It guarantees a win while giving upside. Both 'hold forever' and 'exit fully' ignore the partial profit strategy that manages risk and captures extended moves."
+  },
+  {
+    situation: "You scan pre-market and find a stock up 40% on a clinical trial approval. Float is 3M shares. It's 8:15 AM. You want in.",
+    options: ["A. Buy now in pre-market — the move is real and news is confirmed", "B. Wait for the regular market open and watch the first few candles", "C. Short it — 40% is too extended", "D. Ignore it — biotech is always too risky"],
+    answer: 1,
+    explanation: "Pre-market has wide spreads and low liquidity — you can get filled at a terrible price and can't react properly. Waiting for the open lets you see real volume, direction, and a proper setup with defined risk. You don't need to be first. You need to be right."
+  },
+  {
+    situation: "A stock breaks out of a 3-week base on 5x average volume. You enter. It moves up 4% then stalls. Your target is 8%. Do you hold or take profits?",
+    options: ["A. Hold — your target is 8%, never exit before your target", "B. Take half off at 4%, move stop to breakeven on the rest", "C. Exit fully — a 4% gain is plenty", "D. Add to the position since it's working"],
+    answer: 1,
+    explanation: "Taking partial profits at 4% locks in a win and removes risk on the remaining shares. Moving your stop to breakeven means the worst case is now a scratch trade. This is position management — letting a portion ride while protecting the profit you've already made."
+  },
+  {
+    situation: "You're watching Level 2. A stock is trying to break $50.00. You see a massive sell order of 500k shares sitting at $50.00. The stock is at $49.90.",
+    options: ["A. Buy now — it's about to break $50", "B. Wait to see if the wall gets absorbed before entering", "C. Short it — that wall will stop the move", "D. Ignore Level 2 — it doesn't matter"],
+    answer: 1,
+    explanation: "A large sell wall at a round number is a real resistance level. It may get absorbed and price breaks through — but you don't know that yet. Waiting to see if buyers can chew through the wall before entering gives you confirmation. Entering before the wall breaks is anticipating, not reacting."
+  },
+  {
+    situation: "You're short a stock. It starts to short squeeze — up 15% in 10 minutes. You're down significantly. You think it'll come back down.",
+    options: ["A. Hold and wait — short squeezes always reverse", "B. Cover immediately and take the loss", "C. Add to your short — better average price", "D. Hold until it returns to your entry"],
+    answer: 1,
+    explanation: "Short squeezes can go parabolic and wipe accounts. There is no 'it has to come back' in a squeeze. Covering immediately caps your loss. Adding to a losing short during a squeeze is one of the most dangerous moves in trading. The market doesn't care about your analysis when momentum takes over."
+  },
+  {
+    situation: "A stock has earnings tomorrow after close. It's up 2% today on anticipation. Your analysis says it'll beat estimates. You want to hold overnight.",
+    options: ["A. Hold — your analysis is solid and the trend is up", "B. Day trade it today but close before the earnings print", "C. Buy more before close to maximize the potential move", "D. Short it — earnings always disappoint"],
+    answer: 1,
+    explanation: "Even when you're right about earnings, the market reaction is unpredictable. A stock can beat estimates and drop 10% on 'sell the news.' Holding overnight into a binary event is gambling, not trading. Day trading the momentum and closing flat before earnings is the disciplined play."
+  },
+  {
+    situation: "You've been in a winning trade for 20 minutes. It's up $1.20 from your entry. Suddenly you feel euphoric and start thinking about how much you'll make if it goes to $5.",
+    options: ["A. Let the feeling guide you — confidence is an edge", "B. Recognize this as emotional escalation — tighten your stop", "C. Add to the position to maximize the win", "D. Ignore your emotions, they're irrelevant to the trade"],
+    answer: 1,
+    explanation: "Euphoria in a winning trade is one of the most dangerous states. It leads to holding too long, adding at the top, and giving back gains. Recognizing the emotion and tightening your stop protects your profit. The feeling of 'this could go to $5' is a signal to be more disciplined, not less."
+  },
+  {
+    situation: "You see a stock on social media with hundreds of people posting about it. It's up 60% today. Everyone says it's going higher. You have FOMO.",
+    options: ["A. Buy in — the crowd is usually right about momentum stocks", "B. Avoid — social media pumps are chasing, not trading", "C. Short it immediately — it's overextended", "D. Buy a small amount just to participate"],
+    answer: 1,
+    explanation: "By the time a stock is trending on social media and everyone is talking about it, the smart money is often already selling into the hype. Buying because of FOMO is chasing — you're entering without a real setup, defined risk, or clear exit. The people posting are often already in; you'd be their exit liquidity."
+  },
+  {
+    situation: "You have a $10,000 account. You see a $2 stock and want to buy 5,000 shares ($10,000 worth — your full account). Your stop is $0.10 below entry.",
+    options: ["A. Buy it — you believe in the setup and the stop is tight", "B. Size down — risking $500 (5% of account) violates your risk rules", "C. Don't trade it — $2 stocks are too risky", "D. Use all of it — the tight stop means low risk"],
+    answer: 1,
+    explanation: "A $0.10 stop on 5,000 shares = $500 risk, which is 5% of the account. The 1-2% rule means max $100-$200 at risk. To risk only $200, you'd buy ~2,000 shares at most. The dollar amount of the stop, not the percentage, determines your position size. Tight stop ≠ small risk if you're oversized."
+  },
+  {
+    situation: "A stock pulls back to its 20 EMA after a strong uptrend. Volume on the pullback is light. RSI has cooled from 72 to 52. Price holds the EMA and shows a hammer candle.",
+    options: ["A. This is a valid long setup — EMA hold + hammer + light pullback volume", "B. Avoid — it already ran, the uptrend is over", "C. Short it — RSI was overbought at 72", "D. Wait for it to break below the EMA before deciding"],
+    answer: 0,
+    explanation: "This is a textbook pullback entry. Light volume on the pullback means sellers aren't aggressive. The hammer candle shows buyers stepping in at the EMA. RSI resetting to 52 removes the overbought condition. This is how healthy uptrends work — strong move, light pullback to key level, continuation."
+  },
+  {
+    situation: "You exit a trade for a $200 loss. 10 minutes later the stock goes exactly where you thought. You missed a $600 gain. How do you handle the next trade?",
+    options: ["A. Size up — you need to make back the $200 plus the missed $600", "B. Take the next valid setup at your normal size with no adjustment", "C. Avoid trading for the rest of the day — you're clearly off", "D. Only take trades where you're 100% confident to avoid another miss"],
+    answer: 1,
+    explanation: "A stopped-out trade that then works is painful — but the stop was correct at the time. You cannot trade based on hindsight. Sizing up to 'make back' missed gains is revenge trading on a 'ghost' loss. The next trade is independent. Normal size, normal process, no emotion from the previous trade."
+  },
+  {
+    situation: "It's Monday morning. You had a terrible week last week — down 8%. You're eager to start fresh and get it back fast.",
+    options: ["A. Start aggressive — momentum will help you recover quickly", "B. Start with smaller size until you rebuild confidence and consistency", "C. Take the week off entirely", "D. Only take trades with 3:1 R/R or better to catch up faster"],
+    answer: 1,
+    explanation: "After a losing week, your psychology is compromised even if you don't feel it. Starting with reduced size protects you while you get back in rhythm. Trying to 'get it back fast' is the mindset that turns a bad week into a blown account. Size restores when results restore — not the other way around."
+  },
+  {
+    situation: "You're watching a stock form a bull flag on the 5-min chart. Everything looks perfect. But the overall market (SPY) is down 1.5% and still falling.",
+    options: ["A. Take it — the individual setup is what matters", "B. Pass — trading against a weak market reduces your edge significantly", "C. Short the stock instead since the market is weak", "D. Take it but with a tighter stop"],
+    answer: 1,
+    explanation: "Market direction is the tide that lifts or sinks most boats. A bull flag in a falling market has much lower follow-through probability. The setup may look perfect technically, but you're fighting the current. The best long setups occur when SPY supports them. Passing on a good-looking setup in a bad environment is disciplined."
+  },
+  {
+    situation: "You enter a trade. Immediately after entry, the spread widens significantly and you can barely get a fill. You're in the trade but stuck.",
+    options: ["A. Hold — wide spreads don't affect the actual trade outcome", "B. Exit at market immediately and note this stock has liquidity issues", "C. Place a limit order to exit at your target", "D. Add more shares since the price is favorable"],
+    answer: 1,
+    explanation: "Wide spreads mean the market for this stock is illiquid. You'll lose money on every entry and exit just to the spread. If you're already in and spreads have widened dramatically, exiting quickly minimizes damage. A stock with persistent spread issues should be avoided entirely in the future."
+  },
+  {
+    situation: "You've been practicing a specific setup (bull flag on 5-min with VWAP hold) for 3 weeks. Your win rate is 65% on paper. When should you start trading it live?",
+    options: ["A. Now — 65% win rate on paper is excellent proof", "B. After 3 weeks live with very small size to test real execution", "C. Never — paper trading results don't translate", "D. When your win rate reaches 80% on paper"],
+    answer: 1,
+    explanation: "Paper trading validates the setup logic, but live trading introduces execution risk (slippage, emotional decisions, order types). The right step is to trade very small size live to test whether you can execute the setup under real conditions. A 65% win rate on paper is promising — but you need to prove you can replicate it live before scaling up."
+  },
+  {
+    situation: "A stock you trade regularly just reported a massive earnings miss. It's down 18% pre-market. You think it's oversold.",
+    options: ["A. Buy at open — 18% down is clearly oversold, a bounce is guaranteed", "B. Wait and watch — falling knives can keep falling", "C. Short more at open to capitalize on continued weakness", "D. Buy after confirming a base forms and volume dries up"],
+    answer: 3,
+    explanation: "Catching falling knives is one of the most common beginner mistakes. An 18% gap down can become 25% or 40% by end of day. Option D is the disciplined approach — waiting for the selling to exhaust, volume to dry up, and a base to form before considering a long. You're not buying a 'bounce', you're buying a confirmed reversal."
   }
 ];
 
