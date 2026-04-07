@@ -726,6 +726,13 @@
   }
   .lib-play-btn:hover { background: rgba(74,222,128,.1); border-color: var(--accent2); }
 
+  .lib-scan-output {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 20px; font-size: 12px;
+  }
+  .lib-scan-title { font-weight: 700; color: var(--muted); margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .lib-scan-list { display: flex; flex-wrap: wrap; gap: 4px 12px; max-height: 160px; overflow-y: auto; }
+  .lib-scan-item { color: var(--text); font-size: 12px; white-space: nowrap; }
   .lib-empty-section { font-size: 12px; color: var(--muted); padding: 8px 0; font-style: italic; }
   .lib-loading { font-size: 12px; color: var(--muted); padding: 10px 0; }
 

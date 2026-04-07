@@ -3311,8 +3311,29 @@ async function connectLibraryFolder() {
     _libDirHandle = await window.showDirectoryPicker({ mode: 'read' });
     localStorage.setItem('td_lib_connected_name', _libDirHandle.name);
     renderLibrary();
+    await scanLibraryFolder();
   } catch(e) {
     if (e.name !== 'AbortError') alert('Could not connect folder: ' + e.message);
+  }
+}
+
+// Scan top-level folder contents for diagnostics
+async function scanLibraryFolder() {
+  if (!_libDirHandle) return;
+  const outEl = document.getElementById('lib-scan-output');
+  const listEl = document.getElementById('lib-scan-list');
+  if (!outEl || !listEl) return;
+  outEl.style.display = '';
+  listEl.innerHTML = '<em style="color:var(--muted)">Scanning...</em>';
+  try {
+    const items = [];
+    for await (const entry of _libDirHandle.values()) {
+      items.push((entry.kind === 'directory' ? '📁 ' : '📄 ') + entry.name);
+    }
+    items.sort();
+    listEl.innerHTML = items.map(i => '<div class="lib-scan-item">' + i + '</div>').join('');
+  } catch(e) {
+    listEl.innerHTML = '<em style="color:var(--warn)">Scan failed: ' + e.message + '</em>';
   }
 }
 
@@ -3395,18 +3416,45 @@ async function openLibraryFile(relPath) {
       if (dlRow) dlRow.style.display = 'none';
       viewer.style.display = 'flex';
     } else {
-      // EPUB or unknown — can't embed, offer download link
+      // EPUB or unknown — trigger programmatic download, don't navigate
+      const a = document.createElement('a');
+      a.href = _libViewerBlobUrl;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Show viewer with info message
       videoEl.style.display = 'none';
       iframeEl.style.display = 'none';
       if (dlRow) {
-        const dlLink = document.getElementById('lib-viewer-dl-link');
-        if (dlLink) { dlLink.href = _libViewerBlobUrl; dlLink.download = file.name; }
+        const msg = dlRow.querySelector('.lib-viewer-dl-msg');
+        if (msg) msg.textContent = '"' + file.name + '" is downloading — open it in Calibre, Apple Books, or Kindle.';
+        const btn = dlRow.querySelector('.lib-viewer-dl-btn');
+        if (btn) { btn.href = _libViewerBlobUrl; btn.download = file.name; btn.textContent = '⬇ Download Again'; }
         dlRow.style.display = '';
       }
       viewer.style.display = 'flex';
     }
   } catch(e) {
-    alert('Could not open: ' + relPath.split('/').pop() + '\n\nError: ' + e.message + '\n\nMake sure the TG folder is connected and this file exists at that path.');
+    // Show error inside the viewer (not alert) so user doesn't lose context
+    const viewer = document.getElementById('lib-viewer');
+    const videoEl = document.getElementById('lib-viewer-video');
+    const iframeEl = document.getElementById('lib-viewer-iframe');
+    const dlRow = document.getElementById('lib-viewer-dl-row');
+    document.getElementById('lib-viewer-title').textContent = 'Error opening file';
+    if (videoEl) { videoEl.style.display = 'none'; videoEl.src = ''; }
+    if (iframeEl) { iframeEl.style.display = 'none'; iframeEl.src = ''; }
+    if (dlRow) {
+      const msg = dlRow.querySelector('.lib-viewer-dl-msg');
+      if (msg) msg.innerHTML =
+        '<strong style="color:var(--warn)">Could not open:</strong> ' + relPath.split('/').pop() +
+        '<br><br><strong>Error:</strong> ' + e.message +
+        '<br><br>This usually means the folder name on disk doesn\'t match exactly. Check the "Folder Contents" list above to verify your paths.';
+      const btn = dlRow.querySelector('.lib-viewer-dl-btn');
+      if (btn) btn.style.display = 'none';
+      dlRow.style.display = '';
+    }
+    if (viewer) viewer.style.display = 'flex';
   }
 }
 
