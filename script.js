@@ -3291,6 +3291,7 @@ let _libDirHandle = null;
 let _libWatched = JSON.parse(localStorage.getItem('td_lib_watched') || '{}');
 const _libExpanded = new Set();
 let _libDynamicLoaded = new Set(); // track which dynamic courses have been loaded
+let _libViewerBlobUrl = null;
 
 // Helper: count total hardcoded videos (excluding dynamic course)
 function _libTotalVideos() {
@@ -3326,16 +3327,53 @@ async function _libTraverse(pathStr) {
   return await fileHandle.getFile();
 }
 
-// Open a file using File System Access API
+// Open a file in the embedded viewer
 async function openLibraryFile(relPath) {
   if (!_libDirHandle) { alert('Connect your TG folder first.'); return; }
   try {
     const file = await _libTraverse(relPath);
-    const url = URL.createObjectURL(file);
-    window.open(url, '_blank');
+    if (_libViewerBlobUrl) URL.revokeObjectURL(_libViewerBlobUrl);
+    _libViewerBlobUrl = URL.createObjectURL(file);
+
+    const ext = relPath.split('.').pop().toLowerCase();
+    const rawName = relPath.split('/').pop().replace(/\.[^.]+$/, '');
+    const title = rawName.replace(/[-_]/g, ' ').replace(/^\d+\s*/, '');
+
+    const viewer = document.getElementById('lib-viewer');
+    const videoEl = document.getElementById('lib-viewer-video');
+    const iframeEl = document.getElementById('lib-viewer-iframe');
+
+    document.getElementById('lib-viewer-title').textContent = title;
+
+    if (['mp4', 'mov', 'webm', 'mkv'].includes(ext)) {
+      videoEl.src = _libViewerBlobUrl;
+      videoEl.style.display = '';
+      iframeEl.style.display = 'none';
+      iframeEl.src = '';
+      viewer.style.display = '';
+      videoEl.focus();
+    } else {
+      // PDF, EPUB, etc. — render in iframe
+      iframeEl.src = _libViewerBlobUrl;
+      iframeEl.style.display = '';
+      videoEl.style.display = 'none';
+      videoEl.src = '';
+      viewer.style.display = '';
+    }
   } catch(e) {
     alert('Could not open file. Make sure the TG folder is connected and the file exists.\n\n' + relPath);
   }
+}
+
+function closeLibViewer() {
+  const viewer = document.getElementById('lib-viewer');
+  const videoEl = document.getElementById('lib-viewer-video');
+  const iframeEl = document.getElementById('lib-viewer-iframe');
+  viewer.style.display = 'none';
+  videoEl.pause();
+  videoEl.src = '';
+  iframeEl.src = '';
+  if (_libViewerBlobUrl) { URL.revokeObjectURL(_libViewerBlobUrl); _libViewerBlobUrl = null; }
 }
 
 // Toggle watched state for a video
