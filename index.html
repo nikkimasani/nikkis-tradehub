@@ -250,7 +250,11 @@
   .res-card a:hover { opacity:.85; }
 
   /* ===================== KNOWLEDGEBASE PANEL ===================== */
-  #panel-learn { overflow-y:auto; padding:20px; gap:20px; }
+  #panel-learn { display:flex; flex-direction:column; overflow:hidden; }
+  .study-subtabs { display:flex; gap:8px; padding:12px 20px 0; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .study-subtab { background:none; border:none; border-bottom:2px solid transparent; padding:8px 16px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
+  .study-subtab:hover { color:var(--text); }
+  .study-subtab.active { color:var(--accent); border-bottom-color:var(--accent); }
   .learn-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:16px; }
   .learn-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
   .learn-card h3 { font-size:14px; font-weight:600; color:var(--accent); margin-bottom:10px; }
@@ -403,8 +407,7 @@
   .cls-embed-error .err-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
 
   /* ===================== QUIZ PANEL ===================== */
-  #panel-quiz { display:none; flex-direction:column; flex:1; overflow:hidden; background:var(--bg); }
-  #panel-quiz.active { display:flex; }
+
   .quiz-wrap { flex:1; overflow-y:auto; padding:24px 28px; display:flex; flex-direction:column; gap:20px; max-width:860px; margin:0 auto; width:100%; }
 
   /* Landing screen */
@@ -489,8 +492,7 @@
   <div class="tab" data-tab="paper">🎯 Paper Trade</div>
   <div class="tab" data-tab="news">🗞 Live News</div>
   <div class="tab" data-tab="classroom">🎓 Classroom</div>
-  <div class="tab" data-tab="quiz">🧠 Quiz</div>
-  <div class="tab" data-tab="learn">📚 Knowledge Base</div>
+  <div class="tab" data-tab="learn">📚 Study</div>
 </nav>
 
 <div class="main">
@@ -844,8 +846,13 @@
 
     </div>
 
-    <!-- ============ KNOWLEDGEBASE ============ -->
+    <!-- ============ KNOWLEDGEBASE + QUIZ ============ -->
     <div class="panel" id="panel-learn">
+      <div class="study-subtabs">
+        <button class="study-subtab active" onclick="switchStudyTab('reference')">📚 Reference</button>
+        <button class="study-subtab" onclick="switchStudyTab('quiz')">🧠 Quiz</button>
+      </div>
+      <div id="study-reference-view" style="overflow-y:auto;padding:20px;flex:1">
       <div class="section-header">📖 Beginner Foundations</div>
       <div class="learn-grid">
         <div class="learn-card">
@@ -944,7 +951,122 @@
         <div class="res-card"><h3>Tastytrade</h3><p>Great for options. Clean UI, strong education, low commissions.</p><a href="https://tastytrade.com" target="_blank">Learn More →</a></div>
         <div class="res-card"><h3>Interactive Brokers</h3><p>Professional-grade. Low margin rates, global markets, direct access routing.</p><a href="https://www.interactivebrokers.com" target="_blank">Learn More →</a></div>
       </div>
-    </div>
+      </div><!-- /study-reference-view -->
+
+      <div id="study-quiz-view" style="display:none;overflow-y:auto;flex:1">
+        <div class="quiz-wrap">
+
+      <!-- LANDING SCREEN -->
+      <div id="quiz-landing">
+        <div class="quiz-hero">
+          <h2>🧠 Trading Knowledge Quiz</h2>
+          <p>Test yourself on terms, chart patterns, risk rules, order types, scenarios &amp; psychology. <strong>50+ questions</strong> built-in — plus AI-generated questions using your Claude API key.</p>
+        </div>
+
+        <!-- Mode cards -->
+        <div class="quiz-modes">
+          <div class="quiz-mode-card" onclick="startQuiz('quick')">
+            <div class="mode-icon">⚡</div>
+            <div class="mode-name">Quick Quiz</div>
+            <div class="mode-desc">10 random questions across all topics. No timer.</div>
+          </div>
+          <div class="quiz-mode-card" onclick="startQuiz('timed')">
+            <div class="mode-icon">⏱️</div>
+            <div class="mode-name">Timed Exam</div>
+            <div class="mode-desc">25 questions. 30 seconds per question.</div>
+          </div>
+          <div class="quiz-mode-card" onclick="startQuiz('scenarios')">
+            <div class="mode-icon">📈</div>
+            <div class="mode-name">Scenarios Only</div>
+            <div class="mode-desc">Real trading situations — what would you do?</div>
+          </div>
+          <div class="quiz-mode-card" onclick="startQuiz('weakspots')">
+            <div class="mode-icon">🎯</div>
+            <div class="mode-name">Weak Spots</div>
+            <div class="mode-desc">Focus on categories where you scored lowest.</div>
+          </div>
+        </div>
+
+        <!-- Category filter -->
+        <div>
+          <div class="section-header" style="margin-bottom:10px">Or drill a specific topic:</div>
+          <div class="quiz-cats" id="quiz-cat-pills">
+            <div class="quiz-cat-pill active" data-cat="all" onclick="selectCat(this,'all')">All Topics</div>
+            <div class="quiz-cat-pill" data-cat="terms" onclick="selectCat(this,'terms')">📖 Terms</div>
+            <div class="quiz-cat-pill" data-cat="patterns" onclick="selectCat(this,'patterns')">📊 Chart Patterns</div>
+            <div class="quiz-cat-pill" data-cat="risk" onclick="selectCat(this,'risk')">⚠️ Risk Mgmt</div>
+            <div class="quiz-cat-pill" data-cat="orders" onclick="selectCat(this,'orders')">📋 Order Types</div>
+            <div class="quiz-cat-pill" data-cat="mechanics" onclick="selectCat(this,'mechanics')">⚙️ Market Mechanics</div>
+            <div class="quiz-cat-pill" data-cat="psychology" onclick="selectCat(this,'psychology')">🧘 Psychology</div>
+            <div class="quiz-cat-pill" data-cat="technical" onclick="selectCat(this,'technical')">📉 Technical</div>
+            <div class="quiz-cat-pill" data-cat="scenarios" onclick="selectCat(this,'scenarios')">🎬 Scenarios</div>
+          </div>
+          <button class="btn" style="margin-top:12px" onclick="startQuiz('category')">Start Category Quiz →</button>
+        </div>
+
+        <!-- AI Generate -->
+        <div class="quiz-ai-box">
+          <div class="section-header" style="margin-bottom:4px">🤖 AI Question Generator</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Use your Claude API key to generate fresh questions on any topic.</div>
+          <div class="quiz-ai-row">
+            <input type="text" id="quiz-ai-topic" placeholder="e.g. VWAP strategies, gap trading, managing emotions…">
+            <button class="btn" onclick="generateAIQuiz()" id="quiz-ai-btn">✨ Generate 5 Questions</button>
+          </div>
+          <div id="quiz-ai-status" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+        </div>
+
+        <!-- Past scores -->
+        <div id="quiz-history-wrap" style="display:none">
+          <div class="section-header" style="margin-bottom:10px">📊 Your Recent Scores</div>
+          <div id="quiz-history"></div>
+        </div>
+      </div>
+
+      <!-- ACTIVE QUIZ SCREEN (hidden by default) -->
+      <div id="quiz-active" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <button class="btn" style="font-size:11px;padding:4px 10px" onclick="quitQuiz()">← Back</button>
+          <span id="quiz-timer-display" class="quiz-timer" style="display:none">⏱ <span id="quiz-timer-val">30</span>s</span>
+          <span id="quiz-score-live" style="font-size:12px;color:var(--muted)">Score: <strong id="quiz-live-num" style="color:var(--accent2)">0</strong></span>
+        </div>
+        <div class="quiz-meta">
+          <span id="quiz-q-counter" style="font-size:12px;color:var(--muted)">Question 1 of 10</span>
+        </div>
+        <div class="quiz-progress-bar-wrap" style="margin:8px 0 16px">
+          <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
+        </div>
+
+        <!-- Question card -->
+        <div class="quiz-q-card">
+          <div class="quiz-q-cat" id="quiz-q-cat"></div>
+          <div class="quiz-q-text" id="quiz-q-text"></div>
+          <div class="quiz-options" id="quiz-options"></div>
+          <div id="quiz-explanation" class="quiz-explanation" style="display:none;margin-top:14px"></div>
+        </div>
+
+        <div class="quiz-nav-row" style="margin-top:14px">
+          <div id="quiz-result-badge" style="font-size:20px"></div>
+          <button class="btn" id="quiz-next-btn" onclick="nextQuestion()" style="display:none">Next →</button>
+        </div>
+      </div>
+
+      <!-- RESULTS SCREEN (hidden by default) -->
+      <div id="quiz-results" style="display:none">
+        <div class="quiz-result-card">
+          <div class="quiz-score-big" id="quiz-final-score"></div>
+          <div class="quiz-score-label" id="quiz-final-label"></div>
+          <div id="quiz-grade-msg" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6"></div>
+          <div class="quiz-cat-scores" id="quiz-cat-breakdown" style="margin-top:20px"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn" onclick="retryQuiz()">🔄 Try Again</button>
+          <button class="btn" onclick="showQuizLanding()">🏠 Back to Menu</button>
+        </div>
+      </div>
+
+        </div><!-- /quiz-wrap -->
+      </div><!-- /study-quiz-view -->
+    </div><!-- /panel-learn -->
 
 
     <!-- ============ TODAY ============ -->
@@ -1131,121 +1253,6 @@
       </div>
     </div>
 
-  <!-- ============ QUIZ ============ -->
-  <div class="panel" id="panel-quiz">
-    <div class="quiz-wrap">
-
-      <!-- LANDING SCREEN -->
-      <div id="quiz-landing">
-        <div class="quiz-hero">
-          <h2>🧠 Trading Knowledge Quiz</h2>
-          <p>Test yourself on terms, chart patterns, risk rules, order types, scenarios &amp; psychology. <strong>50+ questions</strong> built-in — plus AI-generated questions using your Claude API key.</p>
-        </div>
-
-        <!-- Mode cards -->
-        <div class="quiz-modes">
-          <div class="quiz-mode-card" onclick="startQuiz('quick')">
-            <div class="mode-icon">⚡</div>
-            <div class="mode-name">Quick Quiz</div>
-            <div class="mode-desc">10 random questions across all topics. No timer.</div>
-          </div>
-          <div class="quiz-mode-card" onclick="startQuiz('timed')">
-            <div class="mode-icon">⏱️</div>
-            <div class="mode-name">Timed Exam</div>
-            <div class="mode-desc">25 questions. 30 seconds per question.</div>
-          </div>
-          <div class="quiz-mode-card" onclick="startQuiz('scenarios')">
-            <div class="mode-icon">📈</div>
-            <div class="mode-name">Scenarios Only</div>
-            <div class="mode-desc">Real trading situations — what would you do?</div>
-          </div>
-          <div class="quiz-mode-card" onclick="startQuiz('weakspots')">
-            <div class="mode-icon">🎯</div>
-            <div class="mode-name">Weak Spots</div>
-            <div class="mode-desc">Focus on categories where you scored lowest.</div>
-          </div>
-        </div>
-
-        <!-- Category filter -->
-        <div>
-          <div class="section-header" style="margin-bottom:10px">Or drill a specific topic:</div>
-          <div class="quiz-cats" id="quiz-cat-pills">
-            <div class="quiz-cat-pill active" data-cat="all" onclick="selectCat(this,'all')">All Topics</div>
-            <div class="quiz-cat-pill" data-cat="terms" onclick="selectCat(this,'terms')">📖 Terms</div>
-            <div class="quiz-cat-pill" data-cat="patterns" onclick="selectCat(this,'patterns')">📊 Chart Patterns</div>
-            <div class="quiz-cat-pill" data-cat="risk" onclick="selectCat(this,'risk')">⚠️ Risk Mgmt</div>
-            <div class="quiz-cat-pill" data-cat="orders" onclick="selectCat(this,'orders')">📋 Order Types</div>
-            <div class="quiz-cat-pill" data-cat="mechanics" onclick="selectCat(this,'mechanics')">⚙️ Market Mechanics</div>
-            <div class="quiz-cat-pill" data-cat="psychology" onclick="selectCat(this,'psychology')">🧘 Psychology</div>
-            <div class="quiz-cat-pill" data-cat="technical" onclick="selectCat(this,'technical')">📉 Technical</div>
-            <div class="quiz-cat-pill" data-cat="scenarios" onclick="selectCat(this,'scenarios')">🎬 Scenarios</div>
-          </div>
-          <button class="btn" style="margin-top:12px" onclick="startQuiz('category')">Start Category Quiz →</button>
-        </div>
-
-        <!-- AI Generate -->
-        <div class="quiz-ai-box">
-          <div class="section-header" style="margin-bottom:4px">🤖 AI Question Generator</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Use your Claude API key to generate fresh questions on any topic.</div>
-          <div class="quiz-ai-row">
-            <input type="text" id="quiz-ai-topic" placeholder="e.g. VWAP strategies, gap trading, managing emotions…">
-            <button class="btn" onclick="generateAIQuiz()" id="quiz-ai-btn">✨ Generate 5 Questions</button>
-          </div>
-          <div id="quiz-ai-status" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
-        </div>
-
-        <!-- Past scores -->
-        <div id="quiz-history-wrap" style="display:none">
-          <div class="section-header" style="margin-bottom:10px">📊 Your Recent Scores</div>
-          <div id="quiz-history"></div>
-        </div>
-      </div>
-
-      <!-- ACTIVE QUIZ SCREEN (hidden by default) -->
-      <div id="quiz-active" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <button class="btn" style="font-size:11px;padding:4px 10px" onclick="quitQuiz()">← Back</button>
-          <span id="quiz-timer-display" class="quiz-timer" style="display:none">⏱ <span id="quiz-timer-val">30</span>s</span>
-          <span id="quiz-score-live" style="font-size:12px;color:var(--muted)">Score: <strong id="quiz-live-num" style="color:var(--accent2)">0</strong></span>
-        </div>
-        <div class="quiz-meta">
-          <span id="quiz-q-counter" style="font-size:12px;color:var(--muted)">Question 1 of 10</span>
-        </div>
-        <div class="quiz-progress-bar-wrap" style="margin:8px 0 16px">
-          <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
-        </div>
-
-        <!-- Question card -->
-        <div class="quiz-q-card">
-          <div class="quiz-q-cat" id="quiz-q-cat"></div>
-          <div class="quiz-q-text" id="quiz-q-text"></div>
-          <div class="quiz-options" id="quiz-options"></div>
-          <div id="quiz-explanation" class="quiz-explanation" style="display:none;margin-top:14px"></div>
-        </div>
-
-        <div class="quiz-nav-row" style="margin-top:14px">
-          <div id="quiz-result-badge" style="font-size:20px"></div>
-          <button class="btn" id="quiz-next-btn" onclick="nextQuestion()" style="display:none">Next →</button>
-        </div>
-      </div>
-
-      <!-- RESULTS SCREEN (hidden by default) -->
-      <div id="quiz-results" style="display:none">
-        <div class="quiz-result-card">
-          <div class="quiz-score-big" id="quiz-final-score"></div>
-          <div class="quiz-score-label" id="quiz-final-label"></div>
-          <div id="quiz-grade-msg" style="font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6"></div>
-          <div class="quiz-cat-scores" id="quiz-cat-breakdown" style="margin-top:20px"></div>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-          <button class="btn" onclick="retryQuiz()">🔄 Try Again</button>
-          <button class="btn" onclick="showQuizLanding()">🏠 Back to Menu</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
   </div>
 </div>
 
@@ -1266,6 +1273,15 @@ document.querySelectorAll('.tab').forEach(tab => {
     switchTab(tab.dataset.tab);
   });
 });
+
+// ==================== STUDY SUB-TABS ====================
+function switchStudyTab(view) {
+  document.getElementById('study-reference-view').style.display = view === 'reference' ? 'block' : 'none';
+  document.getElementById('study-quiz-view').style.display = view === 'quiz' ? 'block' : 'none';
+  document.querySelectorAll('.study-subtab').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick').includes(view));
+  });
+}
 
 // ==================== SIDEBAR TOGGLE ====================
 function toggleSidebar() {
