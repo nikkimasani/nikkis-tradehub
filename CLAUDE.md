@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Nikki's TradeLab — a personal trading dashboard. No build step, no npm, no server required.
+Nikki's TradeLab — a personal trading education and practice dashboard. No build step, no npm, no server required.
 
 **Live:** https://nikkis-tradehub.vercel.app  
 **Repo:** https://github.com/nikkimasani/nikkis-tradehub  
@@ -14,17 +14,13 @@ Nikki's TradeLab — a personal trading dashboard. No build step, no npm, no ser
 
 Open `index.html` directly in Chrome or Edge. No dev server needed.
 
-## File Responsibilities
+## Architecture
 
-| File | What goes here |
-|---|---|
-| `index.html` | Page structure, tab nav, panel containers — no logic, no styling |
-| `style.css` | All styling |
-| `script.js` | All functionality and state |
+Single-file app: all HTML structure, `<style>` block, and `<script>` block live in `index.html`. Do not split into separate files unless explicitly asked.
 
 ## Tabs
 
-Tab elements use `data-tab` attribute; panels use `id="panel-{name}"`. Switching is handled in `script.js` via click listeners on `.tab` elements.
+Tab elements use `data-tab` attribute; panels use `id="panel-{name}"`. Switching is handled via click listeners on `.tab` elements.
 
 | `data-tab` | Purpose |
 |---|---|
@@ -42,7 +38,7 @@ Tab elements use `data-tab` attribute; panels use `id="panel-{name}"`. Switching
 | `resources` | Curated links |
 | `library` | My Library / file connector |
 
-## Data Layer (`script.js`)
+## Data Layer
 
 Persistence uses Supabase as primary and `localStorage` as fallback. All reads/writes go through:
 
@@ -54,7 +50,7 @@ dbInit()            // on load: pulls from Supabase, falls back to localStorage
 
 **localStorage key prefix:** `td_`
 
-Key storage variables (initialized in `dbInit`):
+Key storage variables (initialised in `dbInit`):
 - `td_watchlist` → `watchlist[]`
 - `td_trades` → `trades[]`
 - `td_paper` → `paperData`
@@ -62,7 +58,7 @@ Key storage variables (initialized in `dbInit`):
 - `td_quiz_history` → `_quizHistory[]`
 - `td_kb_mastery`, `td_kb_tags`, `td_strategy_notes`, `td_flashcard_weak`, `td_lib_watched`
 
-API keys (also in localStorage, set by user in UI):
+API keys (set by user in UI, stored in localStorage — never hardcode these):
 - `td_finnhub_key` — Live News tab
 - `td_anthropic_key` — Quiz AI generation
 - `td_yt_key` — Classroom tab
@@ -70,7 +66,6 @@ API keys (also in localStorage, set by user in UI):
 ## Deploying
 
 ```bash
-cd C:\Users\nikki\tradehub
 git add .
 git commit -m "describe change"
 git push
