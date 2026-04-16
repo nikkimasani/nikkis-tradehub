@@ -1052,7 +1052,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.39.0/lib/msal-browser.min.js"></script>
 </head>
 
 <body>
@@ -6633,6 +6633,7 @@ const LIB_DOC_EXTS   = new Set(['pdf','docx','doc','xlsx','xls','pptx','ppt','tx
 let libMsalApp = null;
 let libAccount = null;
 let libMsalInitPromise = null;
+let libMsalReady = false;
 
 function libGetMsal() {
   if (libMsalApp) return libMsalApp;
@@ -6641,12 +6642,13 @@ function libGetMsal() {
     auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/consumers', redirectUri: window.location.origin },
     cache: { cacheLocation: 'localStorage' }
   });
-  libMsalInitPromise = libMsalApp.initialize();
+  libMsalInitPromise = libMsalApp.initialize().then(() => { libMsalReady = true; });
   return libMsalApp;
 }
 
-// Pre-initialize MSAL at page load so initialize() is resolved before any user click
-libGetMsal();
+// Eagerly initialize MSAL at page load — initialize() resolves in the background,
+// sets libMsalReady = true before any user interaction is possible.
+try { libGetMsal(); } catch(e) { console.warn('MSAL pre-init failed:', e); }
 
 async function initLibrary() {
   const app = libGetMsal();
@@ -6657,6 +6659,8 @@ async function initLibrary() {
 }
 
 async function libSignInMicrosoft() {
+  const errEl = document.getElementById('lib-signin-error');
+  errEl.style.display = 'none';
   let app = libGetMsal();
   if (!app) {
     const id = prompt('Azure Client ID not configured. Enter Client ID:');
@@ -6665,23 +6669,26 @@ async function libSignInMicrosoft() {
     localStorage.setItem('td_lib_client_id', LIB_CLIENT_ID);
     libMsalApp = null;
     libMsalInitPromise = null;
-    app = libGetMsal();
-    // MSAL just started initializing — can't loginPopup yet; user must click again
-    const el = document.getElementById('lib-signin-error');
-    el.textContent = 'Client ID saved. Please click "Sign in with Microsoft" again.';
-    el.style.display = '';
+    libMsalReady = false;
+    try { app = libGetMsal(); } catch(e) { errEl.textContent = 'MSAL load error: ' + e.message; errEl.style.display = ''; return; }
+    errEl.textContent = 'Client ID saved. Please click "Sign in with Microsoft" again.';
+    errEl.style.display = '';
     return;
   }
-  // loginPopup must be called synchronously in the user-gesture chain — no await before it
+  if (!libMsalReady) {
+    errEl.textContent = 'Still loading — please try again in a moment.';
+    errEl.style.display = '';
+    return;
+  }
+  // loginPopup must fire synchronously in the user-gesture chain — no await before this line
   try {
     const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
     libAccount = result.account;
     await libLoadFiles();
   } catch(e) {
     if (e.errorCode !== 'user_cancelled') {
-      const el = document.getElementById('lib-signin-error');
-      el.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
-      el.style.display = '';
+      errEl.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
+      errEl.style.display = '';
     }
   }
 }
