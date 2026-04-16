@@ -1052,6 +1052,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
 </head>
 
 <body>
@@ -2650,46 +2651,50 @@
     </div>
 
 
-
-  </div>
-
-</div>
 <!-- LIBRARY PANEL -->
 <div id="panel-library" class="panel">
-  <div class="lib-header">
+
+  <!-- Not signed in to OneDrive -->
+  <div id="lib-signin-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:24px;text-align:center;padding:40px">
+    <div style="font-size:52px">📁</div>
     <div>
-      <h2>📁 Trading Library</h2>
-      <p>Videos, documents, and resources — synced from OneDrive.</p>
+      <div style="font-size:22px;font-weight:800;background:linear-gradient(90deg,#60b4ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">Trading Library</div>
+      <div style="font-size:14px;color:var(--muted);max-width:400px;line-height:1.6">Sign in with Microsoft to automatically connect your OneDrive trading resources — videos and documents.</div>
     </div>
-    <div class="lib-header-actions">
-      <a class="lib-btn-onedrive" href="https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf" target="_blank" rel="noopener">Open OneDrive Folder ↗</a>
-      <button class="lib-btn-connect" id="lib-connect-btn" onclick="connectLibraryFolder()">Connect Local Folder</button>
+    <button id="lib-ms-signin-btn" onclick="libSignInMicrosoft()" style="display:flex;align-items:center;gap:10px;background:#fff;color:#333;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+      <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Sign in with Microsoft
+    </button>
+    <div id="lib-signin-error" style="color:var(--warn);font-size:13px;display:none"></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:-8px">Uses your Microsoft account (OneDrive) — no password stored here.</div>
+  </div>
+
+  <!-- Signed in, loading -->
+  <div id="lib-loading-view" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px">
+    <div style="font-size:32px">⏳</div>
+    <div style="color:var(--muted);font-size:14px">Connecting to OneDrive…</div>
+  </div>
+
+  <!-- Connected: file browser -->
+  <div id="lib-browser-view" style="display:none;flex-direction:column;gap:16px;flex:1;min-height:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:var(--text)">📁 Trading Library</div>
+        <div id="lib-user-info" style="font-size:12px;color:var(--accent2);margin-top:2px"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="libRefresh()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer">↻ Refresh</button>
+        <button onclick="libSignOut()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer">Sign Out</button>
+      </div>
     </div>
+    <div id="lib-file-grid" style="overflow-y:auto;flex:1"></div>
   </div>
 
-  <div id="lib-instructions" class="lib-instructions">
-    <h3>📋 First Time Setup</h3>
-    <ol>
-      <li>Click <strong>"Open OneDrive Folder ↗"</strong> above to open the shared folder in your browser.</li>
-      <li>Sign in to OneDrive if prompted.</li>
-      <li>Click <strong>"Add shortcut to My OneDrive"</strong> (or <strong>"Sync"</strong>) to save the folder to your device.</li>
-      <li>Wait a few minutes for the files to sync to your machine.</li>
-      <li>Come back here and click <strong>"Connect Local Folder"</strong> → navigate to and select the synced folder.</li>
-    </ol>
-    <div class="lib-instructions-note">💡 Once connected, videos play right here in the app and documents open instantly.</div>
-  </div>
-
-  <div id="lib-connected-bar" style="display:none" class="lib-connected-bar">
-    <span class="lib-connected-name" id="lib-folder-name">📁 Connected</span>
-    <button class="lib-icon-btn" onclick="refreshLibraryFolder()">↻ Refresh</button>
-    <button class="lib-icon-btn danger" onclick="disconnectLibraryFolder()">Disconnect</button>
-  </div>
-
-  <div id="lib-browser" class="lib-browser" style="display:none">
-    <div id="lib-file-tree"></div>
-  </div>
 </div>
 
+  </div>
+
+</div>
 <!-- LIBRARY VIDEO MODAL -->
 <div class="lib-video-overlay" id="lib-video-overlay" onclick="closeLibraryVideo(event)">
   <div class="lib-video-box">
@@ -6586,161 +6591,167 @@ Rules:
 
 
 // ==================== LIBRARY ====================
-const LIB_ONEDRIVE_URL = 'https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf';
+const LIB_SHARE_URL = 'https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf';
+let LIB_CLIENT_ID = localStorage.getItem('td_lib_client_id') || '';
 const LIB_VIDEO_EXTS = new Set(['mp4','mov','avi','mkv','webm','m4v','wmv']);
-const LIB_DOC_EXTS = new Set(['pdf','docx','doc','xlsx','xls','pptx','ppt','txt','md']);
-const libHandles = new Map();
-let libHandleCounter = 0;
-let libDirHandle = null;
+const LIB_DOC_EXTS   = new Set(['pdf','docx','doc','xlsx','xls','pptx','ppt','txt']);
 
-// IndexedDB helpers
-async function libGetDB() {
-  return new Promise((res, rej) => {
-    const r = indexedDB.open('tradehub-lib', 1);
-    r.onupgradeneeded = e => e.target.result.createObjectStore('handles');
-    r.onsuccess = e => res(e.target.result);
-    r.onerror = rej;
+let libMsalApp = null;
+let libAccount = null;
+
+function libGetMsal() {
+  if (libMsalApp) return libMsalApp;
+  if (!LIB_CLIENT_ID) return null;
+  libMsalApp = new msal.PublicClientApplication({
+    auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/consumers', redirectUri: window.location.origin },
+    cache: { cacheLocation: 'localStorage' }
   });
-}
-async function libSaveHandle(h) {
-  const db = await libGetDB();
-  return new Promise((res, rej) => { const tx = db.transaction('handles','readwrite'); tx.objectStore('handles').put(h,'lib'); tx.oncomplete = res; tx.onerror = rej; });
-}
-async function libLoadHandle() {
-  const db = await libGetDB();
-  return new Promise((res, rej) => { const tx = db.transaction('handles','readonly'); const r = tx.objectStore('handles').get('lib'); r.onsuccess = () => res(r.result); r.onerror = rej; });
-}
-async function libClearHandle() {
-  const db = await libGetDB();
-  return new Promise((res, rej) => { const tx = db.transaction('handles','readwrite'); tx.objectStore('handles').delete('lib'); tx.oncomplete = res; tx.onerror = rej; });
+  return libMsalApp;
 }
 
 async function initLibrary() {
+  const app = libGetMsal();
+  if (!app) return;
+  const accounts = app.getAllAccounts();
+  if (accounts.length > 0) { libAccount = accounts[0]; await libLoadFiles(); }
+}
+
+async function libSignInMicrosoft() {
+  let app = libGetMsal();
+  if (!app) {
+    const id = prompt('Azure Client ID not configured. Enter Client ID:');
+    if (!id) return;
+    LIB_CLIENT_ID = id.trim();
+    localStorage.setItem('td_lib_client_id', LIB_CLIENT_ID);
+    libMsalApp = null;
+    app = libGetMsal();
+  }
   try {
-    const h = await libLoadHandle();
-    if (!h) return;
-    const perm = await h.queryPermission({ mode: 'read' });
-    if (perm === 'granted') { libDirHandle = h; await renderLibraryBrowser(); }
-    else { document.getElementById('lib-connect-btn').textContent = 'Reconnect Folder'; }
-  } catch(e) { /* no saved handle */ }
+    const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
+    libAccount = result.account;
+    await libLoadFiles();
+  } catch(e) {
+    if (e.errorCode !== 'user_cancelled') {
+      const el = document.getElementById('lib-signin-error');
+      el.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message);
+      el.style.display = '';
+    }
+  }
 }
 
-async function connectLibraryFolder() {
-  if (!window.showDirectoryPicker) { alert('Your browser does not support folder picker. Please use Chrome or Edge.'); return; }
+function libSignOut() {
+  const app = libGetMsal();
+  if (app && libAccount) app.logoutPopup({ account: libAccount });
+  libAccount = null;
+  document.getElementById('lib-browser-view').style.display = 'none';
+  document.getElementById('lib-signin-view').style.display = 'flex';
+}
+
+async function libGetToken() {
+  const app = libGetMsal();
+  const result = await app.acquireTokenSilent({ scopes: ['Files.Read'], account: libAccount });
+  return result.accessToken;
+}
+
+function libEncodeShareUrl(url) {
+  const b64 = btoa(url).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  return 'u!' + b64;
+}
+
+async function libLoadFiles(folderId) {
+  document.getElementById('lib-signin-view').style.display = 'none';
+  document.getElementById('lib-loading-view').style.display = 'flex';
+  document.getElementById('lib-browser-view').style.display = 'none';
   try {
-    const h = await window.showDirectoryPicker({ mode: 'read' });
-    libDirHandle = h;
-    await libSaveHandle(h);
-    await renderLibraryBrowser();
-  } catch(e) { if (e.name !== 'AbortError') console.error('Library connect error:', e); }
-}
-
-async function disconnectLibraryFolder() {
-  libDirHandle = null;
-  await libClearHandle();
-  document.getElementById('lib-connected-bar').style.display = 'none';
-  document.getElementById('lib-browser').style.display = 'none';
-  document.getElementById('lib-instructions').style.display = '';
-  document.getElementById('lib-connect-btn').textContent = 'Connect Local Folder';
-}
-
-async function refreshLibraryFolder() {
-  if (libDirHandle) { libHandles.clear(); libHandleCounter = 0; await renderLibraryBrowser(); }
-}
-
-async function renderLibraryBrowser() {
-  const instructions = document.getElementById('lib-instructions');
-  const bar = document.getElementById('lib-connected-bar');
-  const browser = document.getElementById('lib-browser');
-  const tree = document.getElementById('lib-file-tree');
-  if (instructions) instructions.style.display = 'none';
-  if (bar) { bar.style.display = 'flex'; document.getElementById('lib-folder-name').textContent = '\u{1F4C1} ' + libDirHandle.name; }
-  if (browser) browser.style.display = '';
-  document.getElementById('lib-connect-btn').textContent = 'Change Folder';
-  if (tree) tree.innerHTML = '<div class="lib-loading">Scanning files\u2026</div>';
-  const html = await buildLibTree(libDirHandle, 0);
-  if (tree) tree.innerHTML = html || '<div class="lib-empty">No supported files found.</div>';
-}
-
-async function buildLibTree(dir, depth) {
-  if (depth > 4) return '';
-  let html = '';
-  const entries = [];
-  try { for await (const [name, handle] of dir.entries()) entries.push({ name, handle }); }
-  catch(e) { return ''; }
-  entries.sort((a,b) => {
-    if (a.handle.kind !== b.handle.kind) return a.handle.kind === 'directory' ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
-  for (const { name, handle } of entries) {
-    if (name.startsWith('.')) continue;
-    if (handle.kind === 'directory') {
-      const id = 'libf_' + (libHandleCounter++);
-      libHandles.set(id, handle);
-      html += `<div class="lib-folder-row" onclick="libToggleFolder(this,'${id}')"><span>\u{1F4C1}</span><span style="font-size:13px;font-weight:600;color:var(--text)">${name}</span><span class="lib-folder-arrow">\u203A</span></div><div class="lib-folder-children" id="children_${id}"></div>`;
+    const token = await libGetToken();
+    let url;
+    if (folderId) {
+      url = `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}/children?$top=200`;
     } else {
-      const ext = name.split('.').pop().toLowerCase();
-      if (!LIB_VIDEO_EXTS.has(ext) && !LIB_DOC_EXTS.has(ext)) continue;
-      const id = 'libf_' + (libHandleCounter++);
-      libHandles.set(id, handle);
+      const shareId = libEncodeShareUrl(LIB_SHARE_URL);
+      url = `https://graph.microsoft.com/v1.0/shares/${shareId}/driveItem/children?$top=200`;
+    }
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('Graph API ' + res.status);
+    const data = await res.json();
+    document.getElementById('lib-user-info').textContent = '✓ Connected as ' + (libAccount.name || libAccount.username);
+    libRenderFiles(data.value || []);
+    document.getElementById('lib-loading-view').style.display = 'none';
+    document.getElementById('lib-browser-view').style.display = 'flex';
+  } catch(e) {
+    document.getElementById('lib-loading-view').style.display = 'none';
+    document.getElementById('lib-signin-view').style.display = 'flex';
+    const el = document.getElementById('lib-signin-error');
+    el.textContent = 'Error: ' + e.message;
+    el.style.display = '';
+  }
+}
+
+async function libRefresh() { if (libAccount) await libLoadFiles(); }
+
+function libGetIcon(name) {
+  const ext = (name.split('.').pop()||'').toLowerCase();
+  if (LIB_VIDEO_EXTS.has(ext)) return '🎬';
+  if (ext==='pdf') return '📄';
+  if (['xlsx','xls'].includes(ext)) return '📊';
+  if (['pptx','ppt'].includes(ext)) return '📊';
+  if (['docx','doc'].includes(ext)) return '📝';
+  return '📁';
+}
+
+function libRenderFiles(items) {
+  const grid = document.getElementById('lib-file-grid');
+  if (!items.length) { grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No files found.</div>'; return; }
+  const folders = items.filter(i => i.folder);
+  const files   = items.filter(i => !i.folder).filter(f => {
+    const ext = (f.name.split('.').pop()||'').toLowerCase();
+    return LIB_VIDEO_EXTS.has(ext) || LIB_DOC_EXTS.has(ext);
+  });
+  let html = '';
+  if (folders.length) {
+    html += '<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px">Folders</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">';
+    folders.forEach(f => {
+      html += `<div onclick="libLoadFiles('${f.id}')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:22px">📁</span><span style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span></div>`;
+    });
+    html += '</div></div>';
+  }
+  if (files.length) {
+    html += '<div><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px">Files</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">';
+    files.forEach(f => {
+      const ext = (f.name.split('.').pop()||'').toLowerCase();
       const isVid = LIB_VIDEO_EXTS.has(ext);
-      const icon = isVid ? '\u{1F3AC}' : ext === 'pdf' ? '\u{1F4C4}' : ['xlsx','xls'].includes(ext) ? '\u{1F4CA}' : ['pptx','ppt'].includes(ext) ? '\u{1F4CA}' : '\u{1F4DD}';
-      const action = isVid ? 'Watch \u25B6' : 'Open \u2192';
-      html += `<div class="lib-file-row" onclick="handleLibFile('${id}')"><span>${icon}</span><span class="lib-file-name">${name}</span><span class="lib-file-action">${action}</span></div>`;
-    }
+      const dlUrl = f['@microsoft.graph.downloadUrl'] || '';
+      const action = isVid ? 'Watch ▶' : 'Open →';
+      const clickFn = isVid ? `libPlayVideo(decodeURIComponent('${encodeURIComponent(dlUrl)}'),'${f.name.replace(/'/g,"\'")}')` : `window.open(decodeURIComponent('${encodeURIComponent(dlUrl)}'),'_blank')`;
+      html += `<div onclick="${clickFn}" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-size:28px">${libGetIcon(f.name)}</div><div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.name}">${f.name}</div><div style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(96,180,255,.1);padding:3px 8px;border-radius:20px;width:fit-content">${action}</div></div>`;
+    });
+    html += '</div></div>';
   }
-  return html;
+  grid.innerHTML = html || '<div style="padding:40px;text-align:center;color:var(--muted)">No supported files.</div>';
 }
 
-async function libToggleFolder(el, id) {
-  el.classList.toggle('open');
-  const childEl = document.getElementById('children_' + id);
-  if (!childEl) return;
-  if (el.classList.contains('open') && childEl.innerHTML === '') {
-    childEl.innerHTML = '<div class="lib-loading" style="padding:10px 16px;font-size:12px">Loading\u2026</div>';
-    const dirHandle = libHandles.get(id);
-    if (dirHandle) {
-      const html = await buildLibTree(dirHandle, 1);
-      childEl.innerHTML = html || '<div class="lib-empty" style="padding:10px 16px;font-size:12px">Empty folder.</div>';
-    }
-  }
-}
-
-async function handleLibFile(id) {
-  const handle = libHandles.get(id);
-  if (!handle) return;
-  const file = await handle.getFile();
-  const ext = file.name.split('.').pop().toLowerCase();
-  const url = URL.createObjectURL(file);
-  if (LIB_VIDEO_EXTS.has(ext)) {
-    document.getElementById('lib-video-title').textContent = file.name;
-    const player = document.getElementById('lib-video-player');
-    player.src = url;
-    document.getElementById('lib-video-overlay').classList.add('open');
-    player.play();
-  } else {
-    window.open(url, '_blank');
-  }
+function libPlayVideo(url, name) {
+  const overlay = document.getElementById('lib-video-overlay');
+  const player  = document.getElementById('lib-video-player');
+  if (!overlay||!player) return;
+  document.getElementById('lib-video-title').textContent = name;
+  player.src = url;
+  overlay.classList.add('open');
+  player.play();
 }
 
 function closeLibraryVideo(e, force) {
   if (!force && e && e.target !== document.getElementById('lib-video-overlay')) return;
-  const player = document.getElementById('lib-video-player');
-  player.pause();
-  URL.revokeObjectURL(player.src);
-  player.src = '';
+  const p = document.getElementById('lib-video-player');
+  p.pause(); p.src = '';
   document.getElementById('lib-video-overlay').classList.remove('open');
 }
 
-// Init library when switching to library tab (lazy)
-(function() {
-  const origSwitch = window.switchTab;
-  if (origSwitch) {
-    window.switchTab = function(name) {
-      origSwitch(name);
-      if (name === 'library' && !libDirHandle) initLibrary();
-    };
-  }
+(function(){
+  const orig = window.switchTab;
+  if (orig) window.switchTab = function(n){ orig(n); if(n==='library'&&!libAccount) initLibrary(); };
 })();
 
 </script>
