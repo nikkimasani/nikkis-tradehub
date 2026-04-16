@@ -1052,7 +1052,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
 </head>
 
 <body>
@@ -6598,6 +6598,7 @@ const LIB_DOC_EXTS   = new Set(['pdf','docx','doc','xlsx','xls','pptx','ppt','tx
 
 let libMsalApp = null;
 let libAccount = null;
+let libMsalInitPromise = null;
 
 function libGetMsal() {
   if (libMsalApp) return libMsalApp;
@@ -6606,13 +6607,14 @@ function libGetMsal() {
     auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/consumers', redirectUri: window.location.origin },
     cache: { cacheLocation: 'localStorage' }
   });
+  libMsalInitPromise = libMsalApp.initialize();
   return libMsalApp;
 }
 
 async function initLibrary() {
   const app = libGetMsal();
   if (!app) return;
-  await app.initialize();
+  await libMsalInitPromise;
   const accounts = app.getAllAccounts();
   if (accounts.length > 0) { libAccount = accounts[0]; await libLoadFiles(); }
 }
@@ -6625,10 +6627,12 @@ async function libSignInMicrosoft() {
     LIB_CLIENT_ID = id.trim();
     localStorage.setItem('td_lib_client_id', LIB_CLIENT_ID);
     libMsalApp = null;
+    libMsalInitPromise = null;
     app = libGetMsal();
+    await libMsalInitPromise;
   }
+  // loginPopup must be called synchronously within the user gesture — no await before this
   try {
-    await app.initialize();
     const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
     libAccount = result.account;
     await libLoadFiles();
