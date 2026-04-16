@@ -1580,7 +1580,7 @@
 
         <button class="btn-sm" onclick="saveFinnhubKey()">Save & Load</button>
 
-        <button class="btn-sm btn-ghost" onclick="loadNews(localStorage.getItem('td_finnhub_key'))" style="margin-left:4px">↻ Refresh</button>
+        <button class="btn-sm btn-ghost" onclick="loadNews(getStoredKey('td_finnhub_key'))" style="margin-left:4px">↻ Refresh</button>
 
         <span style="font-size:11px;color:var(--muted);margin-left:4px" id="news-last-updated"></span>
 
@@ -2982,6 +2982,11 @@ async function dbInit() {
 
   });
 
+  // Re-populate API key fields now that Supabase data is in localStorage
+  populateFinnhubKey();
+  const yk = getStoredKey('td_yt_key');
+  if (yk) document.getElementById('yt-api-key-inp').value = yk;
+
 }
 
 
@@ -3846,11 +3851,12 @@ function scoreArticle(item) {
 
 
 
-const savedKey = localStorage.getItem('td_finnhub_key') || '';
+function populateFinnhubKey() {
+  const k = getStoredKey('td_finnhub_key');
+  if (k) { document.getElementById('finnhub-key').value = k; loadNews(k); }
+}
 
-if (savedKey) document.getElementById('finnhub-key').value = savedKey;
-
-
+populateFinnhubKey();
 
 function saveFinnhubKey() {
 
@@ -5186,9 +5192,15 @@ function saveYtKey() {
 
 
 
+function getStoredKey(storageKey) {
+  const raw = localStorage.getItem(storageKey);
+  if (!raw) return '';
+  try { return JSON.parse(raw); } catch { return raw; }
+}
+
 function getYtKey() {
 
-  return localStorage.getItem('td_yt_key') || '';
+  return getStoredKey('td_yt_key');
 
 }
 
