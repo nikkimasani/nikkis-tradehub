@@ -112,20 +112,40 @@ CREATE TABLE td_profiles (
 
 -- Aggregate stats for leaderboard (synced from localStorage)
 CREATE TABLE td_user_stats (
-  user_id           uuid PRIMARY KEY REFERENCES td_profiles(id),
-  paper_pnl         numeric DEFAULT 0,
-  paper_win_rate    numeric DEFAULT 0,   -- percentage 0-100
+  user_id            uuid PRIMARY KEY REFERENCES td_profiles(id),
+  paper_pnl          numeric DEFAULT 0,
+  paper_win_rate     numeric DEFAULT 0,   -- percentage 0-100
   paper_trades_count integer DEFAULT 0,
-  last_synced       timestamptz DEFAULT now()
+  last_synced        timestamptz DEFAULT now()
+);
+
+-- Real trade journal entries (full sync — cross-device + admin visibility)
+CREATE TABLE td_journal_trades (
+  id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id   uuid NOT NULL REFERENCES td_profiles(id),
+  date      text NOT NULL,
+  symbol    text NOT NULL,
+  dir       text NOT NULL,       -- 'Long' | 'Short'
+  entry     numeric NOT NULL,
+  exit      numeric NOT NULL,
+  shares    integer NOT NULL,
+  pnl       numeric NOT NULL,
+  pnl_pct   numeric NOT NULL,
+  setup     text DEFAULT '',
+  notes     text DEFAULT '',
+  created_at timestamptz DEFAULT now()
 );
 ```
 
-RLS enabled on both tables. Auth users can read all rows (leaderboard needs this), write only their own.
+RLS policies:
+- `td_profiles`, `td_user_stats`: auth users can read all rows (leaderboard needs this), write only their own
+- `td_journal_trades`: users can read and write only their own rows; admin can read all
 
 ### Supabase Sync
-- `syncToSupabase()` — computes paper P&L, win rate, and trade count from `td_paper_<userId>` and upserts into `td_user_stats`
-- `pullStatsFromSupabase()` — on login, pulls user's own stats (cross-device restore)
+- `syncToSupabase()` — upserts `td_user_stats` (paper aggregates) + syncs `td_journal_trades` (full trade array diff against Supabase)
+- `pullFromSupabase()` — on login, pulls user's own stats + trade journal rows into localStorage (cross-device restore)
 - Triggers: every 5 minutes + `visibilitychange` event
+- Trade sync strategy: fetch all existing `td_journal_trades` rows for user, compare with localStorage array by `(date, symbol, entry, exit, shares)`, insert new rows only (no updates/deletes to avoid destructive sync)
 
 ---
 
@@ -191,7 +211,6 @@ const ADMIN_EMAILS = ['nikkimasani@gmail.com'];
 
 ## Out of Scope
 
-- Real-money trade journal data is NOT synced to Supabase (stays local only for privacy)
 - No email verification flow
 - No password reset UI (users can use Supabase dashboard)
 - No profile edit screen post-registration
