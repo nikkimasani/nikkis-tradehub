@@ -6642,18 +6642,34 @@ function libGetMsal() {
     auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/consumers', redirectUri: window.location.origin },
     cache: { cacheLocation: 'localStorage' }
   });
-  libMsalInitPromise = libMsalApp.initialize().then(() => { libMsalReady = true; });
+  // After initialize(), process any pending redirect result (called once per page load)
+  libMsalInitPromise = libMsalApp.initialize().then(() => {
+    libMsalReady = true;
+    return libMsalApp.handleRedirectPromise().then(result => {
+      if (result && result.account) {
+        libAccount = result.account;
+        // Auto-switch to Library tab if we just returned from a sign-in redirect
+        if (sessionStorage.getItem('td_lib_auth_return')) {
+          sessionStorage.removeItem('td_lib_auth_return');
+          setTimeout(() => { if (typeof switchTab === 'function') switchTab('library'); }, 200);
+        }
+      }
+    });
+  }).catch(e => {
+    libMsalReady = true;
+    console.warn('MSAL init/redirect error:', e);
+  });
   return libMsalApp;
 }
 
-// Eagerly initialize MSAL at page load — initialize() resolves in the background,
-// sets libMsalReady = true before any user interaction is possible.
+// Eagerly initialize at page load so handleRedirectPromise runs immediately on page return
 try { libGetMsal(); } catch(e) { console.warn('MSAL pre-init failed:', e); }
 
 async function initLibrary() {
   const app = libGetMsal();
   if (!app) return;
-  await libMsalInitPromise;
+  await libMsalInitPromise; // waits for initialize() + handleRedirectPromise() to finish
+  if (libAccount) { await libLoadFiles(); return; }
   const accounts = app.getAllAccounts();
   if (accounts.length > 0) { libAccount = accounts[0]; await libLoadFiles(); }
 }
@@ -6667,10 +6683,8 @@ async function libSignInMicrosoft() {
     if (!id) return;
     LIB_CLIENT_ID = id.trim();
     localStorage.setItem('td_lib_client_id', LIB_CLIENT_ID);
-    libMsalApp = null;
-    libMsalInitPromise = null;
-    libMsalReady = false;
-    try { app = libGetMsal(); } catch(e) { errEl.textContent = 'MSAL load error: ' + e.message; errEl.style.display = ''; return; }
+    libMsalApp = null; libMsalInitPromise = null; libMsalReady = false;
+    try { libGetMsal(); } catch(e) {}
     errEl.textContent = 'Client ID saved. Please click "Sign in with Microsoft" again.';
     errEl.style.display = '';
     return;
@@ -6680,16 +6694,15 @@ async function libSignInMicrosoft() {
     errEl.style.display = '';
     return;
   }
-  // loginPopup must fire synchronously in the user-gesture chain — no await before this line
+  // Use redirect instead of popup — avoids all popup-blocker issues
+  // Page will navigate to Microsoft login, then return here automatically
   try {
-    const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
-    libAccount = result.account;
-    await libLoadFiles();
+    sessionStorage.setItem('td_lib_auth_return', '1');
+    await app.loginRedirect({ scopes: ['Files.Read', 'User.Read'] });
   } catch(e) {
-    if (e.errorCode !== 'user_cancelled') {
-      errEl.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
-      errEl.style.display = '';
-    }
+    sessionStorage.removeItem('td_lib_auth_return');
+    errEl.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
+    errEl.style.display = '';
   }
 }
 
