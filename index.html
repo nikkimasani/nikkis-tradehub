@@ -2654,6 +2654,53 @@
   </div>
 
 </div>
+<!-- LIBRARY PANEL -->
+<div id="panel-library" class="panel">
+  <div class="lib-header">
+    <div>
+      <h2>📁 Trading Library</h2>
+      <p>Videos, documents, and resources — synced from OneDrive.</p>
+    </div>
+    <div class="lib-header-actions">
+      <a class="lib-btn-onedrive" href="https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf" target="_blank" rel="noopener">Open OneDrive Folder ↗</a>
+      <button class="lib-btn-connect" id="lib-connect-btn" onclick="connectLibraryFolder()">Connect Local Folder</button>
+    </div>
+  </div>
+
+  <div id="lib-instructions" class="lib-instructions">
+    <h3>📋 First Time Setup</h3>
+    <ol>
+      <li>Click <strong>"Open OneDrive Folder ↗"</strong> above to open the shared folder in your browser.</li>
+      <li>Sign in to OneDrive if prompted.</li>
+      <li>Click <strong>"Add shortcut to My OneDrive"</strong> (or <strong>"Sync"</strong>) to save the folder to your device.</li>
+      <li>Wait a few minutes for the files to sync to your machine.</li>
+      <li>Come back here and click <strong>"Connect Local Folder"</strong> → navigate to and select the synced folder.</li>
+    </ol>
+    <div class="lib-instructions-note">💡 Once connected, videos play right here in the app and documents open instantly.</div>
+  </div>
+
+  <div id="lib-connected-bar" style="display:none" class="lib-connected-bar">
+    <span class="lib-connected-name" id="lib-folder-name">📁 Connected</span>
+    <button class="lib-icon-btn" onclick="refreshLibraryFolder()">↻ Refresh</button>
+    <button class="lib-icon-btn danger" onclick="disconnectLibraryFolder()">Disconnect</button>
+  </div>
+
+  <div id="lib-browser" class="lib-browser" style="display:none">
+    <div id="lib-file-tree"></div>
+  </div>
+</div>
+
+<!-- LIBRARY VIDEO MODAL -->
+<div class="lib-video-overlay" id="lib-video-overlay" onclick="closeLibraryVideo(event)">
+  <div class="lib-video-box">
+    <div class="lib-video-titlebar">
+      <span id="lib-video-title"></span>
+      <button class="lib-video-close" onclick="closeLibraryVideo(null,true)">&#x2715;</button>
+    </div>
+    <video id="lib-video-player" controls></video>
+  </div>
+</div>
+
 
 
 
@@ -6702,53 +6749,6 @@ function closeLibraryVideo(e, force) {
 
 
 
-
-<!-- LIBRARY PANEL -->
-<div id="panel-library" class="panel" style="display:none">
-  <div class="lib-header">
-    <div>
-      <h2>📁 Trading Library</h2>
-      <p>Videos, documents, and resources — synced from OneDrive.</p>
-    </div>
-    <div class="lib-header-actions">
-      <a class="lib-btn-onedrive" href="https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf" target="_blank" rel="noopener">Open OneDrive Folder ↗</a>
-      <button class="lib-btn-connect" id="lib-connect-btn" onclick="connectLibraryFolder()">Connect Local Folder</button>
-    </div>
-  </div>
-
-  <div id="lib-instructions" class="lib-instructions">
-    <h3>📋 First Time Setup</h3>
-    <ol>
-      <li>Click <strong>"Open OneDrive Folder ↗"</strong> above to open the shared folder in your browser.</li>
-      <li>Sign in to OneDrive if prompted.</li>
-      <li>Click <strong>"Add shortcut to My OneDrive"</strong> (or <strong>"Sync"</strong>) to save the folder to your device.</li>
-      <li>Wait a few minutes for the files to sync to your machine.</li>
-      <li>Come back here and click <strong>"Connect Local Folder"</strong> → navigate to and select the synced folder.</li>
-    </ol>
-    <div class="lib-instructions-note">💡 Once connected, videos play right here in the app and documents open instantly.</div>
-  </div>
-
-  <div id="lib-connected-bar" style="display:none" class="lib-connected-bar">
-    <span class="lib-connected-name" id="lib-folder-name">📁 Connected</span>
-    <button class="lib-icon-btn" onclick="refreshLibraryFolder()">↻ Refresh</button>
-    <button class="lib-icon-btn danger" onclick="disconnectLibraryFolder()">Disconnect</button>
-  </div>
-
-  <div id="lib-browser" class="lib-browser" style="display:none">
-    <div id="lib-file-tree"></div>
-  </div>
-</div>
-
-<!-- LIBRARY VIDEO MODAL -->
-<div class="lib-video-overlay" id="lib-video-overlay" onclick="closeLibraryVideo(event)">
-  <div class="lib-video-box">
-    <div class="lib-video-titlebar">
-      <span id="lib-video-title"></span>
-      <button class="lib-video-close" onclick="closeLibraryVideo(null,true)">&#x2715;</button>
-    </div>
-    <video id="lib-video-player" controls></video>
-  </div>
-</div>
 
 <!-- AUTH MODAL -->
 
