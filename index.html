@@ -6663,9 +6663,9 @@ async function libSignInMicrosoft() {
     libMsalApp = null;
     libMsalInitPromise = null;
     app = libGetMsal();
-    await libMsalInitPromise;
   }
-  // loginPopup must be called synchronously within the user gesture — no await before this
+  // Always ensure MSAL is fully initialized before loginPopup
+  if (libMsalInitPromise) await libMsalInitPromise;
   try {
     const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
     libAccount = result.account;
