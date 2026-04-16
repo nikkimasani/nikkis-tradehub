@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Access Requests</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1f2d45;
+      --accent: #60b4ff;
+      --accent2: #4ade80;
+      --warn: #fb5b52;
+      --gold: #fbbf24;
+      --purple: #c084fc;
+      --text: #e8f0fe;
+      --muted: #7a8ba8;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .header-logo span {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 0.85rem;
+      margin-left: 10px;
+    }
+
+    #header-user {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #signout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    #signout-btn:hover {
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    /* ── Login Screen ────────────────────────────────────── */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .login-card p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: var(--font);
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+    }
+
+    #login-error {
+      background: rgba(251, 91, 82, 0.12);
+      border: 1px solid rgba(251, 91, 82, 0.3);
+      border-radius: 8px;
+      color: var(--warn);
+      font-size: 0.82rem;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #0a0e17;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: var(--font);
+      padding: 12px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.88;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── Admin Panel ─────────────────────────────────────── */
+    #admin-panel {
+      flex: 1;
+      padding: 28px 24px;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .panel-subtitle {
+      color: var(--muted);
+      font-size: 0.83rem;
+      margin-top: 2px;
+    }
+
+    /* ── Stats Bar ───────────────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-value.pending  { color: var(--gold);   }
+    .stat-value.approved { color: var(--accent2); }
+    .stat-value.rejected { color: var(--warn);    }
+    .stat-value.total    { color: var(--accent);  }
+
+    /* ── Filter Tabs ─────────────────────────────────────── */
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.83rem;
+      font-family: var(--font);
+      padding: 7px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: rgba(96, 180, 255, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .tab-badge {
+      background: var(--warn);
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+      display: none;
+    }
+
+    .tab-badge.visible {
+      display: inline-flex;
+    }
+
+    /* ── Table ───────────────────────────────────────────── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-toolbar-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    #row-count {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: var(--surface2);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      padding: 11px 16px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--surface2);
+    }
+
+    tbody td {
+      padding: 13px 16px;
+      font-size: 0.84rem;
+      vertical-align: middle;
+    }
+
+    .td-email {
+      font-weight: 500;
+    }
+
+    .td-app {
+      font-size: 0.78rem;
+    }
+
+    .app-tag {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .app-tradehub      { background: rgba(96, 180, 255, 0.15); color: var(--accent);  }
+    .app-pmp           { background: rgba(192, 132, 252, 0.15); color: var(--purple); }
+    .app-betiq         { background: rgba(251, 191, 36, 0.15);  color: var(--gold);   }
+    .app-career-arsenal{ background: rgba(74, 222, 128, 0.15);  color: var(--accent2);}
+
+    .td-date {
+      color: var(--muted);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .badge-pending  { background: rgba(251, 191, 36, 0.15);  color: var(--gold);   }
+    .badge-pending::before  { background: var(--gold);   }
+
+    .badge-approved { background: rgba(74, 222, 128, 0.15); color: var(--accent2); }
+    .badge-approved::before { background: var(--accent2); }
+
+    .badge-rejected { background: rgba(251, 91, 82, 0.15);  color: var(--warn);   }
+    .badge-rejected::before { background: var(--warn); }
+
+    /* Action buttons */
+    .action-wrap {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action {
+      border: 1px solid;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-action:hover  { opacity: 0.78; }
+    .btn-action:active { opacity: 0.6;  }
+    .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-approve {
+      background: rgba(74, 222, 128, 0.1);
+      border-color: rgba(74, 222, 128, 0.4);
+      color: var(--accent2);
+    }
+
+    .btn-reject, .btn-revoke {
+      background: rgba(251, 91, 82, 0.1);
+      border-color: rgba(251, 91, 82, 0.4);
+      color: var(--warn);
+    }
+
+    /* Empty / loading states */
+    .table-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.82rem;
+      color: var(--text);
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      max-width: 320px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success { border-left: 3px solid var(--accent2); }
+    .toast.error   { border-left: 3px solid var(--warn);    }
+    .toast.info    { border-left: 3px solid var(--accent);  }
+
+    /* Real-time pulse dot */
+    .live-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse 2s ease-in-out infinite;
+      margin-right: 6px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1;   transform: scale(1);    }
+      50%       { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      #admin-panel {
+        padding: 16px;
+      }
+
+      table thead {
+        display: none;
+      }
+
+      tbody tr {
+        display: block;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0;
+        border: none;
+        font-size: 0.82rem;
+      }
+
+      tbody td::before {
+        content: attr(data-label);
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        flex-shrink: 0;
+        margin-right: 10px;
+      }
+
+      .action-wrap {
+        justify-content: flex-end;
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-logo">
+    NikkiHub <span>Admin</span>
+  </div>
+  <div id="header-user" style="display:none;">
+    <span id="header-email"></span>
+    <button id="signout-btn">Sign out</button>
+  </div>
+</header>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Admin Sign In</h1>
+    <p>Access restricted to authorised administrators only.</p>
+    <div id="login-error"></div>
+    <div class="form-group">
+      <label for="login-email">Email</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn-primary" id="login-btn">Sign In</button>
+  </div>
+</div>
+
+<!-- Admin Panel -->
+<div id="admin-panel">
+  <div>
+    <div class="panel-title">User Access Requests</div>
+    <div class="panel-subtitle">
+      <span class="live-dot"></span>Live — updates in real time
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value pending" id="stat-pending">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Approved</div>
+      <div class="stat-value approved" id="stat-approved">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Rejected</div>
+      <div class="stat-value rejected" id="stat-rejected">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total</div>
+      <div class="stat-value total" id="stat-total">—</div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs" id="filter-tabs">
+    <button class="tab-btn active" data-app="all">
+      All Apps <span class="tab-badge" id="badge-all"></span>
+    </button>
+    <button class="tab-btn" data-app="tradehub">
+      TradeLab <span class="tab-badge" id="badge-tradehub"></span>
+    </button>
+    <button class="tab-btn" data-app="pmp">
+      PMP Dashboard <span class="tab-badge" id="badge-pmp"></span>
+    </button>
+    <button class="tab-btn" data-app="betiq">
+      Sports Hub <span class="tab-badge" id="badge-betiq"></span>
+    </button>
+    <button class="tab-btn" data-app="career-arsenal">
+      Career Arsenal <span class="tab-badge" id="badge-career-arsenal"></span>
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <div class="table-toolbar-title">Requests</div>
+      <div id="row-count"></div>
+    </div>
+    <div id="table-container">
+      <div class="table-state"><div class="spinner"></div><br />Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script>
+  const SUPABASE_URL = 'https://bazjlrualnmbanmhiuau.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhempscnVhbG5tYmFubWhpdWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTkyNDQsImV4cCI6MjA5MTA5NTI0NH0.R8f7yEhxVHIcjwSS3H1b3tLj5jpuRP1pR4jiyVFEbmE';
+  const ADMIN_EMAIL = 'nikkimasani@gmail.com';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ── State ──────────────────────────────────────────────── */
+  let allRows = [];
+  let activeFilter = 'all';
+  let realtimeChannel = null;
+
+  /* ── DOM refs ───────────────────────────────────────────── */
+  const loginScreen  = document.getElementById('login-screen');
+  const adminPanel   = document.getElementById('admin-panel');
+  const loginEmailEl = document.getElementById('login-email');
+  const loginPassEl  = document.getElementById('login-password');
+  const loginBtn     = document.getElementById('login-btn');
+  const loginError   = document.getElementById('login-error');
+  const headerUser   = document.getElementById('header-user');
+  const headerEmail  = document.getElementById('header-email');
+  const signoutBtn   = document.getElementById('signout-btn');
+  const tableContainer = document.getElementById('table-container');
+  const rowCountEl   = document.getElementById('row-count');
+  const filterTabs   = document.getElementById('filter-tabs');
+
+  /* ── Toast ──────────────────────────────────────────────── */
+  function showToast(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    container.appendChild(t);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => t.classList.add('show'));
+    });
+    setTimeout(() => {
+      t.classList.remove('show');
+      setTimeout(() => t.remove(), 250);
+    }, 3500);
+  }
+
+  /* ── Auth ───────────────────────────────────────────────── */
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user.email === ADMIN_EMAIL) {
+      showAdmin(session.user.email);
+    } else {
+      if (session) {
+        await sb.auth.signOut();
+      }
+      showLogin();
+    }
+  }
+
+  function showLogin() {
+    loginScreen.style.display = 'flex';
+    adminPanel.style.display  = 'none';
+    headerUser.style.display  = 'none';
+  }
+
+  function showAdmin(email) {
+    loginScreen.style.display = 'none';
+    adminPanel.style.display  = 'flex';
+    headerUser.style.display  = 'flex';
+    headerEmail.textContent   = email;
+    loadData();
+    subscribeRealtime();
+  }
+
+  loginBtn.addEventListener('click', handleLogin);
+  loginPassEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  loginEmailEl.addEventListener('keydown', e => { if (e.key === 'Enter') loginPassEl.focus(); });
+
+  async function handleLogin() {
+    const email    = loginEmailEl.value.trim();
+    const password = loginPassEl.value;
+    loginError.style.display = 'none';
+
+    if (!email || !password) {
+      showLoginError('Please enter your email and password.');
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in…';
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign In';
+
+    if (error) {
+      showLoginError(error.message || 'Sign-in failed. Please try again.');
+      return;
+    }
+
+    if (data.user.email !== ADMIN_EMAIL) {
+      await sb.auth.signOut();
+      showLoginError('Access denied. This panel is restricted to admins only.');
+      return;
+    }
+
+    showAdmin(data.user.email);
+  }
+
+  function showLoginError(msg) {
+    loginError.textContent = msg;
+    loginError.style.display = 'block';
+  }
+
+  signoutBtn.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    if (realtimeChannel) {
+      sb.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
+    showLogin();
+  });
+
+  /* ── Data ───────────────────────────────────────────────── */
+  async function loadData() {
+    tableContainer.innerHTML = '<div class="table-state"><div class="spinner"></div><br />Loading…</div>';
+
+    const { data, error } = await sb
+      .from('user_approvals')
+      .select('*')
+      .order('requested_at', { ascending: false });
+
+    if (error) {
+      tableContainer.innerHTML = `<div class="table-state">Failed to load data: ${escHtml(error.message)}</div>`;
+      showToast('Failed to load data.', 'error');
+      return;
+    }
+
+    allRows = data || [];
+    renderAll();
+  }
+
+  /* ── Realtime ───────────────────────────────────────────── */
+  function subscribeRealtime() {
+    if (realtimeChannel) sb.removeChannel(realtimeChannel);
+
+    realtimeChannel = sb
+      .channel('admin-user-approvals')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_approvals'
+      }, payload => {
+        handleRealtimeChange(payload);
+      })
+      .subscribe();
+  }
+
+  function handleRealtimeChange(payload) {
+    const { eventType, new: newRow, old: oldRow } = payload;
+
+    if (eventType === 'INSERT') {
+      allRows.unshift(newRow);
+      showToast(`New request from ${newRow.email} (${newRow.app_name})`, 'info');
+    } else if (eventType === 'UPDATE') {
+      const idx = allRows.findIndex(r => r.id === newRow.id);
+      if (idx !== -1) allRows[idx] = newRow;
+      else allRows.unshift(newRow);
+    } else if (eventType === 'DELETE') {
+      allRows = allRows.filter(r => r.id !== oldRow.id);
+    }
+
+    renderAll();
+  }
+
+  /* ── Filter ─────────────────────────────────────────────── */
+  filterTabs.addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    activeFilter = btn.dataset.app;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderTable();
+  });
+
+  /* ── Render ─────────────────────────────────────────────── */
+  function renderAll() {
+    updateStats();
+    updateBadges();
+    renderTable();
+  }
+
+  function updateStats() {
+    const pending  = allRows.filter(r => r.status === 'pending').length;
+    const approved = allRows.filter(r => r.status === 'approved').length;
+    const rejected = allRows.filter(r => r.status === 'rejected').length;
+    document.getElementById('stat-pending').textContent  = pending;
+    document.getElementById('stat-approved').textContent = approved;
+    document.getElementById('stat-rejected').textContent = rejected;
+    document.getElementById('stat-total').textContent    = allRows.length;
+  }
+
+  const APP_KEYS = ['tradehub', 'pmp', 'betiq', 'career-arsenal'];
+
+  function updateBadges() {
+    const totalPending = allRows.filter(r => r.status === 'pending').length;
+    setBadge('all', totalPending);
+    APP_KEYS.forEach(app => {
+      const count = allRows.filter(r => r.app_name === app && r.status === 'pending').length;
+      setBadge(app, count);
+    });
+  }
+
+  function setBadge(app, count) {
+    const el = document.getElementById(`badge-${app}`);
+    if (!el) return;
+    el.textContent = count;
+    el.classList.toggle('visible', count > 0);
+  }
+
+  function filteredRows() {
+    if (activeFilter === 'all') return allRows;
+    return allRows.filter(r => r.app_name === activeFilter);
+  }
+
+  function renderTable() {
+    const rows = filteredRows();
+    rowCountEl.textContent = `${rows.length} record${rows.length !== 1 ? 's' : ''}`;
+
+    if (rows.length === 0) {
+      tableContainer.innerHTML = '<div class="table-state">No requests found.</div>';
+      return;
+    }
+
+    const tbody = rows.map(row => `
+      <tr data-id="${escAttr(row.id)}">
+        <td data-label="Email" class="td-email">${escHtml(row.email || '—')}</td>
+        <td data-label="App" class="td-app">${appTag(row.app_name)}</td>
+        <td data-label="Requested" class="td-date">${fmtDate(row.requested_at)}</td>
+        <td data-label="Status">${statusBadge(row.status)}</td>
+        <td data-label="Actions">${actionButtons(row)}</td>
+      </tr>
+    `).join('');
+
+    tableContainer.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>App</th>
+            <th>Requested</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    `;
+
+    tableContainer.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => handleAction(btn.dataset.id, btn.dataset.action, btn));
+    });
+  }
+
+  function appTag(name) {
+    const labels = {
+      'tradehub':       'TradeLab',
+      'pmp':            'PMP',
+      'betiq':          'Sports Hub',
+      'career-arsenal': 'Career Arsenal'
+    };
+    const cls = {
+      'tradehub':       'app-tradehub',
+      'pmp':            'app-pmp',
+      'betiq':          'app-betiq',
+      'career-arsenal': 'app-career-arsenal'
+    };
+    const label = labels[name] || name;
+    const c     = cls[name] || '';
+    return `<span class="app-tag ${c}">${escHtml(label)}</span>`;
+  }
+
+  function statusBadge(status) {
+    const cls = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+    return `<span class="badge ${cls[status] || ''}">${escHtml(status || '—')}</span>`;
+  }
+
+  function actionButtons(row) {
+    const id = escAttr(row.id);
+    if (row.status === 'pending') {
+      return `<div class="action-wrap">
+        <button class="btn-action btn-approve" data-id="${id}" data-action="approve">Approve</button>
+        <button class="btn-action btn-reject"  data-id="${id}" data-action="reject">Reject</button>
+      </div>`;
+    }
+    if (row.status === 'approved') {
+      return `<div class="action-wrap">
+        <button class="btn-action btn-revoke" data-id="${id}" data-action="revoke">Revoke</button>
+      </div>`;
+    }
+    if (row.status === 'rejected') {
+      return `<div class="action-wrap">
+        <button class="btn-action btn-approve" data-id="${id}" data-action="approve">Approve</button>
+      </div>`;
+    }
+    return '—';
+  }
+
+  /* ── Actions ────────────────────────────────────────────── */
+  async function handleAction(id, action, btn) {
+    const statusMap = { approve: 'approved', reject: 'rejected', revoke: 'pending' };
+    const newStatus = statusMap[action];
+    if (!newStatus) return;
+
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    const { error } = await sb
+      .from('user_approvals')
+      .update({ status: newStatus, reviewed_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      showToast(`Action failed: ${error.message}`, 'error');
+      btn.disabled = false;
+      btn.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+      return;
+    }
+
+    const labels = { approve: 'Approved', reject: 'Rejected', revoke: 'Revoked' };
+    showToast(`${labels[action]} successfully.`, 'success');
+
+    // Optimistic update (realtime will also fire, but update locally too)
+    const idx = allRows.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      allRows[idx] = { ...allRows[idx], status: newStatus, reviewed_at: new Date().toISOString() };
+      renderAll();
+    }
+  }
+
+  /* ── Helpers ────────────────────────────────────────────── */
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function escAttr(str) {
+    return String(str).replace(/"/g, '&quot;');
+  }
+
+  /* ── Boot ───────────────────────────────────────────────── */
+  init();
+</script>
+</body>
+</html>
