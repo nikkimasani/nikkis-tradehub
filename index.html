@@ -1549,7 +1549,7 @@ renderChart();
 
 // ==================== WATCHLIST ====================
 let watchlist = JSON.parse(localStorage.getItem('td_watchlist') || '[]');
-function saveWatchlist() { localStorage.setItem('td_watchlist', JSON.stringify(watchlist)); }
+function saveWatchlist() { dbSet('watchlist', watchlist); }
 function renderWatchlist() {
   const c = document.getElementById('watchlist-items');
   if (!watchlist.length) { c.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0">Add tickers above</div>'; return; }
@@ -1635,7 +1635,7 @@ calcPosition();
 
 // ==================== P&L JOURNAL ====================
 let trades = JSON.parse(localStorage.getItem('td_trades') || '[]');
-function saveTrades() { localStorage.setItem('td_trades', JSON.stringify(trades)); }
+function saveTrades() { dbSet('trades', trades); }
 
 function logTrade() {
   const date     = document.getElementById('tj-date').value.trim();
@@ -1856,7 +1856,7 @@ if (savedKey) document.getElementById('finnhub-key').value = savedKey;
 function saveFinnhubKey() {
   const key = document.getElementById('finnhub-key').value.trim();
   if (!key) { alert('Enter your Finnhub API key'); return; }
-  localStorage.setItem('td_finnhub_key', key);
+  dbSet('finnhub_key', key);
   loadNews(key);
 }
 
@@ -2070,7 +2070,7 @@ function getTradingTake(item) {
 function saveAnthropicKey() {
   const key = document.getElementById('anthropic-key').value.trim();
   if (!key) { alert('Enter your Anthropic API key'); return; }
-  localStorage.setItem('td_anthropic_key', key);
+  dbSet('anthropic_key', key);
   document.getElementById('ai-key-bar').style.display = 'none';
   document.getElementById('ai-brief-btn').style.background = 'var(--accent2)';
   document.getElementById('ai-brief-btn').textContent = '🤖 Generate AI Brief';
@@ -2181,7 +2181,7 @@ Respond in exactly this JSON format (no markdown, just raw JSON):
 
   } catch(e) {
     if (e.message.includes('401') || e.message.includes('invalid')) {
-      content.innerHTML = `<div class="ai-brief-card"><div style="font-size:13px;color:var(--warn)">❌ Invalid API key. <button class="btn-sm btn-ghost" style="font-size:11px" onclick="document.getElementById('ai-key-bar').style.display='flex';localStorage.removeItem('td_anthropic_key')">Reset Key</button></div></div>`;
+      content.innerHTML = `<div class="ai-brief-card"><div style="font-size:13px;color:var(--warn)">❌ Invalid API key. <button class="btn-sm btn-ghost" style="font-size:11px" onclick="document.getElementById('ai-key-bar').style.display='flex';dbRemove('anthropic_key')">Reset Key</button></div></div>`;
     } else {
       // Fallback to rule-based
       content.innerHTML = generateRuleBasedBrief() + `<div style="font-size:11px;color:var(--muted);margin-top:6px">⚠️ API error (${e.message}) — showing rule-based brief instead.</div>`;
@@ -2235,7 +2235,7 @@ let paperData = JSON.parse(localStorage.getItem('td_paper') || 'null');
 function startPaperChallenge() {
   if (paperData && !confirm('A challenge is already running. Start a new one?')) return;
   paperData = { startDate: new Date().toISOString().split('T')[0], days: {} };
-  localStorage.setItem('td_paper', JSON.stringify(paperData));
+  dbSet('paper', paperData);
   renderPaperCalendar();
   document.getElementById('paper-start-btn').textContent = '✓ Challenge Running';
 }
@@ -2243,7 +2243,7 @@ function startPaperChallenge() {
 function resetPaperChallenge() {
   if (!confirm('Reset the 90-day challenge? All data will be lost.')) return;
   paperData = null;
-  localStorage.removeItem('td_paper');
+  dbRemove('paper');
   renderPaperCalendar();
   document.getElementById('paper-start-btn').textContent = '🚀 Start 90-Day Challenge';
 }
@@ -2259,7 +2259,7 @@ function logPaperDay() {
 
   const type = count === 0 ? 'rules' : pnl >= 0 ? 'win' : 'loss';
   paperData.days[today] = { pnl, count, notes, rules, type };
-  localStorage.setItem('td_paper', JSON.stringify(paperData));
+  dbSet('paper', paperData);
   renderPaperCalendar();
 
   document.getElementById('paper-pnl').value = '';
@@ -2516,7 +2516,7 @@ let clsVideos = { pl1: null, pl2: null }; // null = not loaded yet
 function saveYtKey() {
   const key = document.getElementById('yt-api-key-inp').value.trim();
   if (!key) return;
-  localStorage.setItem('td_yt_key', key);
+  dbSet('yt_key', key);
   loadPlaylistVideos(clsCurrentPl);
 }
 
@@ -2720,14 +2720,14 @@ function addClassroomNote() {
   if (!text) return;
   const now = new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
   clsNotes.unshift({ text, tag, date: now });
-  localStorage.setItem('td_cls_notes', JSON.stringify(clsNotes));
+  dbSet('cls_notes', clsNotes);
   document.getElementById('cls-note-input').value = '';
   renderClsNotes();
 }
 
 function deleteClsNote(i) {
   clsNotes.splice(i, 1);
-  localStorage.setItem('td_cls_notes', JSON.stringify(clsNotes));
+  dbSet('cls_notes', clsNotes);
   renderClsNotes();
 }
 
@@ -2769,7 +2769,7 @@ function saveChecks() {
   for (let i = 1; i <= 12; i++) {
     checks['chk'+i] = document.getElementById('chk'+i).checked;
   }
-  localStorage.setItem('td_cls_checks', JSON.stringify(checks));
+  dbSet('cls_checks', checks);
   updateCheckProgress();
 }
 
@@ -3097,12 +3097,12 @@ function showResults() {
     saved[cat].correct += s.correct;
     saved[cat].total   += s.total;
   });
-  localStorage.setItem('td_quiz_catstats', JSON.stringify(saved));
+  dbSet('quiz_catstats', saved);
 
   // Save to history
   _quizHistory.unshift({ date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}), mode:_quizMode, score:pct, correct:_quizScore, total });
   if (_quizHistory.length > 10) _quizHistory.pop();
-  localStorage.setItem('td_quiz_history', JSON.stringify(_quizHistory));
+  dbSet('quiz_history', _quizHistory);
 }
 
 function retryQuiz() { startQuiz(_lastMode); }
