@@ -976,6 +976,18 @@
 
   .auth-close:hover { color: var(--text); }
 
+
+  /* CONTENT GATE */
+  #gate { position:fixed; inset:61px 0 0 0; background:var(--bg); z-index:500; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:0; }
+  .gate-box { text-align:center; padding:40px; }
+  .gate-icon { font-size:48px; margin-bottom:20px; filter:drop-shadow(0 0 12px rgba(96,180,255,.5)); }
+  .gate-title { font-size:26px; font-weight:800; background:linear-gradient(90deg,#60b4ff,#c084fc); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:10px; }
+  .gate-sub { font-size:14px; color:var(--muted); margin-bottom:28px; }
+  .gate-btn { background:var(--accent); color:#000; border:none; border-radius:10px; padding:12px 32px; font-size:15px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+  .gate-btn:hover { opacity:.85; }
+  /* ADMIN LINK */
+  #admin-link { background:rgba(192,132,252,.15); border:1px solid rgba(192,132,252,.3); color:var(--purple); padding:5px 12px; border-radius:7px; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; letter-spacing:.3px; }
+  #admin-link:hover { background:rgba(192,132,252,.25); }
 </style>
 
 <!-- YouTube IFrame Player API — loaded async, needed for error detection -->
@@ -1031,6 +1043,8 @@
       <div id="auth-area-logged-in" style="display:none">
 
         <div id="auth-user">
+
+          <a id="admin-link" href="/admin" style="display:none">Admin ↗</a>
 
           <span id="auth-user-email"></span>
 
@@ -2634,6 +2648,10 @@ async function initAuth() {
 
 function renderAuthState() {
 
+  const gate = document.getElementById('gate');
+
+  const adminLink = document.getElementById('admin-link');
+
   if (currentUser) {
 
     document.getElementById('auth-area-logged-out').style.display = 'none';
@@ -2642,6 +2660,10 @@ function renderAuthState() {
 
     document.getElementById('auth-user-email').textContent = currentUser.email;
 
+    if (gate) gate.style.display = 'none';
+
+    if (adminLink) adminLink.style.display = currentUser.email === 'nikkimasani@gmail.com' ? '' : 'none';
+
     dbInit();
 
   } else {
@@ -2649,6 +2671,10 @@ function renderAuthState() {
     document.getElementById('auth-area-logged-out').style.display = '';
 
     document.getElementById('auth-area-logged-in').style.display = 'none';
+
+    if (gate) gate.style.display = 'flex';
+
+    if (adminLink) adminLink.style.display = 'none';
 
   }
 
@@ -2723,6 +2749,11 @@ async function submitAuth() {
       const { data, error } = await _supabase.auth.signUp({ email, password });
       if (error) { errEl.textContent = error.message; return; }
       if (data.user) {
+        if (email === 'nikkimasani@gmail.com') {
+          // Admin account — skip approval, sign in directly
+          closeAuthModal(null, true);
+          return;
+        }
         await _supabase.from('user_approvals').insert({
           user_id: data.user.id,
           email,
@@ -6508,6 +6539,16 @@ Rules:
 
 </div>
 
+
+<!-- CONTENT GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-icon">⚡</div>
+    <div class="gate-title">Nikki's TradeLab</div>
+    <p class="gate-sub">Sign in to access your trading dashboard.</p>
+    <button class="gate-btn" onclick="openAuthModal()">Sign In</button>
+  </div>
+</div>
 </body>
 
 </html>
