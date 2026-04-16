@@ -2,11 +2,11 @@
 
 ## Purpose
 
-A personal trading education and practice dashboard. Everything in one HTML file — no accounts required, no backend dependency. Helps the owner build trading knowledge, track paper trades, journal real trades, and stay on top of market news.
+A personal trading education and practice dashboard. Everything in one HTML file — no backend dependency. Helps users build trading knowledge, track paper trades, journal real trades, and stay on top of market news.
 
 ## Users
 
-Single user (personal tool). No sign-in required; Supabase sync is optional for cross-device access.
+Primary user (owner) signs in via Supabase auth for cross-device sync. Guest users can access the app without sign-in using localStorage only.
 
 ## Features
 
@@ -24,14 +24,29 @@ Single user (personal tool). No sign-in required; Supabase sync is optional for 
 | Knowledge Base | Curated articles and concept explainers |
 | Flashcards | Spaced-repetition practice on weak concepts |
 | Resources | Curated external links |
-| My Library | Personal note and video connector |
+| Library | Trading video and document library — two connection modes: (1) Sign in with Microsoft to auto-connect a personal OneDrive folder via Graph API; (2) Download the public shared folder and connect it locally via the File System Access API (Chrome/Edge) |
+
+## Library — Connection Modes
+
+### Mode 1: Microsoft Sign-In (OneDrive)
+- Uses MSAL.js (`@azure/msal-browser`) with a registered Azure SPA app
+- Authority: `https://login.microsoftonline.com/consumers` (personal Microsoft accounts)
+- Scopes: `Files.Read`, `User.Read`
+- Reads files from a shared OneDrive folder via Microsoft Graph API
+- Supports folder navigation, inline video playback, and document opening
+
+### Mode 2: Local Folder (offline)
+- User downloads the public OneDrive share, saves locally
+- Connects via `showDirectoryPicker()` (File System Access API)
+- Supports folder navigation, inline video playback via `URL.createObjectURL()`
+- Chrome and Edge only; reconnect required after page reload
 
 ## Technical Constraints
 
 - Single HTML file — all CSS and JS must remain inline in `index.html`
 - No build step, no npm, no framework
-- API keys (Finnhub, Anthropic, YouTube) entered by the user in the UI — never hardcoded in source
-- Supabase is optional; the app must work fully offline with localStorage as the only store
+- API keys (Finnhub, Anthropic, YouTube) entered by the user in the UI — never hardcoded
+- Supabase is optional; the app must work fully with localStorage as fallback
 
 ## Deployment
 
