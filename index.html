@@ -2667,6 +2667,25 @@
     </button>
     <div id="lib-signin-error" style="color:var(--warn);font-size:13px;display:none"></div>
     <div style="font-size:12px;color:var(--muted);margin-top:-8px">Uses your Microsoft account (OneDrive) — no password stored here.</div>
+
+    <!-- Divider -->
+    <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:420px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:12px;color:var(--muted);white-space:nowrap">no Microsoft account?</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+
+    <!-- Local folder instructions -->
+    <div class="lib-instructions" style="max-width:440px;width:100%;text-align:left">
+      <h3>📥 Download &amp; Connect Locally</h3>
+      <ol>
+        <li><strong>Download</strong> the Trading Library — <a href="https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf" target="_blank" style="color:var(--accent);text-decoration:none">open shared OneDrive folder ↗</a>, then select all files and download.</li>
+        <li><strong>Save</strong> the downloaded folder anywhere on your computer (e.g. <code style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:11px">Documents/TradingLibrary</code>).</li>
+        <li><strong>Connect</strong> the folder using the button below — Chrome or Edge required.</li>
+      </ol>
+      <button class="lib-btn-connect" onclick="libConnectLocal()" style="margin-top:14px;width:100%">📂 Connect Local Folder</button>
+      <div class="lib-instructions-note">Works offline · Reconnect needed after page reload · Chrome &amp; Edge only</div>
+    </div>
   </div>
 
   <!-- Signed in, loading -->
@@ -2686,6 +2705,9 @@
         <button onclick="libRefresh()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer">↻ Refresh</button>
         <button onclick="libSignOut()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer">Sign Out</button>
       </div>
+    </div>
+    <div id="lib-local-nav" style="display:none">
+      <button onclick="libLocalGoBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:7px;font-size:12px;cursor:pointer">← Back</button>
     </div>
     <div id="lib-file-grid" style="overflow-y:auto;flex:1"></div>
   </div>
@@ -6649,6 +6671,10 @@ function libSignOut() {
   const app = libGetMsal();
   if (app && libAccount) app.logoutPopup({ account: libAccount });
   libAccount = null;
+  libLocalStack = [];
+  libLocalItems = [];
+  libLocalCurrentHandle = null;
+  document.getElementById('lib-local-nav').style.display = 'none';
   document.getElementById('lib-browser-view').style.display = 'none';
   document.getElementById('lib-signin-view').style.display = 'flex';
 }
@@ -6693,7 +6719,10 @@ async function libLoadFiles(folderId) {
   }
 }
 
-async function libRefresh() { if (libAccount) await libLoadFiles(); }
+async function libRefresh() {
+  if (libAccount) await libLoadFiles();
+  else if (libLocalCurrentHandle) await libLoadLocalFolder(libLocalCurrentHandle, document.getElementById('lib-user-info').textContent);
+}
 
 function libGetIcon(name) {
   const ext = (name.split('.').pop()||'').toLowerCase();
@@ -6753,6 +6782,112 @@ function closeLibraryVideo(e, force) {
   const p = document.getElementById('lib-video-player');
   p.pause(); p.src = '';
   document.getElementById('lib-video-overlay').classList.remove('open');
+}
+
+// ---- Local folder browser ----
+let libLocalStack = [];        // [{label, items}] for back navigation
+let libLocalItems = [];        // current level items
+let libLocalCurrentHandle = null; // current dirHandle
+
+async function libConnectLocal() {
+  if (!window.showDirectoryPicker) {
+    const el = document.getElementById('lib-signin-error');
+    el.textContent = 'Local folder access requires Chrome or Edge.';
+    el.style.display = '';
+    return;
+  }
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+    libLocalStack = [];
+    await libLoadLocalFolder(dirHandle, dirHandle.name);
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      const el = document.getElementById('lib-signin-error');
+      el.textContent = 'Could not open folder: ' + e.message;
+      el.style.display = '';
+    }
+  }
+}
+
+async function libLoadLocalFolder(dirHandle, label) {
+  libLocalCurrentHandle = dirHandle;
+  document.getElementById('lib-signin-view').style.display = 'none';
+  document.getElementById('lib-loading-view').style.display = 'flex';
+  document.getElementById('lib-browser-view').style.display = 'none';
+  libLocalItems = [];
+  for await (const [name, handle] of dirHandle.entries()) {
+    const ext = handle.kind === 'file' ? (name.split('.').pop() || '').toLowerCase() : '';
+    if (handle.kind === 'directory' || LIB_VIDEO_EXTS.has(ext) || LIB_DOC_EXTS.has(ext)) {
+      libLocalItems.push({ name, handle, isFolder: handle.kind === 'directory', ext });
+    }
+  }
+  libLocalItems.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0) || a.name.localeCompare(b.name));
+  document.getElementById('lib-user-info').textContent = '📂 ' + label;
+  document.getElementById('lib-local-nav').style.display = libLocalStack.length ? '' : 'none';
+  document.getElementById('lib-loading-view').style.display = 'none';
+  document.getElementById('lib-browser-view').style.display = 'flex';
+  libRenderLocalItems();
+}
+
+function libRenderLocalItems() {
+  const grid = document.getElementById('lib-file-grid');
+  if (!libLocalItems.length) { grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No supported files found.</div>'; return; }
+  const folders = libLocalItems.filter(i => i.isFolder);
+  const files   = libLocalItems.filter(i => !i.isFolder);
+  let html = '';
+  if (folders.length) {
+    html += '<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px">Folders</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">';
+    folders.forEach((f, _, arr) => {
+      const idx = libLocalItems.indexOf(f);
+      html += `<div onclick="libLocalOpenFolder(${idx})" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:22px">📁</span><span style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span></div>`;
+    });
+    html += '</div></div>';
+  }
+  if (files.length) {
+    html += '<div><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px">Files</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">';
+    files.forEach(f => {
+      const idx = libLocalItems.indexOf(f);
+      const isVid = LIB_VIDEO_EXTS.has(f.ext);
+      const action = isVid ? 'Watch ▶' : 'Open →';
+      const fn = isVid ? `libLocalPlayVideo(${idx})` : `libLocalOpenDoc(${idx})`;
+      html += `<div onclick="${fn}" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-size:28px">${libGetIcon(f.name)}</div><div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.name}">${f.name}</div><div style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(96,180,255,.1);padding:3px 8px;border-radius:20px;width:fit-content">${action}</div></div>`;
+    });
+    html += '</div></div>';
+  }
+  grid.innerHTML = html;
+}
+
+async function libLocalOpenFolder(idx) {
+  const item = libLocalItems[idx];
+  if (!item) return;
+  libLocalStack.push({ label: document.getElementById('lib-user-info').textContent, items: libLocalItems.slice() });
+  await libLoadLocalFolder(item.handle, item.name);
+}
+
+function libLocalGoBack() {
+  const prev = libLocalStack.pop();
+  if (!prev) return;
+  libLocalCurrentHandle = null;
+  libLocalItems = prev.items;
+  document.getElementById('lib-user-info').textContent = prev.label;
+  document.getElementById('lib-local-nav').style.display = libLocalStack.length ? '' : 'none';
+  libRenderLocalItems();
+}
+
+async function libLocalPlayVideo(idx) {
+  const item = libLocalItems[idx];
+  if (!item) return;
+  const file = await item.handle.getFile();
+  const url = URL.createObjectURL(file);
+  libPlayVideo(url, item.name);
+}
+
+async function libLocalOpenDoc(idx) {
+  const item = libLocalItems[idx];
+  if (!item) return;
+  const file = await item.handle.getFile();
+  const url = URL.createObjectURL(file);
+  window.open(url, '_blank');
 }
 
 (function(){
