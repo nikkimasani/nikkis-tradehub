@@ -6612,6 +6612,7 @@ function libGetMsal() {
 async function initLibrary() {
   const app = libGetMsal();
   if (!app) return;
+  await app.initialize();
   const accounts = app.getAllAccounts();
   if (accounts.length > 0) { libAccount = accounts[0]; await libLoadFiles(); }
 }
@@ -6627,13 +6628,14 @@ async function libSignInMicrosoft() {
     app = libGetMsal();
   }
   try {
+    await app.initialize();
     const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
     libAccount = result.account;
     await libLoadFiles();
   } catch(e) {
     if (e.errorCode !== 'user_cancelled') {
       const el = document.getElementById('lib-signin-error');
-      el.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message);
+      el.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
       el.style.display = '';
     }
   }
