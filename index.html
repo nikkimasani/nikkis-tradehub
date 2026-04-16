@@ -469,6 +469,7 @@
     document.head.appendChild(tag);
   })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1262,6 +1263,56 @@
 </div>
 
 <script>
+// ==================== SUPABASE ====================
+const SUPABASE_URL = 'https://bazjlrualnmbanmhiuau.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhempscnVhbG5tYmFubWhpdWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTkyNDQsImV4cCI6MjA5MTA5NTI0NH0.R8f7yEhxVHIcjwSS3H1b3tLj5jpuRP1pR4jiyVFEbmE';
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+
+async function initAuth() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  currentUser = session?.user ?? null;
+  _supabase.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user ?? null;
+    renderAuthState();
+  });
+}
+
+function renderAuthState() {
+  // placeholder — wired up in Task 3 (login/logout UI)
+}
+
+initAuth();
+
+// ==================== DB HELPERS ====================
+async function dbSet(key, value) {
+  localStorage.setItem('td_' + key, JSON.stringify(value));
+  if (!currentUser) return;
+  await _supabase.from('user_data').upsert({ user_id: currentUser.id, key, value }, { onConflict: 'user_id,key' });
+}
+
+async function dbGet(key) {
+  const local = localStorage.getItem('td_' + key);
+  if (!currentUser) return local ? JSON.parse(local) : null;
+  const { data } = await _supabase.from('user_data').select('value').eq('user_id', currentUser.id).eq('key', key).maybeSingle();
+  return data?.value ?? (local ? JSON.parse(local) : null);
+}
+
+async function dbRemove(key) {
+  localStorage.removeItem('td_' + key);
+  if (!currentUser) return;
+  await _supabase.from('user_data').delete().eq('user_id', currentUser.id).eq('key', key);
+}
+
+async function dbInit() {
+  if (!currentUser) return;
+  const { data } = await _supabase.from('user_data').select('key,value').eq('user_id', currentUser.id);
+  if (data) data.forEach(row => {
+    localStorage.setItem('td_' + row.key, JSON.stringify(row.value));
+  });
+}
+
 // ==================== TABS ====================
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
