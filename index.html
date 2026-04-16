@@ -1052,7 +1052,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
 </head>
 
 <body>
@@ -6645,6 +6645,9 @@ function libGetMsal() {
   return libMsalApp;
 }
 
+// Pre-initialize MSAL at page load so initialize() is resolved before any user click
+libGetMsal();
+
 async function initLibrary() {
   const app = libGetMsal();
   if (!app) return;
@@ -6663,9 +6666,13 @@ async function libSignInMicrosoft() {
     libMsalApp = null;
     libMsalInitPromise = null;
     app = libGetMsal();
+    // MSAL just started initializing — can't loginPopup yet; user must click again
+    const el = document.getElementById('lib-signin-error');
+    el.textContent = 'Client ID saved. Please click "Sign in with Microsoft" again.';
+    el.style.display = '';
+    return;
   }
-  // Always ensure MSAL is fully initialized before loginPopup
-  if (libMsalInitPromise) await libMsalInitPromise;
+  // loginPopup must be called synchronously in the user-gesture chain — no await before it
   try {
     const result = await app.loginPopup({ scopes: ['Files.Read', 'User.Read'] });
     libAccount = result.account;
