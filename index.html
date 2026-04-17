@@ -6638,7 +6638,7 @@ function libGetMsal() {
   if (libMsalApp) return libMsalApp;
   if (!LIB_CLIENT_ID) return null;
   libMsalApp = new msal.PublicClientApplication({
-    auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/consumers', redirectUri: window.location.origin },
+    auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/common', redirectUri: window.location.origin },
     cache: { cacheLocation: 'localStorage' }
   });
   // After initialize(), process any pending redirect result (called once per page load)
@@ -6657,6 +6657,15 @@ function libGetMsal() {
   }).catch(e => {
     libMsalReady = true;
     console.warn('MSAL init/redirect error:', e);
+    // If we were expecting a redirect result, switch to Library and show the error
+    if (sessionStorage.getItem('td_lib_auth_return')) {
+      sessionStorage.removeItem('td_lib_auth_return');
+      setTimeout(() => {
+        if (typeof switchTab === 'function') switchTab('library');
+        const errEl = document.getElementById('lib-signin-error');
+        if (errEl) { errEl.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e)); errEl.style.display = ''; }
+      }, 200);
+    }
   });
   return libMsalApp;
 }
@@ -6693,6 +6702,8 @@ async function libSignInMicrosoft() {
     errEl.style.display = '';
     return;
   }
+  // Clear any stale MSAL interaction state that can cause interaction_in_progress errors
+  Object.keys(sessionStorage).filter(k => k.includes('interaction.status')).forEach(k => sessionStorage.removeItem(k));
   // Use redirect instead of popup — avoids all popup-blocker issues
   // Page will navigate to Microsoft login, then return here automatically
   try {
