@@ -6650,7 +6650,7 @@ function libGetMsal() {
         // Auto-switch to Library tab if we just returned from a sign-in redirect
         if (sessionStorage.getItem('td_lib_auth_return')) {
           sessionStorage.removeItem('td_lib_auth_return');
-          setTimeout(() => { if (typeof switchTab === 'function') switchTab('library'); }, 200);
+          setTimeout(() => { if (typeof switchTab === 'function') switchTab('library'); libLoadFiles(); }, 300);
         }
       }
     });
