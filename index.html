@@ -6708,7 +6708,7 @@ async function libSignInMicrosoft() {
   // Page will navigate to Microsoft login, then return here automatically
   try {
     sessionStorage.setItem('td_lib_auth_return', '1');
-    await app.loginRedirect({ scopes: ['Files.Read', 'User.Read'] });
+    await app.loginRedirect({ scopes: ['Files.Read.All', 'User.Read'] });
   } catch(e) {
     sessionStorage.removeItem('td_lib_auth_return');
     errEl.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
@@ -6730,8 +6730,15 @@ function libSignOut() {
 
 async function libGetToken() {
   const app = libGetMsal();
-  const result = await app.acquireTokenSilent({ scopes: ['Files.Read'], account: libAccount });
-  return result.accessToken;
+  try {
+    const result = await app.acquireTokenSilent({ scopes: ['Files.Read.All'], account: libAccount });
+    return result.accessToken;
+  } catch(e) {
+    // Silent token acquisition failed — trigger a new redirect to get a fresh token
+    sessionStorage.setItem('td_lib_auth_return', '1');
+    await app.acquireTokenRedirect({ scopes: ['Files.Read.All'], account: libAccount });
+    throw e; // won't reach here — page navigates
+  }
 }
 
 function libEncodeShareUrl(url) {
