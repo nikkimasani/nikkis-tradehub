@@ -542,7 +542,32 @@
 
   .glossary-item .def { font-size:11px; color:var(--muted); line-height:1.4; margin-top:2px; }
 
+  /* ===================== FLASHCARDS ===================== */
+  .fc-scene { perspective:1000px; width:100%; max-width:460px; height:200px; margin:0 auto 20px; cursor:pointer; }
+  .fc-card { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .45s ease; }
+  .fc-card.flipped { transform:rotateY(180deg); }
+  .fc-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:12px; padding:24px; text-align:center; }
+  .fc-front { background:var(--surface); border:2px solid var(--accent); }
+  .fc-back  { background:var(--surface2); border:2px solid var(--accent2); transform:rotateY(180deg); }
+  .fc-hint  { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px; }
+  .fc-term  { font-size:24px; font-weight:800; color:var(--accent); line-height:1.2; }
+  .fc-def   { font-size:13px; color:var(--text); line-height:1.5; }
+  .fc-wrap  { padding:24px 20px; overflow-y:auto; flex:1; }
+  .fc-nav   { display:flex; align-items:center; gap:16px; justify-content:center; margin-bottom:12px; }
+  .fc-counter { font-size:12px; color:var(--muted); min-width:64px; text-align:center; }
+  .fc-actions { display:flex; gap:10px; justify-content:center; }
+  .fc-progress { font-size:12px; color:var(--muted); text-align:center; margin-top:14px; }
+  .fc-cat-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .fc-cat-pill { padding:4px 12px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border); color:var(--muted); background:var(--surface); transition:all .15s; }
+  .fc-cat-pill.active { background:rgba(96,180,255,.15); color:var(--accent); border-color:var(--accent); }
 
+  /* ===================== PRE-MARKET CHECKLIST ===================== */
+  .pm-list { list-style:none; }
+  .pm-item { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; cursor:pointer; user-select:none; transition:color .15s; }
+  .pm-item:last-child { border-bottom:none; }
+  .pm-item input[type=checkbox] { width:15px; height:15px; accent-color:var(--accent2); cursor:pointer; flex-shrink:0; }
+  .pm-item.checked { color:var(--muted); text-decoration:line-through; }
+  .pm-check-progress { font-size:11px; color:var(--muted); margin-top:8px; }
 
   /* ===================== RSI SIMULATOR PANEL ===================== */
 
@@ -1849,6 +1874,8 @@
 
         <button class="study-subtab" onclick="switchStudyTab('quiz')">🧠 Quiz</button>
 
+        <button class="study-subtab" onclick="switchStudyTab('flashcards')">🃏 Flashcards</button>
+
       </div>
 
       <div id="study-reference-view" style="overflow-y:auto;padding:20px;flex:1">
@@ -2279,6 +2306,39 @@
 
       </div><!-- /study-quiz-view -->
 
+      <!-- FLASHCARDS VIEW -->
+      <div id="study-flashcard-view" class="fc-wrap" style="display:none">
+        <div class="fc-cat-bar" id="fc-cat-bar">
+          <div class="fc-cat-pill active" data-cat="all" onclick="fcSetCat('all')">All</div>
+          <div class="fc-cat-pill" data-cat="glossary" onclick="fcSetCat('glossary')">📖 Glossary</div>
+          <div class="fc-cat-pill" data-cat="patterns" onclick="fcSetCat('patterns')">📊 Patterns</div>
+          <div class="fc-cat-pill" data-cat="indicators" onclick="fcSetCat('indicators')">📉 Indicators</div>
+          <div class="fc-cat-pill" data-cat="risk" onclick="fcSetCat('risk')">⚠️ Risk Rules</div>
+        </div>
+        <div class="fc-scene" onclick="fcFlip()">
+          <div class="fc-card" id="fc-card">
+            <div class="fc-face fc-front">
+              <div class="fc-hint">Tap to flip</div>
+              <div class="fc-term" id="fc-front-term"></div>
+            </div>
+            <div class="fc-face fc-back">
+              <div class="fc-hint">Definition</div>
+              <div class="fc-def" id="fc-back-def"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-nav">
+          <button class="btn-sm btn-ghost" onclick="fcPrev()">← Prev</button>
+          <span class="fc-counter" id="fc-counter">1 / 1</span>
+          <button class="btn-sm btn-ghost" onclick="fcNext()">Next →</button>
+        </div>
+        <div class="fc-actions">
+          <button class="btn-sm btn-ghost" style="color:var(--warn);border-color:rgba(251,91,82,.4)" onclick="fcMark('learning')">🔁 Still Learning</button>
+          <button class="btn-sm btn-ghost" style="color:var(--accent2);border-color:rgba(74,222,128,.4)" onclick="fcMark('known')">✓ Got It</button>
+        </div>
+        <div class="fc-progress" id="fc-progress"></div>
+      </div><!-- /study-flashcard-view -->
+
     </div><!-- /panel-learn -->
 
 
@@ -2380,6 +2440,21 @@
         </div>
 
 
+
+        <div class="today-row">
+
+          <div class="today-card" style="flex:1">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+              <div class="today-card-label" style="margin-bottom:0">Pre-Market Checklist</div>
+              <span id="pm-reset-btn" style="font-size:11px;color:var(--muted);cursor:pointer" onclick="pmReset()" title="Reset checklist">↺ Reset</span>
+            </div>
+            <ul class="pm-list" id="pm-list"></ul>
+            <div class="pm-check-progress" id="pm-progress"></div>
+
+          </div>
+
+        </div>
 
         <div class="today-row">
 
@@ -3021,7 +3096,7 @@ function switchTab(name) {
 
   if (panel) panel.classList.add('active');
 
-  if (name === 'today') renderToday();
+  if (name === 'today') { renderToday(); pmRender(); }
 
 }
 
@@ -3047,11 +3122,15 @@ function switchStudyTab(view) {
 
   document.getElementById('study-quiz-view').style.display = view === 'quiz' ? 'block' : 'none';
 
+  document.getElementById('study-flashcard-view').style.display = view === 'flashcards' ? 'block' : 'none';
+
   document.querySelectorAll('.study-subtab').forEach(btn => {
 
     btn.classList.toggle('active', btn.getAttribute('onclick').includes(view));
 
   });
+
+  if (view === 'flashcards') fcRender();
 
 }
 
@@ -3557,7 +3636,7 @@ function renderTradeLog() {
 
       <td style="color:var(--muted)">${t.setup||'—'}</td>
 
-      <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.notes||'—'}</td>
+      <td style="color:var(--muted);max-width:200px;cursor:${t.notes?'pointer':'default'}" onclick="this.style.whiteSpace=this.style.whiteSpace==='normal'?'nowrap':'normal';this.style.overflow=this.style.overflow==='visible'?'hidden':'visible'" title="${t.notes?'Click to expand':''}">${t.notes?`<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.notes}</span>`:'—'}</td>
 
       <td><button class="del-btn" onclick="deleteTrade(${i})">×</button></td>
 
@@ -3736,6 +3815,7 @@ function renderToday() {
 }
 
 renderToday();
+pmRender();
 
 
 
@@ -6705,6 +6785,147 @@ function exportTradesCSV() {
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'trade-journal-' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
+}
+
+// ==================== FLASHCARDS ====================
+const FC_CARDS = [
+  // Glossary
+  { cat:'glossary', term:'Long',        def:'Buying a stock expecting the price to go up.' },
+  { cat:'glossary', term:'Short',       def:'Selling borrowed shares expecting the price to drop, then buying back cheaper.' },
+  { cat:'glossary', term:'Float',       def:'Number of shares available to trade publicly. Low float stocks move more violently.' },
+  { cat:'glossary', term:'Spread',      def:'Difference between the bid (buy) and ask (sell) price. Wide spread = harder to profit.' },
+  { cat:'glossary', term:'Support',     def:'A price level where buyers tend to step in and prevent further decline.' },
+  { cat:'glossary', term:'Resistance',  def:'A price level where sellers tend to appear and prevent further upside.' },
+  { cat:'glossary', term:'Breakout',    def:'Price moves decisively through a key support/resistance level, usually on high volume.' },
+  { cat:'glossary', term:'Gap Up',      def:'Stock opens significantly above the prior day\'s close — often catalyst-driven.' },
+  { cat:'glossary', term:'PDT Rule',    def:'Pattern Day Trader rule: making 4+ day trades in 5 business days requires $25,000 in a margin account.' },
+  { cat:'glossary', term:'VWAP',        def:'Volume Weighted Average Price — the average price weighted by volume. Institutional benchmark intraday.' },
+  // Patterns
+  { cat:'patterns', term:'Bull Flag',       def:'Strong move up (the pole), then a tight sideways or slight downward consolidation (the flag), followed by continuation up.' },
+  { cat:'patterns', term:'Bear Flag',       def:'Strong move down, brief upward consolidation, then continuation downward.' },
+  { cat:'patterns', term:'Cup & Handle',    def:'U-shaped base followed by a small pullback (handle), then a bullish breakout above the cup rim.' },
+  { cat:'patterns', term:'Head & Shoulders',def:'Three peaks — middle (head) is highest, flanked by two lower shoulders. Signals a trend reversal.' },
+  { cat:'patterns', term:'Doji',            def:'Candle where open ≈ close — shows indecision. Potential reversal signal depending on context.' },
+  { cat:'patterns', term:'Hammer',          def:'Small body, long lower wick. Shows buyers rejected lower prices — bullish reversal signal.' },
+  { cat:'patterns', term:'ORB',             def:'Opening Range Breakout — mark the first 15–30 min high/low, then trade a breakout in either direction with volume.' },
+  // Indicators
+  { cat:'indicators', term:'RSI',    def:'Relative Strength Index (0–100). Above 70 = overbought. Below 30 = oversold. Measures momentum.' },
+  { cat:'indicators', term:'EMA 9',  def:'9-period Exponential Moving Average — fast MA used to spot short-term momentum and dynamic support/resistance.' },
+  { cat:'indicators', term:'EMA 20', def:'20-period EMA — slightly slower trend indicator. A pullback to EMA 20 is a common entry setup.' },
+  { cat:'indicators', term:'MACD',   def:'Moving Average Convergence Divergence — measures trend direction and momentum. Signal: 12 EMA minus 26 EMA.' },
+  { cat:'indicators', term:'ATR',    def:'Average True Range — measures volatility. Use it to set stop-loss distances proportional to how much a stock moves.' },
+  { cat:'indicators', term:'Volume', def:'Number of shares traded. High volume confirms breakouts. Low volume = weak move, likely to reverse.' },
+  // Risk rules
+  { cat:'risk', term:'1–2% Rule',         def:'Never risk more than 1–2% of your account on a single trade.' },
+  { cat:'risk', term:'Stop Loss',         def:'A pre-set exit point that limits your loss. Set it BEFORE entering — never move it wider.' },
+  { cat:'risk', term:'Risk/Reward',       def:'Minimum 1:2 ratio — risk $1 to make $2. Lets you be profitable even with a <50% win rate.' },
+  { cat:'risk', term:'3-Strike Rule',     def:'After 3 losing trades in a day, stop trading. Prevents revenge trading and emotional spirals.' },
+  { cat:'risk', term:'Position Sizing',   def:'Size your shares based on your stop distance, not gut feel: shares = (account% × balance) ÷ stop distance.' },
+];
+
+let _fcCat = 'all';
+let _fcDeck = [];
+let _fcIdx  = 0;
+let _fcKnown = JSON.parse(localStorage.getItem('td_fc_known') || '[]');
+
+function fcGetDeck() {
+  return _fcCat === 'all' ? FC_CARDS : FC_CARDS.filter(c => c.cat === _fcCat);
+}
+
+function fcRender() {
+  _fcDeck = fcGetDeck();
+  if (!_fcDeck.length) return;
+  _fcIdx = Math.min(_fcIdx, _fcDeck.length - 1);
+  const card = _fcDeck[_fcIdx];
+  document.getElementById('fc-card').classList.remove('flipped');
+  document.getElementById('fc-front-term').textContent = card.term;
+  document.getElementById('fc-back-def').textContent   = card.def;
+  document.getElementById('fc-counter').textContent    = `${_fcIdx + 1} / ${_fcDeck.length}`;
+  const knownCount = _fcDeck.filter(c => _fcKnown.includes(c.term)).length;
+  document.getElementById('fc-progress').textContent   = `${knownCount} of ${_fcDeck.length} known`;
+}
+
+function fcFlip() {
+  document.getElementById('fc-card').classList.toggle('flipped');
+}
+
+function fcNext() {
+  _fcIdx = (_fcIdx + 1) % _fcDeck.length;
+  fcRender();
+}
+
+function fcPrev() {
+  _fcIdx = (_fcIdx - 1 + _fcDeck.length) % _fcDeck.length;
+  fcRender();
+}
+
+function fcMark(status) {
+  const term = _fcDeck[_fcIdx].term;
+  if (status === 'known') {
+    if (!_fcKnown.includes(term)) _fcKnown.push(term);
+  } else {
+    _fcKnown = _fcKnown.filter(t => t !== term);
+  }
+  localStorage.setItem('td_fc_known', JSON.stringify(_fcKnown));
+  fcNext();
+}
+
+function fcSetCat(cat) {
+  _fcCat = cat;
+  _fcIdx = 0;
+  document.querySelectorAll('.fc-cat-pill').forEach(p => p.classList.toggle('active', p.dataset.cat === cat));
+  fcRender();
+}
+
+// ==================== PRE-MARKET CHECKLIST ====================
+const PM_ITEMS = [
+  'Checked SPY/QQQ pre-market direction',
+  'Reviewed overnight news & catalysts',
+  'Built watchlist for the day',
+  'Checked economic calendar (Fed, CPI, earnings)',
+  'Set max daily loss limit',
+  'Reviewed yesterday\'s journal entry',
+];
+
+function pmTodayKey() {
+  return 'td_pm_' + new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+}
+
+function pmLoad() {
+  return JSON.parse(localStorage.getItem(pmTodayKey()) || '[]');
+}
+
+function pmSave(checked) {
+  localStorage.setItem(pmTodayKey(), JSON.stringify(checked));
+}
+
+function pmReset() {
+  pmSave([]);
+  pmRender();
+}
+
+function pmRender() {
+  const checked = pmLoad();
+  const ul = document.getElementById('pm-list');
+  if (!ul) return;
+  ul.innerHTML = PM_ITEMS.map((label, i) => {
+    const done = checked.includes(i);
+    return `<li class="pm-item${done?' checked':''}" onclick="pmToggle(${i})">
+      <input type="checkbox" ${done?'checked':''} onclick="event.stopPropagation();pmToggle(${i})">
+      <span>${label}</span>
+    </li>`;
+  }).join('');
+  const count = checked.length;
+  const prog = document.getElementById('pm-progress');
+  if (prog) prog.textContent = count === PM_ITEMS.length ? '✓ All done — great start to the day!' : `${count} of ${PM_ITEMS.length} complete`;
+}
+
+function pmToggle(i) {
+  const checked = pmLoad();
+  const idx = checked.indexOf(i);
+  if (idx === -1) checked.push(i); else checked.splice(idx, 1);
+  pmSave(checked);
+  pmRender();
 }
 
 // ==================== LIBRARY ====================
