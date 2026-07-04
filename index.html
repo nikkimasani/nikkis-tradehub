@@ -1056,6 +1056,54 @@
   .lib-video-close:hover { color:var(--text); }
   #lib-video-player { width:100%; max-height:70vh; background:#000; display:block; }
 
+  /* ===================== MEDIUM + BIGGER FEATURE STYLES ===================== */
+  /* Watchlist notes */
+  .wl-note { font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .wl-note-input { width:100%; margin-top:4px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:3px 6px; font-size:11px; display:none; }
+  /* Journal filter */
+  .journal-filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 16px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+  .journal-filter-bar input, .journal-filter-bar select { background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:5px; padding:4px 8px; font-size:12px; }
+  .journal-filter-bar input { width:90px; }
+  /* Paper analytics */
+  .paper-analytics { display:flex; gap:10px; flex-wrap:wrap; padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .paper-analytic { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; flex:1; min-width:110px; }
+  .paper-analytic-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; }
+  .paper-analytic-val { font-size:16px; font-weight:700; margin-top:2px; }
+  /* Daily recap */
+  .recap-form { padding:16px; background:var(--surface); border-top:1px solid var(--border); }
+  .recap-form h3 { font-size:13px; font-weight:700; color:var(--accent); margin-bottom:10px; cursor:pointer; }
+  .recap-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .recap-fields textarea { background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:8px; font-size:12px; resize:vertical; font-family:var(--font); }
+  /* Chart notes */
+  .chart-notes-bar { background:var(--surface); border-top:1px solid var(--border); padding:8px 14px; display:flex; gap:8px; align-items:center; flex-shrink:0; }
+  .chart-notes-bar input { flex:1; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:5px; padding:5px 8px; font-size:12px; }
+  /* Earnings calendar */
+  .earnings-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .earnings-item:last-child { border-bottom:none; }
+  .earnings-sym { font-weight:700; color:var(--accent); min-width:50px; }
+  .earnings-date { color:var(--muted); }
+  .earnings-when { font-size:10px; padding:2px 6px; border-radius:10px; font-weight:600; }
+  .earnings-bmo { background:rgba(251,191,36,.15); color:var(--gold); }
+  .earnings-amc { background:rgba(192,132,252,.15); color:var(--purple); }
+  /* Risk dashboard */
+  .risk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+  .risk-stat { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+  .risk-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; }
+  .risk-val { font-size:15px; font-weight:700; margin-top:3px; }
+  /* Bot scaffolder */
+  #panel-bot { padding:0; }
+  .bot-layout { display:flex; height:100%; overflow:hidden; }
+  .bot-config { width:280px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+  .bot-output { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .bot-output-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--surface); }
+  .bot-tab { padding:8px 16px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  .bot-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .bot-code-wrap { flex:1; overflow-y:auto; position:relative; }
+  .bot-code { background:var(--bg); color:#e8f0fe; font-family:'Courier New',monospace; font-size:12px; line-height:1.6; padding:20px; margin:0; white-space:pre; overflow-x:auto; min-height:100%; border:none; }
+  .bot-copy-btn { position:absolute; top:10px; right:10px; }
+  .bot-section-title { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; }
+  .bot-config select, .bot-config input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:5px; padding:5px 8px; font-size:12px; margin-bottom:2px; }
+
   /* ===================== QUICK WIN STYLES ===================== */
   .today-streak-val { font-size:22px; font-weight:800; }
   .today-maxloss-val { font-size:22px; font-weight:800; color:var(--accent2); }
@@ -1166,6 +1214,7 @@
 
   <div class="tab" data-tab="learn">📚 Study</div>
   <div class="tab" data-tab="library">📁 Library</div>
+  <div class="tab" data-tab="bot">🤖 Bot</div>
 
 </nav>
 
@@ -1283,6 +1332,13 @@
 
         <div id="tv-widget" style="height:100%"></div>
 
+      </div>
+
+      <div class="chart-notes-bar">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">📌 Notes:</span>
+        <input type="text" id="chart-note-input" placeholder="Add a note for this symbol..." onkeydown="if(event.key==='Enter')saveChartNote()">
+        <button class="btn-sm btn-ghost" onclick="saveChartNote()">Save</button>
+        <span id="chart-note-display" style="font-size:11px;color:var(--gold);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
       </div>
 
       <!-- RSI Simulator — hidden until toggled -->
@@ -1575,6 +1631,22 @@
 
 
 
+      <!-- Journal Filter Bar -->
+      <div class="journal-filter-bar">
+        <span style="font-size:11px;font-weight:700;color:var(--muted)">FILTER:</span>
+        <input type="text" id="jf-symbol" placeholder="Symbol" oninput="applyJournalFilter()" style="text-transform:uppercase">
+        <input type="text" id="jf-setup" placeholder="Setup" oninput="applyJournalFilter()">
+        <select id="jf-dir" onchange="applyJournalFilter()">
+          <option value="">All Directions</option>
+          <option value="Long">Long</option>
+          <option value="Short">Short</option>
+        </select>
+        <input type="text" id="jf-date-from" placeholder="From MM/DD/YYYY" style="width:130px" oninput="applyJournalFilter()">
+        <input type="text" id="jf-date-to" placeholder="To MM/DD/YYYY" style="width:130px" oninput="applyJournalFilter()">
+        <button class="btn-sm btn-ghost" onclick="clearJournalFilter()">✕ Clear</button>
+        <span id="jf-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+      </div>
+
       <!-- Setup Breakdown -->
       <div id="setup-breakdown-wrap">
         <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">🎯 Win Rate by Setup</div>
@@ -1614,7 +1686,25 @@
 
       </div>
 
-
+      <!-- Daily Recap -->
+      <div class="recap-form" id="recap-wrap">
+        <h3 onclick="document.getElementById('recap-fields-wrap').style.display=document.getElementById('recap-fields-wrap').style.display==='none'?'grid':'none'">📝 End-of-Day Recap <span style="font-size:10px;font-weight:400;color:var(--muted)">▼ expand</span></h3>
+        <div id="recap-fields-wrap" style="display:none">
+          <div class="recap-fields">
+            <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">What worked today?</label><textarea id="recap-worked" rows="3" placeholder="Setups, execution, mindset wins..."></textarea></div>
+            <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">What didn't work / lessons learned?</label><textarea id="recap-didnt" rows="3" placeholder="Mistakes, emotion issues, bad entries..."></textarea></div>
+            <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Tomorrow's focus</label><textarea id="recap-tomorrow" rows="2" placeholder="1-3 things to improve..."></textarea></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <label style="font-size:11px;color:var(--muted)">Emotion rating (1–5)</label>
+              <select id="recap-emotion" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px"><option value="">—</option><option>1 - Very anxious/emotional</option><option>2 - Somewhat off</option><option>3 - Neutral</option><option>4 - Focused</option><option>5 - In the zone</option></select>
+              <label style="font-size:11px;color:var(--muted)">Day grade</label>
+              <select id="recap-grade" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px"><option value="">—</option><option>A - Excellent</option><option>B - Good</option><option>C - Average</option><option>D - Poor</option><option>F - Blown rules</option></select>
+              <button class="btn-sm" onclick="saveRecap()">Save Recap</button>
+            </div>
+          </div>
+          <div id="recap-saved-list" style="margin-top:12px;font-size:12px;color:var(--muted)"></div>
+        </div>
+      </div>
 
     </div>
 
@@ -1807,6 +1897,14 @@
       </div>
 
 
+
+      <div class="paper-analytics" id="paper-analytics-row" style="display:none">
+        <div class="paper-analytic"><div class="paper-analytic-label">Avg Daily P&L</div><div class="paper-analytic-val" id="pa-avg">$0</div></div>
+        <div class="paper-analytic"><div class="paper-analytic-label">Best Day</div><div class="paper-analytic-val" id="pa-best" style="color:var(--accent2)">—</div></div>
+        <div class="paper-analytic"><div class="paper-analytic-label">Worst Day</div><div class="paper-analytic-val" id="pa-worst" style="color:var(--warn)">—</div></div>
+        <div class="paper-analytic"><div class="paper-analytic-label">Win Days</div><div class="paper-analytic-val" id="pa-wins" style="color:var(--accent2)">0</div></div>
+        <div class="paper-analytic"><div class="paper-analytic-label">Loss Days</div><div class="paper-analytic-val" id="pa-losses" style="color:var(--warn)">0</div></div>
+      </div>
 
       <div class="paper-log-form">
 
@@ -2537,6 +2635,20 @@
 
           </div>
 
+        </div>
+
+        <div class="today-row">
+          <div class="today-card" style="flex:1">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div class="today-card-label" style="margin-bottom:0">📅 Earnings Calendar</div>
+              <button class="btn-sm btn-ghost" onclick="loadEarnings()" style="font-size:10px;padding:2px 8px">↻ Refresh</button>
+            </div>
+            <div id="earnings-list"><span style="font-size:12px;color:var(--muted)">Add tickers to watchlist, then click Refresh to load upcoming earnings.</span></div>
+          </div>
+          <div class="today-card" style="flex:1">
+            <div class="today-card-label">📊 Risk Dashboard</div>
+            <div class="risk-grid" id="risk-grid"><span style="font-size:12px;color:var(--muted)">No trades logged yet.</span></div>
+          </div>
         </div>
 
         <div class="today-row">
@@ -3455,11 +3567,11 @@ function addTicker() {
 
   watchlist.push({sym});
 
-  saveWatchlist(); renderWatchlist(); inp.value='';
+  saveWatchlist(); renderWatchlistWithNotes(); inp.value='';
 
 }
 
-function removeTicker(i) { watchlist.splice(i,1); saveWatchlist(); renderWatchlist(); }
+function removeTicker(i) { watchlist.splice(i,1); saveWatchlist(); renderWatchlistWithNotes(); }
 
 function loadSymbol(sym) {
 
@@ -3475,7 +3587,7 @@ function loadSymbol(sym) {
 
 document.getElementById('ticker-input').addEventListener('keydown', e=>{ if(e.key==='Enter') addTicker(); });
 
-renderWatchlist();
+renderWatchlistWithNotes();
 
 
 
@@ -3733,6 +3845,7 @@ function renderJournalStats() {
 
   renderEquityCurve();
   renderSetupBreakdown();
+  renderRiskDashboard();
 
   if (!trades.length) return;
 
@@ -3936,6 +4049,8 @@ function renderToday() {
 
 renderToday();
 pmRender();
+renderRiskDashboard();
+renderRecapList();
 
 
 
@@ -5002,6 +5117,7 @@ function renderPaperCalendar() {
 
 
   updateSidebarProgress();
+  updatePaperAnalytics();
 
   document.getElementById('paper-start-btn').textContent = '✓ Challenge Running';
 
@@ -6907,6 +7023,564 @@ function exportTradesCSV() {
   a.click();
 }
 
+// ==================== WATCHLIST NOTES ====================
+function renderWatchlistWithNotes() {
+  const c = document.getElementById('watchlist-items');
+  if (!watchlist.length) { c.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px 0">Add tickers above</div>'; return; }
+  c.innerHTML = watchlist.map((w,i) => `
+    <div class="watchlist-item" style="flex-direction:column;align-items:stretch;gap:2px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="ticker-sym" onclick="loadSymbol('${w.sym}')" style="cursor:pointer">${w.sym}</div>
+        <div style="display:flex;gap:4px">
+          <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 2px" onclick="toggleWlNote(${i})" title="Add note">💬</button>
+          <button class="del-btn" onclick="event.stopPropagation();removeTicker(${i})">×</button>
+        </div>
+      </div>
+      ${w.note ? `<div class="wl-note" title="${w.note}">📝 ${w.note}</div>` : ''}
+      <input class="wl-note-input" id="wl-note-${i}" value="${w.note||''}" placeholder="Why watching? thesis, level..." onblur="saveWlNote(${i},this.value)" onkeydown="if(event.key==='Enter')saveWlNote(${i},this.value)">
+    </div>`).join('');
+}
+function toggleWlNote(i) {
+  const inp = document.getElementById('wl-note-'+i);
+  if (inp) { inp.style.display = inp.style.display==='none'?'block':'none'; if(inp.style.display==='block') inp.focus(); }
+}
+function saveWlNote(i, val) {
+  watchlist[i].note = val.trim();
+  saveWatchlist();
+  renderWatchlistWithNotes();
+}
+
+// ==================== JOURNAL FILTER ====================
+function applyJournalFilter() {
+  const sym   = (document.getElementById('jf-symbol').value||'').trim().toUpperCase();
+  const setup = (document.getElementById('jf-setup').value||'').trim().toLowerCase();
+  const dir   = document.getElementById('jf-dir').value;
+  const from  = document.getElementById('jf-date-from').value.trim();
+  const to    = document.getElementById('jf-date-to').value.trim();
+  const filtered = trades.filter(t => {
+    if (sym && !t.symbol.includes(sym)) return false;
+    if (setup && !(t.setup||'').toLowerCase().includes(setup)) return false;
+    if (dir && t.dir !== dir) return false;
+    if (from && new Date(t.date) < new Date(from)) return false;
+    if (to   && new Date(t.date) > new Date(to))   return false;
+    return true;
+  });
+  const tbody = document.getElementById('trade-log-body');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No trades match filter.</td></tr>';
+  } else {
+    tbody.innerHTML = filtered.map((t,i) => {
+      const origIdx = trades.indexOf(t);
+      return `<tr>
+        <td>${t.date}</td>
+        <td style="font-weight:700;color:var(--accent)">${t.symbol}</td>
+        <td><span class="${t.dir==='Long'?'dir-long':'dir-short'}">${t.dir}</span></td>
+        <td>$${parseFloat(t.entry).toFixed(2)}</td>
+        <td>$${parseFloat(t.exit).toFixed(2)}</td>
+        <td>${t.shares}</td>
+        <td class="${t.pnl>=0?'pnl-pos':'pnl-neg'}">${t.pnl>=0?'+':''}$${parseFloat(t.pnl).toFixed(2)}</td>
+        <td class="${t.pnlPct>=0?'pnl-pos':'pnl-neg'}">${t.pnlPct>=0?'+':''}${parseFloat(t.pnlPct).toFixed(2)}%</td>
+        <td style="color:var(--muted)">${t.setup||'—'}</td>
+        <td style="color:var(--muted);max-width:200px;cursor:${t.notes?'pointer':'default'}" onclick="this.style.whiteSpace=this.style.whiteSpace==='normal'?'nowrap':'normal'">${t.notes?`<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.notes}</span>`:'—'}</td>
+        <td><button class="del-btn" onclick="deleteTrade(${origIdx})">×</button></td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('jf-count').textContent = `${filtered.length} of ${trades.length} trades`;
+}
+function clearJournalFilter() {
+  ['jf-symbol','jf-setup','jf-date-from','jf-date-to'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('jf-dir').value='';
+  document.getElementById('jf-count').textContent='';
+  renderTradeLog();
+}
+
+// ==================== PAPER ANALYTICS ====================
+function updatePaperAnalytics() {
+  if (!paperData) return;
+  const wrap = document.getElementById('paper-analytics-row');
+  const dayVals = Object.values(paperData.days).map(d => d.pnl||0).filter(v => v !== undefined);
+  if (!dayVals.length) { wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  const avg = dayVals.reduce((s,v)=>s+v,0)/dayVals.length;
+  const best = Math.max(...dayVals), worst = Math.min(...dayVals);
+  const wins = dayVals.filter(v=>v>0).length, losses = dayVals.filter(v=>v<0).length;
+  document.getElementById('pa-avg').textContent = `${avg>=0?'+':''}$${avg.toFixed(0)}`;
+  document.getElementById('pa-avg').style.color = avg>=0?'var(--accent2)':'var(--warn)';
+  document.getElementById('pa-best').textContent = `+$${best.toFixed(0)}`;
+  document.getElementById('pa-worst').textContent = `-$${Math.abs(worst).toFixed(0)}`;
+  document.getElementById('pa-wins').textContent = wins;
+  document.getElementById('pa-losses').textContent = losses;
+}
+
+// ==================== DAILY RECAP ====================
+function saveRecap() {
+  const today = new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+  const recap = {
+    date: today,
+    worked:   document.getElementById('recap-worked').value.trim(),
+    didnt:    document.getElementById('recap-didnt').value.trim(),
+    tomorrow: document.getElementById('recap-tomorrow').value.trim(),
+    emotion:  document.getElementById('recap-emotion').value,
+    grade:    document.getElementById('recap-grade').value,
+  };
+  const all = JSON.parse(localStorage.getItem('td_recaps')||'[]');
+  const idx = all.findIndex(r=>r.date===today);
+  if (idx>=0) all[idx]=recap; else all.unshift(recap);
+  localStorage.setItem('td_recaps', JSON.stringify(all));
+  renderRecapList();
+  ['recap-worked','recap-didnt','recap-tomorrow'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('recap-emotion').value='';
+  document.getElementById('recap-grade').value='';
+}
+function renderRecapList() {
+  const el = document.getElementById('recap-saved-list');
+  if (!el) return;
+  const all = JSON.parse(localStorage.getItem('td_recaps')||'[]');
+  if (!all.length) { el.textContent='No recaps saved yet.'; return; }
+  el.innerHTML = all.slice(0,5).map(r=>`<div style="padding:6px 0;border-bottom:1px solid var(--border)"><strong style="color:var(--accent)">${r.date}</strong> <span style="color:var(--gold)">${r.grade||''}</span> <span style="color:var(--muted)">${r.emotion||''}</span>${r.worked?`<br><span style="color:var(--muted)">✓ ${r.worked.slice(0,80)}</span>`:''}</div>`).join('');
+}
+
+// ==================== CHART NOTES ====================
+function saveChartNote() {
+  const sym = (document.getElementById('chart-symbol').value||'').trim().toUpperCase() || 'AAPL';
+  const note = document.getElementById('chart-note-input').value.trim();
+  if (!note) return;
+  const notes = JSON.parse(localStorage.getItem('td_chart_notes')||'{}');
+  notes[sym] = note;
+  localStorage.setItem('td_chart_notes', JSON.stringify(notes));
+  loadChartNote(sym);
+}
+function loadChartNote(sym) {
+  const notes = JSON.parse(localStorage.getItem('td_chart_notes')||'{}');
+  const note = notes[sym||''] || '';
+  const inp = document.getElementById('chart-note-input');
+  const disp = document.getElementById('chart-note-display');
+  if (inp) inp.value = note;
+  if (disp) disp.textContent = note ? `📌 ${note}` : '';
+}
+
+// ==================== EARNINGS CALENDAR ====================
+async function loadEarnings() {
+  const el = document.getElementById('earnings-list');
+  if (!watchlist.length) { el.innerHTML='<span style="font-size:12px;color:var(--muted)">Add tickers to watchlist first.</span>'; return; }
+  const key = localStorage.getItem('td_finnhub_key') || localStorage.getItem('td_api_key') || '';
+  if (!key) { el.innerHTML='<span style="font-size:12px;color:var(--warn)">Save your Finnhub API key in the News tab first.</span>'; return; }
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Loading...</span>';
+  const from = new Date().toISOString().split('T')[0];
+  const to   = new Date(Date.now()+30*86400000).toISOString().split('T')[0];
+  try {
+    const res  = await fetch(`https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${to}&token=${key}`);
+    const data = await res.json();
+    const syms = new Set(watchlist.map(w=>w.sym));
+    const hits = (data.earningsCalendar||[]).filter(e=>syms.has(e.symbol));
+    if (!hits.length) { el.innerHTML='<span style="font-size:12px;color:var(--muted)">No earnings found for watchlist in next 30 days.</span>'; return; }
+    el.innerHTML = hits.slice(0,10).map(e=>`
+      <div class="earnings-item">
+        <span class="earnings-sym">${e.symbol}</span>
+        <span class="earnings-date">${e.date}</span>
+        <span class="earnings-when ${e.hour==='bmo'?'earnings-bmo':'earnings-amc'}">${e.hour==='bmo'?'BMO':'AMC'}</span>
+        ${e.epsEstimate!=null?`<span style="font-size:11px;color:var(--muted)">EPS est. ${e.epsEstimate}</span>`:''}
+      </div>`).join('');
+  } catch(e) { el.innerHTML=`<span style="font-size:12px;color:var(--warn)">Error: ${e.message}</span>`; }
+}
+
+// ==================== RISK DASHBOARD ====================
+function renderRiskDashboard() {
+  const el = document.getElementById('risk-grid');
+  if (!el) return;
+  if (!trades.length) { el.innerHTML='<span style="font-size:12px;color:var(--muted)">No trades logged yet.</span>'; return; }
+  const pnls = trades.map(t=>parseFloat(t.pnl));
+  const totalPnl = pnls.reduce((s,v)=>s+v,0);
+  const bestTrade = Math.max(...pnls), worstTrade = Math.min(...pnls);
+  const avgWin = pnls.filter(v=>v>0).reduce((s,v,_,a)=>s+v/a.length,0)||0;
+  const avgLoss= Math.abs(pnls.filter(v=>v<0).reduce((s,v,_,a)=>s+v/a.length,0)||0);
+  // Max drawdown
+  let peak=0, drawdown=0, cum=0;
+  [...trades].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(t=>{
+    cum+=parseFloat(t.pnl); if(cum>peak)peak=cum; drawdown=Math.min(drawdown,cum-peak);
+  });
+  const stats=[
+    {label:'Total P&L', val:`${totalPnl>=0?'+':''}$${totalPnl.toFixed(0)}`, color:totalPnl>=0?'var(--accent2)':'var(--warn)'},
+    {label:'Best Trade', val:`+$${bestTrade.toFixed(0)}`, color:'var(--accent2)'},
+    {label:'Worst Trade', val:`-$${Math.abs(worstTrade).toFixed(0)}`, color:'var(--warn)'},
+    {label:'Avg Win', val:`$${avgWin.toFixed(0)}`, color:'var(--accent2)'},
+    {label:'Avg Loss', val:`$${avgLoss.toFixed(0)}`, color:'var(--warn)'},
+    {label:'Max Drawdown', val:`-$${Math.abs(drawdown).toFixed(0)}`, color:'var(--warn)'},
+  ];
+  el.innerHTML = stats.map(s=>`<div class="risk-stat"><div class="risk-label">${s.label}</div><div class="risk-val" style="color:${s.color}">${s.val}</div></div>`).join('');
+}
+
+// ==================== KEYBOARD SHORTCUTS ====================
+(function() {
+  const tabKeys = {'1':'today','2':'charts','3':'calc','4':'journal','5':'paper','6':'news','7':'classroom','8':'learn','9':'library','0':'bot'};
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT') return;
+    if (tabKeys[e.key]) { e.preventDefault(); switchTab(tabKeys[e.key]); }
+    if (e.key==='j') switchTab('journal');
+    if (e.key==='n') switchTab('news');
+    if (e.key==='?') alert('Keyboard shortcuts:\n1=Today  2=Charts  3=Calc  4=Journal\n5=Paper  6=News  7=Classroom\n8=Study  9=Library  0=Bot\nj=Journal  n=News  ?=Help');
+  });
+})();
+
+// ==================== BOT SCAFFOLDER ====================
+const BOT_STATIC = {
+  telegram: `# ============ TELEGRAM ALERT MODULE ============
+import requests
+
+TELEGRAM_TOKEN = "YOUR_BOT_TOKEN"  # from @BotFather
+TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"  # from @userinfobot
+
+def send_telegram(msg: str) -> bool:
+    """Send a Telegram message. Returns True on success."""
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        resp = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "HTML"}, timeout=5)
+        resp.raise_for_status()
+        return True
+    except requests.exceptions.Timeout:
+        print("[TELEGRAM] Timeout — message not delivered")
+    except requests.exceptions.HTTPError as e:
+        print(f"[TELEGRAM] HTTP error: {e}")
+    except Exception as e:
+        print(f"[TELEGRAM] Unexpected error: {e}")
+    return False
+
+# Usage:
+# send_telegram(f"🟢 <b>BUY signal</b>\\nSymbol: AAPL\\nPrice: $182.50\\nReason: RSI crossed below 30")
+# send_telegram(f"🔴 <b>SELL signal</b>\\nSymbol: AAPL\\nP&L: +$142.00\\nExit reason: Trailing stop hit")`,
+
+  errors: `# ============ ERROR HANDLING PATTERNS ============
+import time, logging
+from functools import wraps
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
+                    handlers=[logging.FileHandler("bot.log"), logging.StreamHandler()])
+logger = logging.getLogger("TradeBot")
+
+# --- Retry decorator for transient API failures ---
+def retry(max_attempts=3, delay=2.0, exceptions=(Exception,)):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return fn(*args, **kwargs)
+                except exceptions as e:
+                    logger.warning(f"[RETRY] {fn.__name__} attempt {attempt}/{max_attempts}: {e}")
+                    if attempt < max_attempts:
+                        time.sleep(delay * attempt)
+            raise RuntimeError(f"{fn.__name__} failed after {max_attempts} attempts")
+        return wrapper
+    return decorator
+
+# --- Order validation before submission ---
+def validate_order(symbol, qty, price, account_value, max_risk_pct=0.02):
+    if qty <= 0:
+        raise ValueError(f"Invalid quantity: {qty}")
+    if price <= 0:
+        raise ValueError(f"Invalid price: {price}")
+    risk_amount = qty * price
+    if risk_amount > account_value * max_risk_pct:
+        raise ValueError(f"Order size ${risk_amount:.0f} exceeds {max_risk_pct*100}% risk limit")
+    return True
+
+# --- Safe order placement wrapper ---
+@retry(max_attempts=3, delay=1.5)
+def place_order_safe(api, symbol, qty, side, order_type="market"):
+    logger.info(f"Placing {side} {order_type} order: {qty} {symbol}")
+    try:
+        order = api.submit_order(symbol=symbol, qty=qty, side=side, type=order_type, time_in_force="day")
+        logger.info(f"Order filled: {order.id} @ {order.filled_avg_price}")
+        return order
+    except Exception as e:
+        logger.error(f"Order failed: {e}")
+        raise  # Let retry decorator handle it`,
+
+  slippage: `# ============ TRAILING STOP SLIPPAGE DEBUGGER ============
+# Common causes of trailing stop slippage and how to debug them
+
+"""
+PROBLEM 1: Stop triggers but fill is far from stop price
+---------------------------------------------------------
+Cause: Using market orders on fast-moving stocks.
+Fix:  Use stop-limit orders. Accept partial fills over bad fills.
+
+    # BAD  — market order on stop trigger
+    api.submit_order(symbol=sym, qty=qty, side='sell', type='market')
+
+    # BETTER — stop-limit with small buffer
+    limit_price = round(stop_price * 0.998, 2)  # 0.2% buffer
+    api.submit_order(symbol=sym, qty=qty, side='sell',
+                     type='stop_limit', stop_price=stop_price, limit_price=limit_price)
+
+PROBLEM 2: Trailing stop never adjusts (stays at initial level)
+---------------------------------------------------------------
+Cause: Stop is only set once on entry; highest_price is never updated.
+"""
+
+class TrailingStopTracker:
+    def __init__(self, entry_price: float, trail_pct: float):
+        self.entry_price  = entry_price
+        self.trail_pct    = trail_pct / 100
+        self.highest_price = entry_price
+        self.stop_price   = entry_price * (1 - self.trail_pct)
+        self._log(f"Init: entry={entry_price:.2f} trail={trail_pct}% stop={self.stop_price:.2f}")
+
+    def update(self, current_price: float) -> bool:
+        """Call on every price tick. Returns True if stop is hit."""
+        if current_price > self.highest_price:
+            self.highest_price = current_price
+            new_stop = current_price * (1 - self.trail_pct)
+            if new_stop > self.stop_price:
+                self.stop_price = new_stop
+                self._log(f"Adjusted stop → {self.stop_price:.2f} (price={current_price:.2f})")
+        if current_price <= self.stop_price:
+            self._log(f"STOP HIT at {current_price:.2f} (stop={self.stop_price:.2f})")
+            return True
+        return False
+
+    def _log(self, msg): print(f"[TRAIL] {msg}")
+
+# Usage:
+# tracker = TrailingStopTracker(entry_price=182.50, trail_pct=1.5)
+# while position_open:
+#     price = get_latest_price(symbol)
+#     if tracker.update(price):
+#         close_position(symbol)
+#         send_telegram(f"Trailing stop hit @ {price:.2f}")
+#         break`
+};
+
+let _botCurrentTab = 'scaffold';
+
+function showBotTab(tab, el) {
+  _botCurrentTab = tab;
+  document.querySelectorAll('.bot-tab').forEach(t=>t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (tab === 'scaffold') generateBotCode();
+  else document.getElementById('bot-code-display').textContent = BOT_STATIC[tab] || '';
+}
+
+function copyBotCode() {
+  const code = document.getElementById('bot-code-display').textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    const btn = document.querySelector('.bot-copy-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>btn.textContent='📋 Copy', 2000);
+  });
+}
+
+function generateBotCode() {
+  const exchange = document.getElementById('bot-exchange').value;
+  const ticker   = (document.getElementById('bot-ticker').value||'SPY').trim().toUpperCase();
+  const tf       = document.getElementById('bot-tf').value;
+  const signal   = document.getElementById('bot-signal').value;
+  const tgToken  = document.getElementById('bot-tg-token').value.trim() || 'YOUR_BOT_TOKEN';
+  const tgChat   = document.getElementById('bot-tg-chat').value.trim() || 'YOUR_CHAT_ID';
+  const risk     = document.getElementById('bot-risk').value || '1';
+  const trail    = document.getElementById('bot-trail').value || '1.5';
+
+  const signals = {
+    rsi: `# RSI Signal
+def get_signal(bars):
+    closes = [b.c for b in bars]
+    rsi = compute_rsi(closes, period=14)
+    if rsi[-1] < 30 and rsi[-2] >= 30: return 'buy'   # Oversold cross
+    if rsi[-1] > 70 and rsi[-2] <= 70: return 'sell'  # Overbought cross
+    return None
+
+def compute_rsi(closes, period=14):
+    import numpy as np
+    deltas = np.diff(closes)
+    gains  = np.where(deltas>0, deltas, 0)
+    losses = np.where(deltas<0,-deltas, 0)
+    avg_g  = np.convolve(gains,  np.ones(period)/period, 'valid')
+    avg_l  = np.convolve(losses, np.ones(period)/period, 'valid')
+    rs = avg_g / (avg_l + 1e-10)
+    return 100 - (100 / (1 + rs))`,
+    vwap: `# VWAP Cross Signal
+def get_signal(bars):
+    closes = [b.c for b in bars]
+    vwap   = sum(b.c*b.v for b in bars) / max(sum(b.v for b in bars), 1)
+    if closes[-2] < vwap and closes[-1] >= vwap: return 'buy'   # Cross above
+    if closes[-2] > vwap and closes[-1] <= vwap: return 'sell'  # Cross below
+    return None`,
+    ema: `# EMA 9/20 Cross Signal
+def get_signal(bars):
+    closes = [b.c for b in bars]
+    ema9   = compute_ema(closes, 9)
+    ema20  = compute_ema(closes, 20)
+    if ema9[-2] < ema20[-2] and ema9[-1] >= ema20[-1]: return 'buy'   # Bullish cross
+    if ema9[-2] > ema20[-2] and ema9[-1] <= ema20[-1]: return 'sell'  # Bearish cross
+    return None
+
+def compute_ema(data, period):
+    k = 2/(period+1)
+    ema = [data[0]]
+    for price in data[1:]: ema.append(price*k + ema[-1]*(1-k))
+    return ema`,
+    orb: `# Opening Range Breakout Signal
+ORB_HIGH = None
+ORB_LOW  = None
+
+def get_signal(bars, orb_minutes=15):
+    global ORB_HIGH, ORB_LOW
+    from datetime import datetime, time as dtime
+    market_open = dtime(9, 30)
+    orb_bars = [b for b in bars if datetime.fromisoformat(b.t).time() < dtime(9, 30+orb_minutes)]
+    if not orb_bars: return None
+    ORB_HIGH = max(b.h for b in orb_bars)
+    ORB_LOW  = min(b.l for b in orb_bars)
+    last = bars[-1].c
+    if last > ORB_HIGH * 1.001: return 'buy'   # Breakout above range
+    if last < ORB_LOW  * 0.999: return 'sell'  # Breakdown below range
+    return None`
+  };
+
+  const brokers = {
+    alpaca: `import alpaca_trade_api as tradeapi
+API_KEY    = "YOUR_ALPACA_KEY"
+API_SECRET = "YOUR_ALPACA_SECRET"
+BASE_URL   = "https://paper-api.alpaca.markets"  # Change to live URL when ready
+api = tradeapi.REST(API_KEY, API_SECRET, BASE_URL, api_version='v2')
+
+def get_account(): return api.get_account()
+def get_bars(symbol, tf): return api.get_bars(symbol, tf, limit=100).df
+def get_price(symbol): return float(api.get_latest_trade(symbol).price)
+def submit_order(symbol, qty, side): return api.submit_order(symbol=symbol, qty=qty, side=side, type='market', time_in_force='day')`,
+    ibkr: `from ib_insync import IB, Stock, MarketOrder
+ib = IB()
+ib.connect('127.0.0.1', 7497, clientId=1)  # TWS paper: 7497, live: 7496
+contract = Stock('${ticker}', 'SMART', 'USD')
+ib.qualifyContracts(contract)
+
+def get_price(symbol): return ib.reqTickers(contract)[0].last
+def submit_order(symbol, qty, side):
+    order = MarketOrder(side.upper(), qty)
+    trade = ib.placeOrder(contract, order)
+    ib.sleep(1)
+    return trade`,
+    td: `from td.client import TdAmeritradeClient
+client = TdAmeritradeClient(client_id='YOUR_CLIENT_ID', redirect_uri='https://localhost', credentials_path='creds.json')
+
+def get_price(symbol): return client.get_quotes(instruments=[symbol])[symbol]['lastPrice']
+def submit_order(symbol, qty, side):
+    return client.place_order(account_id='YOUR_ACCOUNT_ID', order={"orderType":"MARKET","session":"NORMAL","duration":"DAY","orderStrategyType":"SINGLE","orderLegCollection":[{"instruction":side.upper(),"quantity":qty,"instrument":{"symbol":symbol,"assetType":"EQUITY"}}]})`,
+    generic: `# Generic broker — replace with your API
+def get_price(symbol: str) -> float:
+    raise NotImplementedError("Implement get_price()")
+
+def submit_order(symbol: str, qty: int, side: str):
+    raise NotImplementedError("Implement submit_order()")
+
+def get_account_value() -> float:
+    raise NotImplementedError("Implement get_account_value()")`
+  };
+
+  const code = `#!/usr/bin/env python3
+"""
+TradeLab Auto-Generated Bot Scaffold
+Symbol:    ${ticker}
+Timeframe: ${tf}
+Signal:    ${signal.toUpperCase()}
+Exchange:  ${exchange}
+Generated: ${new Date().toLocaleDateString()}
+"""
+
+import time, logging
+from datetime import datetime
+
+# ── Logging ────────────────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler("bot.log"), logging.StreamHandler()])
+logger = logging.getLogger("TradeBot")
+
+# ── Config ─────────────────────────────────────────────────────────────
+SYMBOL       = "${ticker}"
+TIMEFRAME    = "${tf}"
+RISK_PCT     = ${risk} / 100      # Max % of account per trade
+TRAIL_PCT    = ${trail} / 100     # Trailing stop %
+TELEGRAM_TOKEN   = "${tgToken}"
+TELEGRAM_CHAT_ID = "${tgChat}"
+
+# ── Broker Setup ───────────────────────────────────────────────────────
+${brokers[exchange]}
+
+# ── Telegram ───────────────────────────────────────────────────────────
+import requests
+def send_telegram(msg):
+    try:
+        requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+            json={"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "HTML"}, timeout=5)
+    except Exception as e:
+        logger.warning(f"Telegram error: {e}")
+
+# ── Signal Logic ───────────────────────────────────────────────────────
+${signals[signal]}
+
+# ── Trailing Stop ──────────────────────────────────────────────────────
+class TrailingStop:
+    def __init__(self, entry, trail_pct):
+        self.highest = entry
+        self.stop    = entry * (1 - trail_pct)
+        self.trail_pct = trail_pct
+    def update(self, price):
+        if price > self.highest:
+            self.highest = price
+            self.stop = price * (1 - self.trail_pct)
+        return price <= self.stop  # True = stop hit
+
+# ── Position State ─────────────────────────────────────────────────────
+position = None   # {'qty': int, 'entry': float, 'trail': TrailingStop}
+
+# ── Main Loop ──────────────────────────────────────────────────────────
+def run():
+    global position
+    logger.info(f"Bot started: {SYMBOL} {TIMEFRAME} | risk={RISK_PCT*100}% trail={TRAIL_PCT*100}%")
+    send_telegram(f"🤖 <b>Bot started</b>\\nSymbol: {SYMBOL} | TF: {TIMEFRAME}")
+
+    while True:
+        try:
+            bars  = get_bars(SYMBOL, TIMEFRAME)
+            price = get_price(SYMBOL)
+
+            if position:
+                # Check trailing stop
+                if position['trail'].update(price):
+                    submit_order(SYMBOL, position['qty'], 'sell')
+                    pnl = (price - position['entry']) * position['qty']
+                    logger.info(f"Trailing stop hit @ {price:.2f} | P&L: ${pnl:.2f}")
+                    send_telegram(f"🔴 <b>Exit</b> {SYMBOL} @ ${price:.2f}\\nP&L: {'+'if pnl>=0 else ''}${pnl:.2f}\\nReason: Trailing stop")
+                    position = None
+            else:
+                # Check entry signal
+                signal_val = get_signal(bars)
+                if signal_val == 'buy':
+                    acct_val = float(get_account().equity)
+                    qty      = max(1, int((acct_val * RISK_PCT) / price))
+                    submit_order(SYMBOL, qty, 'buy')
+                    position = {'qty': qty, 'entry': price, 'trail': TrailingStop(price, TRAIL_PCT)}
+                    logger.info(f"BUY {qty} {SYMBOL} @ {price:.2f}")
+                    send_telegram(f"🟢 <b>Entry</b> {SYMBOL}\\nQty: {qty} @ ${price:.2f}\\nStop: ${position['trail'].stop:.2f}")
+
+        except KeyboardInterrupt:
+            logger.info("Bot stopped by user")
+            send_telegram("⚠️ Bot stopped")
+            break
+        except Exception as e:
+            logger.error(f"Loop error: {e}", exc_info=True)
+            send_telegram(f"⚠️ Bot error: {e}")
+
+        time.sleep(30)  # Poll interval
+
+if __name__ == "__main__":
+    run()
+`;
+  document.getElementById('bot-code-display').textContent = code;
+}
+
 // ==================== SETUP WIN RATE BREAKDOWN ====================
 function renderSetupBreakdown() {
   const wrap = document.getElementById('setup-breakdown-wrap');
@@ -7584,6 +8258,56 @@ async function libLocalOpenDoc(idx) {
     <div class="gate-title">Nikki's TradeLab</div>
     <p class="gate-sub">Sign in to access your trading dashboard.</p>
     <button class="gate-btn" onclick="openAuthModal()">Sign In</button>
+  </div>
+</div>
+
+<!-- ============ BOT SCAFFOLDER ============ -->
+<div class="panel" id="panel-bot">
+  <div class="bot-layout">
+    <div class="bot-config">
+      <div>
+        <div class="bot-section-title">Exchange / Broker</div>
+        <select id="bot-exchange"><option value="alpaca">Alpaca (paper/live)</option><option value="ibkr">Interactive Brokers</option><option value="td">TD Ameritrade / thinkorswim</option><option value="generic">Generic (ccxt / custom)</option></select>
+      </div>
+      <div>
+        <div class="bot-section-title">Asset</div>
+        <input id="bot-ticker" placeholder="e.g. AAPL, SPY, BTC-USD" value="SPY">
+      </div>
+      <div>
+        <div class="bot-section-title">Timeframe</div>
+        <select id="bot-tf"><option value="1Min">1 minute</option><option value="5Min" selected>5 minutes</option><option value="15Min">15 minutes</option><option value="1Hour">1 hour</option><option value="1Day">Daily</option></select>
+      </div>
+      <div>
+        <div class="bot-section-title">Signal Type</div>
+        <select id="bot-signal"><option value="rsi">RSI Overbought/Oversold</option><option value="vwap">VWAP Cross</option><option value="ema">EMA 9/20 Cross</option><option value="orb">Opening Range Breakout</option></select>
+      </div>
+      <div>
+        <div class="bot-section-title">Telegram Alerts</div>
+        <input id="bot-tg-token" placeholder="Bot token (optional)">
+        <input id="bot-tg-chat" placeholder="Chat ID (optional)" style="margin-top:4px">
+      </div>
+      <div>
+        <div class="bot-section-title">Risk per Trade (%)</div>
+        <input id="bot-risk" type="number" value="1" min="0.1" max="10" step="0.1">
+      </div>
+      <div>
+        <div class="bot-section-title">Trailing Stop (%)</div>
+        <input id="bot-trail" type="number" value="1.5" min="0.1" step="0.1">
+      </div>
+      <button class="btn" style="width:100%" onclick="generateBotCode()">⚡ Generate Code</button>
+    </div>
+    <div class="bot-output">
+      <div class="bot-output-tabs">
+        <div class="bot-tab active" onclick="showBotTab('scaffold',this)">🐍 Scaffold</div>
+        <div class="bot-tab" onclick="showBotTab('telegram',this)">📱 Telegram</div>
+        <div class="bot-tab" onclick="showBotTab('errors',this)">🛡 Error Handling</div>
+        <div class="bot-tab" onclick="showBotTab('slippage',this)">🔍 Trailing Stop Debugger</div>
+      </div>
+      <div class="bot-code-wrap">
+        <button class="btn-sm btn-ghost bot-copy-btn" onclick="copyBotCode()">📋 Copy</button>
+        <pre class="bot-code" id="bot-code-display">← Configure your bot on the left, then click Generate Code.</pre>
+      </div>
+    </div>
   </div>
 </div>
 
