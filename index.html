@@ -1055,6 +1055,24 @@
   .lib-video-close { background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; }
   .lib-video-close:hover { color:var(--text); }
   #lib-video-player { width:100%; max-height:70vh; background:#000; display:block; }
+
+  /* ===================== QUICK WIN STYLES ===================== */
+  .today-streak-val { font-size:22px; font-weight:800; }
+  .today-maxloss-val { font-size:22px; font-weight:800; color:var(--accent2); }
+  .maxloss-warning { background:rgba(251,91,82,.12) !important; border-color:rgba(251,91,82,.4) !important; }
+  .maxloss-warning .today-maxloss-val { color:var(--warn) !important; }
+  .rules-list { list-style:none; }
+  .rules-list li { font-size:12px; padding:5px 0; border-bottom:1px solid var(--border); color:var(--text); display:flex; gap:6px; align-items:flex-start; }
+  .rules-list li:last-child { border-bottom:none; }
+  .rules-list li::before { content:'→'; color:var(--accent); flex-shrink:0; }
+  .setup-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .setup-row:last-child { border-bottom:none; }
+  .setup-tag { font-weight:700; color:var(--gold); min-width:80px; }
+  .setup-bar-wrap { flex:1; height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  .setup-bar { height:100%; border-radius:3px; background:var(--accent2); transition:width .3s; }
+  .setup-pct { color:var(--muted); min-width:36px; text-align:right; }
+  .setup-trades { color:var(--muted); min-width:48px; text-align:right; }
+  #setup-breakdown-wrap { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; flex-shrink:0; display:none; }
 </style>
 
 <!-- YouTube IFrame Player API — loaded async, needed for error detection -->
@@ -1556,6 +1574,12 @@
       </div>
 
 
+
+      <!-- Setup Breakdown -->
+      <div id="setup-breakdown-wrap">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">🎯 Win Rate by Setup</div>
+        <div id="setup-breakdown-rows"></div>
+      </div>
 
       <!-- Equity Curve -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;flex-shrink:0;display:none" id="equity-curve-wrap">
@@ -2392,6 +2416,65 @@
             <div class="today-alltime-val" id="today-alltime-val">$0.00</div>
 
             <div class="today-sub" id="today-alltime-sub">0 total trades</div>
+
+          </div>
+
+          <div class="today-card" id="today-streak-card">
+
+            <div class="today-card-label">Streak</div>
+
+            <div class="today-streak-val" id="today-streak-val">—</div>
+
+            <div class="today-sub" id="today-streak-sub">no trades yet</div>
+
+          </div>
+
+          <div class="today-card" id="today-maxloss-card">
+
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div class="today-card-label" style="margin-bottom:0">Daily Max Loss</div>
+              <span style="font-size:10px;color:var(--muted);cursor:pointer" onclick="document.getElementById('maxloss-edit').style.display=document.getElementById('maxloss-edit').style.display==='none'?'flex':'none'">✏️</span>
+            </div>
+
+            <div class="today-maxloss-val" id="today-maxloss-val" style="margin-top:8px">—</div>
+
+            <div class="today-sub" id="today-maxloss-sub">not set</div>
+
+            <div id="maxloss-edit" style="display:none;align-items:center;gap:6px;margin-top:8px">
+              <input type="number" id="maxloss-input" placeholder="e.g. 200" style="width:80px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:12px">
+              <button class="btn-sm" onclick="saveMaxLoss()" style="padding:3px 8px;font-size:11px">Save</button>
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="today-row">
+
+          <div class="today-card" style="flex:2">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div class="today-card-label" style="margin-bottom:0">My Trading Rules</div>
+              <button class="btn-sm btn-ghost" onclick="openRulesEditor()" style="font-size:10px;padding:2px 8px">✏️ Edit</button>
+            </div>
+
+            <ul class="rules-list" id="today-rules-list">
+              <span style="font-size:12px;color:var(--muted)">No rules set — click Edit to add your personal trading rules.</span>
+            </ul>
+
+          </div>
+
+          <div class="today-card" style="flex:1">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div class="today-card-label" style="margin-bottom:0">Data</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <button class="btn-sm btn-ghost" onclick="backupData()" style="width:100%;text-align:left">⬇ Backup all data</button>
+              <label class="btn-sm btn-ghost" style="width:100%;text-align:left;cursor:pointer;display:block">⬆ Restore from file<input type="file" accept=".json" id="restore-file-input" style="display:none" onchange="restoreData(this)"></label>
+            </div>
 
           </div>
 
@@ -3649,6 +3732,7 @@ function renderTradeLog() {
 function renderJournalStats() {
 
   renderEquityCurve();
+  renderSetupBreakdown();
 
   if (!trades.length) return;
 
@@ -3781,6 +3865,42 @@ function renderToday() {
   }
 
 
+
+  // Win/loss streak
+  const streak = computeStreak();
+  const streakEl = document.getElementById('today-streak-val');
+  const streakCard = document.getElementById('today-streak-card');
+  if (streak.count === 0) {
+    streakEl.textContent = '—';
+    streakEl.style.color = 'var(--text)';
+    document.getElementById('today-streak-sub').textContent = 'no trades yet';
+  } else {
+    const isWin = streak.type === 'win';
+    streakEl.textContent = (isWin ? '🔥 ' : '❄️ ') + streak.count + (streak.count === 1 ? ' trade' : ' trades');
+    streakEl.style.color = isWin ? 'var(--accent2)' : 'var(--warn)';
+    document.getElementById('today-streak-sub').textContent = isWin ? 'winning streak' : 'losing streak';
+  }
+
+  // Daily max loss
+  const maxLoss = parseFloat(localStorage.getItem('td_max_loss') || '0');
+  const mlCard = document.getElementById('today-maxloss-card');
+  const mlVal = document.getElementById('today-maxloss-val');
+  const mlSub = document.getElementById('today-maxloss-sub');
+  if (!maxLoss) {
+    mlVal.textContent = 'Not set';
+    mlVal.style.color = 'var(--muted)';
+    mlSub.textContent = 'click ✏️ to set limit';
+    mlCard.classList.remove('maxloss-warning');
+  } else {
+    const remaining = maxLoss + todayPnl; // todayPnl is negative when losing
+    mlVal.textContent = todayPnl < 0 ? `-$${Math.abs(todayPnl).toFixed(2)} / $${maxLoss.toFixed(0)}` : `$${maxLoss.toFixed(0)} limit`;
+    mlVal.style.color = remaining <= 0 ? 'var(--warn)' : remaining < maxLoss * 0.5 ? 'var(--gold)' : 'var(--accent2)';
+    mlSub.textContent = remaining <= 0 ? '🛑 STOP TRADING — limit hit' : `$${remaining.toFixed(2)} remaining today`;
+    mlCard.classList.toggle('maxloss-warning', remaining <= 0);
+  }
+
+  // Trading rules
+  renderRules();
 
   // Recent trades (last 5)
 
@@ -6787,6 +6907,113 @@ function exportTradesCSV() {
   a.click();
 }
 
+// ==================== SETUP WIN RATE BREAKDOWN ====================
+function renderSetupBreakdown() {
+  const wrap = document.getElementById('setup-breakdown-wrap');
+  const tagged = trades.filter(t => t.setup && t.setup.trim());
+  if (!tagged.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const map = {};
+  tagged.forEach(t => {
+    const key = t.setup.trim();
+    if (!map[key]) map[key] = { wins:0, total:0 };
+    map[key].total++;
+    if (parseFloat(t.pnl) > 0) map[key].wins++;
+  });
+  const rows = Object.entries(map).sort((a,b) => b[1].total - a[1].total);
+  document.getElementById('setup-breakdown-rows').innerHTML = rows.map(([setup, s]) => {
+    const pct = Math.round((s.wins / s.total) * 100);
+    return `<div class="setup-row">
+      <span class="setup-tag">${setup}</span>
+      <div class="setup-bar-wrap"><div class="setup-bar" style="width:${pct}%"></div></div>
+      <span class="setup-pct">${pct}%</span>
+      <span class="setup-trades">${s.wins}W/${s.total - s.wins}L</span>
+    </div>`;
+  }).join('');
+}
+
+// ==================== WIN/LOSS STREAK ====================
+function computeStreak() {
+  if (!trades.length) return { count: 0, type: null };
+  const sorted = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const first = parseFloat(sorted[0].pnl) >= 0 ? 'win' : 'loss';
+  let count = 0;
+  for (const t of sorted) {
+    const isWin = parseFloat(t.pnl) >= 0;
+    if ((first === 'win') === isWin) count++;
+    else break;
+  }
+  return { count, type: first };
+}
+
+// ==================== DAILY MAX LOSS ====================
+function saveMaxLoss() {
+  const val = parseFloat(document.getElementById('maxloss-input').value);
+  if (!isNaN(val) && val > 0) {
+    localStorage.setItem('td_max_loss', val.toString());
+    document.getElementById('maxloss-edit').style.display = 'none';
+    renderToday();
+  }
+}
+
+// ==================== TRADING RULES ====================
+function openRulesEditor() {
+  const rules = localStorage.getItem('td_rules') || '';
+  document.getElementById('rules-textarea').value = rules;
+  const modal = document.getElementById('rules-modal');
+  modal.style.display = 'flex';
+}
+function closeRulesEditor() {
+  document.getElementById('rules-modal').style.display = 'none';
+}
+function saveRules() {
+  localStorage.setItem('td_rules', document.getElementById('rules-textarea').value.trim());
+  closeRulesEditor();
+  renderRules();
+}
+function renderRules() {
+  const el = document.getElementById('today-rules-list');
+  if (!el) return;
+  const raw = localStorage.getItem('td_rules') || '';
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) {
+    el.innerHTML = '<span style="font-size:12px;color:var(--muted)">No rules set — click Edit to add your personal trading rules.</span>';
+  } else {
+    el.innerHTML = '<ul class="rules-list">' + lines.map(l => `<li>${l}</li>`).join('') + '</ul>';
+  }
+}
+
+// ==================== BACKUP & RESTORE ====================
+function backupData() {
+  const backup = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('td_')) backup[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tradelab-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function restoreData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm(`Restore ${Object.keys(data).length} data keys? This will overwrite existing data.`)) return;
+      Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+      alert('Restore complete. Reloading...');
+      location.reload();
+    } catch { alert('Invalid backup file.'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
 // ==================== FLASHCARDS ====================
 const FC_CARDS = [
   // Glossary
@@ -7357,6 +7584,19 @@ async function libLocalOpenDoc(idx) {
     <div class="gate-title">Nikki's TradeLab</div>
     <p class="gate-sub">Sign in to access your trading dashboard.</p>
     <button class="gate-btn" onclick="openAuthModal()">Sign In</button>
+  </div>
+</div>
+
+<!-- Rules Editor Modal -->
+<div id="rules-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:min(480px,92vw);max-height:80vh;display:flex;flex-direction:column;gap:12px">
+    <div style="font-size:15px;font-weight:700;color:var(--text)">📋 My Trading Rules</div>
+    <div style="font-size:12px;color:var(--muted)">One rule per line. These show on your Today dashboard as daily reminders.</div>
+    <textarea id="rules-textarea" style="flex:1;min-height:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:13px;line-height:1.6;resize:vertical;font-family:var(--font)" placeholder="e.g.&#10;No trading in the first 15 minutes&#10;Always set stop loss before entering&#10;Max 3 trades per day&#10;Never average down on a loser&#10;Stop trading after 2 consecutive losses"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-sm btn-ghost" onclick="closeRulesEditor()">Cancel</button>
+      <button class="btn-sm" onclick="saveRules()">Save Rules</button>
+    </div>
   </div>
 </div>
 </body>
