@@ -1533,7 +1533,7 @@
 
 
       <!-- Equity Curve -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;flex-shrink:0" id="equity-curve-wrap" style="display:none">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;flex-shrink:0;display:none" id="equity-curve-wrap">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">📈 Equity Curve</div>
           <button class="btn-sm btn-ghost" onclick="exportTradesCSV()" title="Download trade log as CSV">⬇ Export CSV</button>
@@ -3493,13 +3493,15 @@ function logTrade() {
 
 
 
-  // Clear form
+  // Clear form and repopulate date
 
   ['tj-date','tj-symbol','tj-entry','tj-exit','tj-shares','tj-setup','tj-notes'].forEach(id => {
 
     document.getElementById(id).value = '';
 
   });
+
+  document.getElementById('tj-date').value = new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
 
 }
 
@@ -6652,7 +6654,7 @@ function renderEquityCurve() {
   const data = [];
   sorted.forEach(t => {
     const entry = parseFloat(t.entry)||0, exit = parseFloat(t.exit)||0, shares = parseFloat(t.shares)||0;
-    const pnl = t.direction === 'Short' ? (entry - exit)*shares : (exit - entry)*shares;
+    const pnl = t.dir === 'Short' ? (entry - exit)*shares : (exit - entry)*shares;
     cum += pnl;
     labels.push(t.date || '');
     data.push(parseFloat(cum.toFixed(2)));
@@ -6694,9 +6696,9 @@ function exportTradesCSV() {
   const headers = ['Date','Symbol','Direction','Entry','Exit','Shares','P&L','P&L%','Setup','Notes'];
   const rows = trades.map(t => {
     const entry = parseFloat(t.entry)||0, exit = parseFloat(t.exit)||0, shares = parseFloat(t.shares)||0;
-    const pnl = t.direction === 'Short' ? (entry - exit)*shares : (exit - entry)*shares;
+    const pnl = t.dir === 'Short' ? (entry - exit)*shares : (exit - entry)*shares;
     const pnlPct = entry ? ((pnl / (entry*shares))*100).toFixed(2) : '0';
-    return [t.date, t.symbol, t.direction, entry, exit, shares, pnl.toFixed(2), pnlPct, t.setup||'', t.notes||''].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    return [t.date, t.symbol, t.dir, entry, exit, shares, pnl.toFixed(2), pnlPct, t.setup||'', t.notes||''].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
   });
   const csv = [headers.join(','), ...rows].join('\n');
   const a = document.createElement('a');
