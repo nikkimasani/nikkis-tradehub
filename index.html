@@ -708,6 +708,10 @@
   .cls-apikey-row .btn { padding:5px 10px; font-size:11px; }
 
   .cls-apikey-hint { font-size:10px; color:var(--muted); }
+  .cls-key-status { flex-basis:100%; font-size:11px; color:var(--muted); min-height:15px; }
+  .cls-key-status.ok { color:var(--accent2); }
+  .cls-key-status.warn { color:var(--gold); }
+  .cls-key-status.error { color:var(--warn); }
 
 
 
@@ -2827,8 +2831,10 @@
           <input type="password" id="yt-api-key-inp" placeholder="AIza…" title="Free key from console.cloud.google.com — enable YouTube Data API v3">
 
           <button class="btn" onclick="saveYtKey()">Save &amp; Load</button>
+          <button class="btn btn-ghost" onclick="testYtKey()">Test Key</button>
 
           <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" class="cls-apikey-hint">Get free key ↗</a>
+          <div class="cls-key-status" id="yt-key-status"></div>
 
         </div>
 
@@ -5608,12 +5614,62 @@ function saveYtKey() {
 
   const key = document.getElementById('yt-api-key-inp').value.trim();
 
-  if (!key) return;
+  if (!key) {
+    setYtKeyStatus('Paste your YouTube Data API key first.', 'warn');
+    return;
+  }
 
   dbSet('yt_key', key);
 
+  setYtKeyStatus('Key saved. Loading playlist videos...', 'warn');
+
   loadPlaylistVideos(clsCurrentPl);
 
+}
+
+function setYtKeyStatus(message, type = '') {
+  const el = document.getElementById('yt-key-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = 'cls-key-status' + (type ? ' ' + type : '');
+}
+
+function describeYouTubeApiError(error) {
+  const reason = error?.errors?.[0]?.reason || '';
+  const message = error?.message || 'The YouTube API request failed.';
+  if (reason === 'keyInvalid' || reason === 'badRequest') {
+    return 'This API key was rejected. Copy the key again from Google Cloud Credentials and make sure there are no extra spaces.';
+  }
+  if (reason === 'accessNotConfigured') {
+    return 'The key is valid, but YouTube Data API v3 is not enabled for its Google Cloud project.';
+  }
+  if (reason === 'forbidden' || reason === 'ipRefererBlocked' || reason === 'refererNotAllowedMapError') {
+    return 'The key is restricted to a different website. Add https://nikkis-tradehub.vercel.app/* to its website restrictions, or remove the website restriction.';
+  }
+  if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
+    return 'The key works, but its YouTube API quota is used up for today.';
+  }
+  return message;
+}
+
+async function testYtKey() {
+  const key = document.getElementById('yt-api-key-inp').value.trim();
+  if (!key) {
+    setYtKeyStatus('Paste your YouTube Data API key first.', 'warn');
+    return;
+  }
+  setYtKeyStatus('Testing YouTube key...', 'warn');
+  try {
+    const plId = YT_PLAYLISTS[clsCurrentPl].id;
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=id&maxResults=1&playlistId=${plId}&key=${key}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(describeYouTubeApiError(data.error));
+    dbSet('yt_key', key);
+    setYtKeyStatus('YouTube key works. Loading playlist videos...', 'ok');
+    await loadPlaylistVideos(clsCurrentPl);
+  } catch (e) {
+    setYtKeyStatus('YouTube key test failed: ' + e.message, 'error');
+  }
 }
 
 
@@ -5726,7 +5782,7 @@ async function loadPlaylistVideos(pl) {
 
         const err = await res.json();
 
-        throw new Error(err.error?.message || 'API error');
+        throw new Error(describeYouTubeApiError(err.error) || 'API error');
 
       }
 
@@ -5747,10 +5803,12 @@ async function loadPlaylistVideos(pl) {
     clsVideos[pl] = videos;
 
     document.getElementById(`cls-${pl}-meta`).textContent = `${videos.length} videos`;
+    setYtKeyStatus(`YouTube key works. Loaded ${videos.length} videos.`, 'ok');
 
     renderVideoList(pl, videos);
 
   } catch(e) {
+    setYtKeyStatus('YouTube key error: ' + e.message, 'error');
 
     scroll.innerHTML = `<div class="cls-vlist-nokey" style="color:var(--warn)">
 
