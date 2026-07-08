@@ -6052,27 +6052,7 @@ function playVideo(videoId, title) {
   document.getElementById('cls-now-playing').style.display = '';
 
   document.getElementById('cls-now-title').textContent = title;
-
-
-
-  if (_ytApiReady) {
-
-    _doPlay(videoId, title);
-
-  } else {
-
-    // API still loading — queue it
-
-    _pendingPlay = { videoId, title };
-
-    setTimeout(() => {
-      if (_pendingPlay && _pendingPlay.videoId === videoId && !_ytApiReady) {
-        mountDirectPlayer(videoId);
-        _pendingPlay = null;
-      }
-    }, 1800);
-
-  }
+  mountDirectPlayer(videoId);
 
 }
 
