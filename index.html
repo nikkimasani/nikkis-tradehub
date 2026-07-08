@@ -5910,6 +5910,7 @@ let _pendingPlay = null; // { videoId, title } queued before API loaded
 
 window.onYouTubeIframeAPIReady = function() {
 
+  console.info('[classroom] YouTube iframe API ready');
   _ytApiReady = true;
 
   if (_pendingPlay) {
@@ -5925,6 +5926,8 @@ window.onYouTubeIframeAPIReady = function() {
 
 
 function _doPlay(videoId, title) {
+
+  console.info('[classroom] init player', { videoId, title, ytReady: !!window.YT, playerReady: !!(window.YT && YT.Player) });
 
   document.getElementById('cls-pick-prompt').style.display = 'none';
 
@@ -5970,7 +5973,14 @@ function _doPlay(videoId, title) {
         }
       }
     });
-  } catch (e) {}
+  } catch (e) {
+    console.error('[classroom] YT.Player init failed', { videoId, title, error: e });
+    showEmbedError(videoId, title);
+    const errSub = document.querySelector('#cls-embed-error .err-sub');
+    if (errSub) {
+      errSub.textContent = 'Player init failed: ' + (e && e.message ? e.message : String(e));
+    }
+  }
 
 }
 
@@ -5997,6 +6007,8 @@ function showEmbedError(videoId, title) {
 // ---- Play a video ----
 
 function playVideo(videoId, title) {
+
+  console.info('[classroom] playVideo', { videoId, title, ytApiReady: _ytApiReady });
 
   // Highlight selected item in list
 
