@@ -5911,6 +5911,9 @@ let _pendingPlay = null; // { videoId, title } queued before API loaded
 
 
 function mountDirectPlayer(videoId) {
+  document.getElementById('cls-pick-prompt').style.display = 'none';
+  document.getElementById('cls-embed-error').style.display = 'none';
+
   const wrap = document.getElementById('cls-player-wrap');
   let playerDiv = document.getElementById('cls-yt-player');
 
