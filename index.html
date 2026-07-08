@@ -5908,6 +5908,8 @@ let _ytApiReady = false;
 
 let _pendingPlay = null; // { videoId, title } queued before API loaded
 
+let _playerLoadTimer = null;
+
 
 
 function mountDirectPlayer(videoId, title = '') {
@@ -5929,6 +5931,11 @@ function mountDirectPlayer(videoId, title = '') {
     _ytPlayer = null;
   }
 
+  if (_playerLoadTimer) {
+    clearTimeout(_playerLoadTimer);
+    _playerLoadTimer = null;
+  }
+
   playerDiv.innerHTML = '';
   const iframe = document.createElement('iframe');
   iframe.title = title || 'YouTube video player';
@@ -5937,7 +5944,24 @@ function mountDirectPlayer(videoId, title = '') {
   iframe.setAttribute('allowfullscreen', 'true');
   iframe.referrerPolicy = 'strict-origin-when-cross-origin';
   iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+  iframe.addEventListener('load', () => {
+    if (_playerLoadTimer) {
+      clearTimeout(_playerLoadTimer);
+      _playerLoadTimer = null;
+    }
+  });
   playerDiv.appendChild(iframe);
+
+  _playerLoadTimer = setTimeout(() => {
+    const activeIframe = document.querySelector('#cls-yt-player iframe');
+    if (activeIframe && activeIframe.src.includes(`/embed/${videoId}`)) {
+      showEmbedError(videoId, title);
+      const errSub = document.querySelector('#cls-embed-error .err-sub');
+      if (errSub) {
+        errSub.textContent = 'Your browser or an extension may be blocking YouTube embeds. Open the video on YouTube instead.';
+      }
+    }
+  }, 4000);
 }
 
 
