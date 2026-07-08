@@ -4161,6 +4161,16 @@ function renderToday() {
 }
 
 renderToday();
+
+const PM_ITEMS = [
+  'Checked SPY/QQQ pre-market direction',
+  'Reviewed overnight news & catalysts',
+  'Built watchlist for the day',
+  'Checked economic calendar (Fed, CPI, earnings)',
+  'Set max daily loss limit',
+  'Reviewed yesterday\'s journal entry',
+];
+
 pmRender();
 renderRiskDashboard();
 renderRecapList();
@@ -7932,16 +7942,6 @@ function fcSetCat(cat) {
   document.querySelectorAll('.fc-cat-pill').forEach(p => p.classList.toggle('active', p.dataset.cat === cat));
   fcRender();
 }
-
-// ==================== PRE-MARKET CHECKLIST ====================
-const PM_ITEMS = [
-  'Checked SPY/QQQ pre-market direction',
-  'Reviewed overnight news & catalysts',
-  'Built watchlist for the day',
-  'Checked economic calendar (Fed, CPI, earnings)',
-  'Set max daily loss limit',
-  'Reviewed yesterday\'s journal entry',
-];
 
 function pmTodayKey() {
   return 'td_pm_' + new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
