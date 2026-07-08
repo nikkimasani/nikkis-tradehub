@@ -5932,7 +5932,7 @@ function mountDirectPlayer(videoId, title = '') {
   playerDiv.innerHTML = '';
   const iframe = document.createElement('iframe');
   iframe.title = title || 'YouTube video player';
-  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
+  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`;
   iframe.allow = 'autoplay; encrypted-media; picture-in-picture; web-share';
   iframe.setAttribute('allowfullscreen', 'true');
   iframe.referrerPolicy = 'strict-origin-when-cross-origin';
