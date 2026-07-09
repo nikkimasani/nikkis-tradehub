@@ -4777,6 +4777,62 @@ function saveAnthropicKey() {
 
 
 
+// Call Claude — direct with a personal key, or via the server proxy when signed in.
+
+// Returns a fetch Response, or null when neither a key nor a session is available.
+
+async function callClaude(payload) {
+
+  const key = localStorage.getItem('td_anthropic_key') || localStorage.getItem('td_claude_key');
+
+  if (key) {
+
+    return fetch('https://api.anthropic.com/v1/messages', {
+
+      method: 'POST',
+
+      headers: {
+
+        'content-type': 'application/json',
+
+        'x-api-key': key,
+
+        'anthropic-version': '2023-06-01',
+
+        'anthropic-dangerous-allow-browser': 'true',
+
+      },
+
+      body: JSON.stringify(payload),
+
+    });
+
+  }
+
+  const { data: { session } } = await _supabase.auth.getSession();
+
+  if (!session) return null;
+
+  return fetch('/api/ai', {
+
+    method: 'POST',
+
+    headers: {
+
+      'content-type': 'application/json',
+
+      'Authorization': 'Bearer ' + session.access_token,
+
+    },
+
+    body: JSON.stringify(payload),
+
+  });
+
+}
+
+
+
 // Store headlines for AI brief
 
 let _latestHighlights = [];
@@ -4799,9 +4855,9 @@ async function generateAIBrief() {
 
 
 
-  if (!key) {
+  if (!key && !currentUser) {
 
-    // Rule-based fallback brief
+    // Rule-based fallback brief — no key and not signed in
 
     content.innerHTML = generateRuleBasedBrief();
 
@@ -4853,33 +4909,25 @@ Respond in exactly this JSON format (no markdown, just raw JSON):
 
   try {
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await callClaude({
 
-      method: 'POST',
+      model: 'claude-haiku-4-5-20251001',
 
-      headers: {
+      max_tokens: 400,
 
-        'x-api-key': key,
-
-        'anthropic-version': '2023-06-01',
-
-        'anthropic-dangerous-allow-browser': 'true',
-
-        'content-type': 'application/json'
-
-      },
-
-      body: JSON.stringify({
-
-        model: 'claude-haiku-4-5-20251001',
-
-        max_tokens: 400,
-
-        messages: [{ role: 'user', content: prompt }]
-
-      })
+      messages: [{ role: 'user', content: prompt }]
 
     });
+
+
+
+    if (!res) {
+
+      content.innerHTML = generateRuleBasedBrief();
+
+      return;
+
+    }
 
 
 
@@ -6920,11 +6968,11 @@ async function generateAIQuiz() {
 
 
 
-  if (!key) {
+  if (!key && !currentUser) {
 
     status.style.color = 'var(--warn)';
 
-    status.textContent = '⚠ No Claude API key found. Add it in the Live News tab (Settings) first.';
+    status.textContent = '⚠ Sign in, or add a Claude API key in the Live News tab, to generate AI quizzes.';
 
     return;
 
@@ -6988,35 +7036,19 @@ Rules:
 
 
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await callClaude({
 
-      method: 'POST',
+      model: 'claude-haiku-4-5-20251001',
 
-      headers: {
+      max_tokens: 2000,
 
-        'Content-Type': 'application/json',
-
-        'x-api-key': key,
-
-        'anthropic-version': '2023-06-01',
-
-        'anthropic-dangerous-allow-browser': 'true',
-
-      },
-
-      body: JSON.stringify({
-
-        model: 'claude-haiku-4-5-20251001',
-
-        max_tokens: 2000,
-
-        messages: [{ role: 'user', content: prompt }],
-
-      }),
+      messages: [{ role: 'user', content: prompt }],
 
     });
 
 
+
+    if (!res) throw new Error('Sign in or add an API key first');
 
     if (!res.ok) throw new Error(`API error ${res.status}`);
 
