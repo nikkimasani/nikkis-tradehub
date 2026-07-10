@@ -43,8 +43,8 @@
 <script>
   (async function startMicrosoftAuth() {
     const status = document.getElementById('status');
-    let clientId = localStorage.getItem('td_lib_client_id') || '95da8234-cfc9-4303-884c-819479bd9b52';
-    if (clientId === '0f962b69-dd93-4e33-8a69-3c5ec1576ebf') clientId = '95da8234-cfc9-4303-884c-819479bd9b52';
+    let clientId = localStorage.getItem('td_lib_client_id') || '3303bf34-4367-47a8-b925-7d9189d81d94';
+    if (clientId === '0f962b69-dd93-4e33-8a69-3c5ec1576ebf' || clientId === '95da8234-cfc9-4303-884c-819479bd9b52') clientId = '3303bf34-4367-47a8-b925-7d9189d81d94';
     if (!window.msal?.PublicClientApplication) {
       status.textContent = 'Microsoft sign-in library failed to load. Go back and reload the app.';
       return;

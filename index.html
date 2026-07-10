@@ -9355,10 +9355,10 @@ function pmToggle(i) {
 
 // ==================== LIBRARY ====================
 const LIB_SHARE_URL = 'https://1drv.ms/f/c/12dc5ef91903e837/IgCCKK1tkem2QbcoV5ntkDbgAZQ1k16_-nvAAReqseWzpW4?e=6vZ4Yf';
-const LIB_DEFAULT_CLIENT_ID = '95da8234-cfc9-4303-884c-819479bd9b52';
+const LIB_DEFAULT_CLIENT_ID = '3303bf34-4367-47a8-b925-7d9189d81d94';
 let LIB_CLIENT_ID = localStorage.getItem('td_lib_client_id') || LIB_DEFAULT_CLIENT_ID;
-// Migrate away from the old app registration that never had this site registered
-if (LIB_CLIENT_ID === '0f962b69-dd93-4e33-8a69-3c5ec1576ebf') {
+// Migrate devices still holding a retired app registration in localStorage
+if (LIB_CLIENT_ID === '0f962b69-dd93-4e33-8a69-3c5ec1576ebf' || LIB_CLIENT_ID === '95da8234-cfc9-4303-884c-819479bd9b52') {
   LIB_CLIENT_ID = LIB_DEFAULT_CLIENT_ID;
   localStorage.setItem('td_lib_client_id', LIB_DEFAULT_CLIENT_ID);
 }
