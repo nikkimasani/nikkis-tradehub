@@ -2,53 +2,142 @@
 
 ## Purpose
 
-A personal trading education and practice dashboard. Everything in one HTML file — no backend dependency. Helps users build trading knowledge, track paper trades, journal real trades, and stay on top of market news.
+TradeLab is a personal trading dashboard for learning, practice, and execution review. It is designed to help a solo trader move through the full workflow:
+
+- plan the day
+- manage a watchlist
+- scan for setups
+- size trades
+- simulate portfolio decisions
+- journal real and paper trades
+- review news, study material, and personal library content
 
 ## Users
 
-Primary user (owner) signs in via Supabase auth for cross-device sync. Guest users can access the app without sign-in using localStorage only.
+- Primary user:
+  owner account signed in with Supabase for cross-device sync
+- Guest user:
+  local-only mode using `localStorage`
 
-## Features
+## Product Principles
 
-| Tab | Description |
+- Single-file frontend:
+  core product logic remains inline in `index.html`
+- No required frontend build step
+- Optional auth and sync:
+  app must still work when not signed in
+- User-provided keys only:
+  Finnhub, Anthropic, and YouTube keys are entered in the UI
+- Mobile, tablet, and desktop support:
+  the shell must remain usable across all major device sizes
+
+## Core Areas
+
+| Area | Purpose |
 |---|---|
-| Start Here | Orientation guide for first-time use |
-| Live Charts | Embedded TradingView chart with symbol search |
-| Position Calc | Risk-based position size calculator (entry price, stop level, account %) |
-| RSI Simulator | Interactive RSI concept explainer and simulator |
-| Trade Journal | Log real P&L trades with running totals |
-| Paper Challenge | 90-day paper trading tracker with virtual bankroll |
-| News | Live headlines via Finnhub API, filterable by watchlist symbols |
-| Classroom | Embedded YouTube playlist player for trading courses |
-| Quiz | AI-generated trading knowledge questions via Anthropic API |
-| Knowledge Base | Curated articles and concept explainers |
-| Flashcards | Spaced-repetition practice on weak concepts |
-| Resources | Curated external links |
-| Library | Trading video and document library — two connection modes: (1) Sign in with Microsoft to auto-connect a personal OneDrive folder via Graph API; (2) Download the public shared folder and connect it locally via the File System Access API (Chrome/Edge) |
+| `Today` | Daily command center with market status, rules, watchlist, scanner, portfolio simulator, earnings, risk dashboard, and recent trades |
+| `Charts` | Live chart workflow and related chart tools |
+| `Position Calc` | Risk-based position sizing, reward/risk, and rule checks |
+| `P&L Journal` | Real trade logging, review, filtering, and analytics |
+| `Paper Trade` | 90-day challenge tracker and progress calendar |
+| `Live News` | Finnhub news feed plus AI-generated summary/brief workflows |
+| `Classroom` | Video-based learning and study checklist |
+| `Study` | Reference material, quizzes, and flashcards |
+| `Library` | OneDrive/local folder trading content access |
+| `Bot` | Trading code scaffolds and automation helpers |
 
-## Library — Connection Modes
+## Feature Requirements
 
-### Mode 1: Microsoft Sign-In (OneDrive)
-- Uses MSAL.js (`@azure/msal-browser`) with a registered Azure SPA app
-- Authority: `https://login.microsoftonline.com/consumers` (personal Microsoft accounts)
-- Scopes: `Files.Read`, `User.Read`
-- Reads files from a shared OneDrive folder via Microsoft Graph API
-- Supports folder navigation, inline video playback, and document opening
+### Responsive Shell
 
-### Mode 2: Local Folder (offline)
-- User downloads the public OneDrive share, saves locally
-- Connects via `showDirectoryPicker()` (File System Access API)
-- Supports folder navigation, inline video playback via `URL.createObjectURL()`
-- Chrome and Edge only; reconnect required after page reload
+- Desktop:
+  left sidebar can stay docked
+- Tablet/mobile:
+  left sidebar must become a closable drawer
+- Main content must stay navigable without the sidebar blocking the viewport
+
+### PWA
+
+- App must expose a manifest
+- App must register a service worker
+- App should be installable on supported browsers
+- Offline support is shell-first, not full feature parity:
+  live APIs and CDN-hosted dependencies may still require network
+
+### Watchlist
+
+- Add/remove symbols
+- Save optional notes per symbol
+- Reuse watchlist in charts, earnings, strategy scanner, and dashboard widgets
+
+### Strategy Scanner
+
+- Save one or more watchlist setup rules
+- Rule fields:
+  symbol, setup, bias, trigger, stop, target, relative volume, optional manual price
+- Scanner output should classify setups into actionable states such as:
+  triggered, near trigger, extended, invalidated, or missing price
+- If Finnhub quote data is available, prefer live quote-assisted evaluation
+- If live quotes are unavailable, support manual-price fallback
+
+### Portfolio Simulator
+
+- Start with a virtual cash balance
+- Support buy/sell order simulation
+- Track open positions, average cost, recent orders, realized P&L, and unrealized P&L
+- Keep it local and lightweight:
+  no broker integration required
+
+### Position Calculator
+
+- Use account size, risk percent, entry, stop, and optional target
+- Compute shares, position value, and reward/risk
+- Show rule-based guidance for novice risk control
+
+### Trade Journal
+
+- Log symbol, direction, entry, exit, shares, setup, and notes
+- Show equity curve and trade analytics
+- Feed dashboard summaries and risk metrics
+
+### Paper Trading Challenge
+
+- Track 90-day progress
+- Log paper P&L, trade count, notes, and rules-followed checklist
+- Surface progress in both the paper-trade area and sidebar/dashboard summaries
+
+### News and AI Brief
+
+- Pull market news from Finnhub
+- Allow user to summarize or interpret news with AI when API keys are configured
+
+### Classroom / Study / Library
+
+- Classroom:
+  load trading playlists from YouTube API
+- Study:
+  reference material, quiz mode, and flashcards
+- Library:
+  Microsoft sign-in and local-folder access paths
 
 ## Technical Constraints
 
-- Single HTML file — all CSS and JS must remain inline in `index.html`
-- No build step, no npm, no framework
-- API keys (Finnhub, Anthropic, YouTube) entered by the user in the UI — never hardcoded
-- Supabase is optional; the app must work fully with localStorage as fallback
+- Frontend stays mostly in `index.html`
+- No framework migration unless explicitly requested
+- API keys must never be hardcoded
+- Supabase remains optional
+- Deployment target is Vercel
 
 ## Deployment
 
-Vercel (auto-deploys from `main`). Static HTML — no build command needed.  
-Live at https://nikkis-tradehub.vercel.app
+- Production URL:
+  https://tradehub-sooty.vercel.app
+- Linked Vercel project:
+  `tradehub`
+
+## Supporting Files
+
+- `manifest.webmanifest`: install metadata
+- `sw.js`: cache and shell behavior
+- `icons/app-icon.svg` and `icons/app-icon-maskable.svg`: install icons
+- `api/ai.js`: backend helper for AI requests

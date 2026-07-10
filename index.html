@@ -8,6 +8,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<meta name="theme-color" content="#0a0e17">
+
+<link rel="manifest" href="manifest.webmanifest?v=2026-07-09-3">
+
+<link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+
 <title>Nikki's TradeLab ✨</title>
 
 <style>
@@ -82,7 +88,7 @@
 
   /* LAYOUT */
 
-  .main { flex:1; display:flex; overflow:hidden; }
+  .main { flex:1; display:flex; overflow:hidden; position:relative; }
 
   .sidebar { width:240px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto; transition:width .2s; }
 
@@ -91,6 +97,10 @@
   .sidebar-toggle { background:var(--surface); border:none; border-right:1px solid var(--border); color:var(--muted); cursor:pointer; padding:0 5px; font-size:10px; flex-shrink:0; display:flex; align-items:center; transition:color .15s; }
 
   .sidebar-toggle:hover { color:var(--accent); background:var(--surface2); }
+
+  .sidebar-backdrop { position:absolute; inset:0; background:rgba(3,8,18,.62); opacity:0; pointer-events:none; transition:opacity .2s; z-index:30; }
+
+  .sidebar-backdrop.visible { opacity:1; pointer-events:auto; }
 
   .sidebar-section { padding:14px; border-bottom:1px solid var(--border); }
 
@@ -651,6 +661,46 @@
 
   .today-recent-table tr:last-child td { border-bottom:none; }
 
+  .strategy-form, .portfolio-order-row, .portfolio-summary { display:grid; gap:8px; }
+
+  .strategy-form { grid-template-columns:repeat(4, minmax(0, 1fr)); margin-bottom:12px; }
+
+  .portfolio-summary { grid-template-columns:repeat(4, minmax(0, 1fr)); margin-bottom:12px; }
+
+  .portfolio-order-row { grid-template-columns:1.1fr .9fr .8fr 1fr auto; margin-bottom:12px; align-items:end; }
+
+  .mini-card { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+
+  .mini-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.7px; }
+
+  .mini-value { font-size:18px; font-weight:800; margin-top:4px; }
+
+  .strategy-alert-list, .portfolio-orders-list, .portfolio-positions-list { display:flex; flex-direction:column; gap:8px; }
+
+  .strategy-alert, .portfolio-row { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+
+  .strategy-alert-top, .portfolio-row-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+
+  .strategy-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+
+  .status-pill { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 8px; font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; }
+
+  .status-ready { background:rgba(74,222,128,.14); color:var(--accent2); border:1px solid rgba(74,222,128,.28); }
+
+  .status-near { background:rgba(251,191,36,.14); color:var(--gold); border:1px solid rgba(251,191,36,.28); }
+
+  .status-wait { background:rgba(96,180,255,.12); color:var(--accent); border:1px solid rgba(96,180,255,.22); }
+
+  .status-risk { background:rgba(251,91,82,.14); color:var(--warn); border:1px solid rgba(251,91,82,.25); }
+
+  .strategy-meta, .portfolio-meta { font-size:11px; color:var(--muted); line-height:1.5; }
+
+  .strategy-actions-head, .portfolio-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+
+  .scanner-note { font-size:11px; color:var(--muted); margin-top:6px; }
+
+  .portfolio-empty, .scanner-empty { font-size:12px; color:var(--muted); padding:4px 0; }
+
 
 
 
@@ -1165,14 +1215,22 @@
     nav { gap:6px; padding:8px 10px; }
     .tab { min-height:36px; display:flex; align-items:center; padding:7px 12px; }
     .main { flex-direction:column; }
-    .sidebar { width:100%; max-height:190px; border-right:none; border-bottom:1px solid var(--border); }
-    .sidebar.collapsed { width:100%; max-height:0; border-bottom:none; }
-    .sidebar-toggle { min-height:28px; justify-content:center; border-right:none; border-bottom:1px solid var(--border); }
+    .sidebar {
+      position:absolute; top:0; left:0; bottom:0; width:min(82vw,320px); max-width:320px; max-height:none;
+      border-right:1px solid var(--border); border-bottom:none; z-index:40; box-shadow:0 18px 40px rgba(0,0,0,.45);
+      transform:translateX(-100%); transition:transform .22s ease; overscroll-behavior:contain;
+    }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar.collapsed { width:min(82vw,320px); border-right:1px solid var(--border); transform:translateX(-100%); }
+    .sidebar-toggle {
+      position:absolute; top:12px; left:12px; min-height:40px; justify-content:center; border:1px solid var(--border);
+      border-radius:999px; padding:0 12px; z-index:45; background:rgba(17,24,39,.96); box-shadow:0 8px 24px rgba(0,0,0,.32);
+    }
     .content { flex:1 1 auto; }
     #gate { inset:110px 0 0 0; padding:16px; }
     .gate-box { padding:24px 16px; }
     #panel-calc, #panel-journal, #panel-paper, #panel-resources, #panel-library, #panel-today { padding:14px; }
-    .calc-grid, .paper-header, .recap-fields, .ai-brief-sections, .glossary-grid { grid-template-columns:1fr; }
+    .calc-grid, .paper-header, .recap-fields, .ai-brief-sections, .glossary-grid, .strategy-form, .portfolio-summary, .portfolio-order-row { grid-template-columns:1fr; }
     .news-api-bar, .news-highlights-zone, .news-brief-header, .news-brief-body, .news-feed-zone { padding-left:14px; padding-right:14px; }
     .highlights-grid, .learn-grid, .res-grid { grid-template-columns:1fr; }
     .paper-form-row, .chart-toolbar, .chart-notes-bar, .journal-filter-bar, .news-api-bar, .quiz-ai-row, .fc-actions, .fc-nav { align-items:stretch; }
@@ -1315,6 +1373,8 @@
 
 </nav>
 
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
 
 
 <div class="main">
@@ -1385,7 +1445,7 @@
 
   </aside>
 
-  <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
+  <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">◀</button>
 
 
 
@@ -2095,6 +2155,8 @@
 
         <button class="study-subtab" onclick="switchStudyTab('flashcards')">🃏 Flashcards</button>
 
+        <button class="study-subtab" onclick="switchStudyTab('guide')">📘 Guide</button>
+
       </div>
 
       <div id="study-reference-view" style="overflow-y:auto;padding:20px;flex:1">
@@ -2313,7 +2375,7 @@
 
           <h2>🧠 Trading Knowledge Quiz</h2>
 
-          <p>Test yourself on terms, chart patterns, risk rules, order types, scenarios &amp; psychology. <strong>50+ questions</strong> built-in — plus AI-generated questions using your Claude API key.</p>
+          <p>Test yourself on terms, chart patterns, risk rules, order types, scenarios &amp; psychology. <strong>100+ questions</strong> built-in — plus AI-generated questions using your Claude API key.</p>
 
         </div>
 
@@ -2558,6 +2620,93 @@
         <div class="fc-progress" id="fc-progress"></div>
       </div><!-- /study-flashcard-view -->
 
+      <!-- GUIDE VIEW: how to use TradeLab's tools -->
+      <div id="study-guide-view" style="display:none;overflow-y:auto;padding:20px;flex:1">
+
+        <div class="section-header">📘 How to Use TradeLab</div>
+        <p style="color:var(--muted);font-size:13px;max-width:640px;margin:0 0 16px">A quick tour of every tool in the app — including the newest additions. Everything saves automatically to this browser (and syncs through Supabase when you're signed in).</p>
+
+        <div class="learn-grid">
+
+          <div class="learn-card">
+            <h3>🔎 Strategy Scanner <span class="badge badge-green">New</span></h3>
+            <p>Found on the <strong>Today</strong> tab. Save a rule-based setup for any watchlist symbol (entry trigger, invalidation, target), then hit <strong>Scan</strong>.</p>
+            <ul>
+              <li>Each symbol is flagged <strong>Triggered</strong>, <strong>Near trigger</strong>, <strong>Extended</strong>, or <strong>Invalidated</strong></li>
+              <li>Add symbols to your watchlist first — the scanner reads from it</li>
+              <li>Live quote checks use your Finnhub key (Settings)</li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>💼 Portfolio Simulator <span class="badge badge-green">New</span></h3>
+            <p>Also on the <strong>Today</strong> tab. A local practice portfolio: starting cash, buy/sell orders, open positions, realized and unrealized P&amp;L.</p>
+            <ul>
+              <li>Place simulated orders to test ideas without risking money</li>
+              <li>Quotes refresh from Finnhub to mark positions to market</li>
+              <li>Reset any time — it's all local, nothing real is traded</li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>🤖 Bot Scaffolder <span class="badge badge-green">New</span></h3>
+            <p>The <strong>Bot</strong> tab generates starter code for trading automation — pick a strategy, broker/API style, and options, then copy the generated scaffold.</p>
+            <ul>
+              <li>Output is a starting point, not a finished bot — review before running</li>
+              <li>Paper-trade any bot before ever going live <span class="badge badge-red">Critical</span></li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>🧠 Quiz &amp; Flashcards</h3>
+            <p>Right here in <strong>Study</strong>. Quick Quiz = 10 random questions; Timed Exam = 25 with a 30s clock; <strong>Start Category Quiz</strong> runs every question in the selected topic (all 100+ if "All Topics").</p>
+            <ul>
+              <li><strong>Weak Spots</strong> re-drills the categories you score lowest on</li>
+              <li>Flashcards: tap a card to flip, mark it known to track progress</li>
+              <li>With a Claude API key set, generate fresh AI questions on any topic</li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>📁 Trading Library</h3>
+            <p>The <strong>Library</strong> tab connects your study materials two ways:</p>
+            <ul>
+              <li><strong>Microsoft sign-in</strong> browses your OneDrive directly (requires the app's redirect URI to be registered — see the note on the Library page if sign-in errors)</li>
+              <li><strong>Connect Local Folder</strong> browses a folder on this computer — works offline, Chrome/Edge only</li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>📊 Today Dashboard</h3>
+            <p>Your pre-market home base: watchlist with notes, earnings calendar, win/loss streak, daily max-loss limit, trading rules checklist, and the pre-market routine checklist.</p>
+            <ul>
+              <li>Set a <strong>daily max loss</strong> — the card turns red when you hit it</li>
+              <li>Keep the watchlist current; the scanner and simulator build on it</li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>📓 P&amp;L Journal &amp; Paper Trade</h3>
+            <p><strong>P&amp;L Journal</strong> logs real trades and charts your equity curve and stats. <strong>Paper Trade</strong> is a structured 90-day challenge tracker.</p>
+            <ul>
+              <li>Log every trade — the streak and analytics feed off the journal</li>
+              <li>Journal data also powers the Weak Spots quiz insights</li>
+            </ul>
+          </div>
+
+          <div class="learn-card">
+            <h3>🔑 API Keys (Settings)</h3>
+            <p>Three optional keys unlock live features — each stored only in your browser:</p>
+            <ul>
+              <li><strong>Finnhub</strong> — live news, earnings, scanner/simulator quotes</li>
+              <li><strong>Anthropic (Claude)</strong> — AI news briefs and AI quiz questions</li>
+              <li><strong>YouTube</strong> — Classroom playlist loading</li>
+            </ul>
+          </div>
+
+        </div>
+      </div><!-- /study-guide-view -->
+
     </div><!-- /panel-learn -->
 
 
@@ -2749,6 +2898,62 @@
         </div>
 
         <div class="today-row">
+          <div class="today-card" style="flex:1.2">
+            <div class="strategy-actions-head">
+              <div class="today-card-label" style="margin-bottom:0">⚙️ Strategy Scanner</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-sm btn-ghost" onclick="prefillScannerFromWatchlist()">Use Watchlist</button>
+                <button class="btn-sm" onclick="runStrategyScan()">Run Scan</button>
+              </div>
+            </div>
+            <div class="strategy-form">
+              <div class="field-group"><label>Symbol</label><select id="scanner-symbol"></select></div>
+              <div class="field-group"><label>Setup</label><select id="scanner-setup"><option value="breakout">Breakout</option><option value="pullback">Pullback</option><option value="reversal">Reversal</option><option value="momentum">Momentum</option></select></div>
+              <div class="field-group"><label>Bias</label><select id="scanner-bias"><option value="long">Long</option><option value="short">Short</option></select></div>
+              <div class="field-group"><label>Relative Volume</label><input type="number" id="scanner-rvol" step="0.1" placeholder="e.g. 2.5"></div>
+              <div class="field-group"><label>Trigger</label><input type="number" id="scanner-trigger" step="0.01" placeholder="Entry trigger"></div>
+              <div class="field-group"><label>Stop</label><input type="number" id="scanner-stop" step="0.01" placeholder="Invalidation"></div>
+              <div class="field-group"><label>Target</label><input type="number" id="scanner-target" step="0.01" placeholder="Profit target"></div>
+              <div class="field-group"><label>Manual Last Price</label><input type="number" id="scanner-manual-price" step="0.01" placeholder="Used if no quote API"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="btn-sm" onclick="saveScannerRule()">Save Rule</button>
+              <button class="btn-sm btn-ghost" onclick="clearScannerRule()">Clear Rule</button>
+            </div>
+            <div id="scanner-last-run" class="scanner-note">No scan run yet.</div>
+            <div id="strategy-alerts" class="strategy-alert-list" style="margin-top:10px"></div>
+          </div>
+          <div class="today-card" style="flex:1">
+            <div class="portfolio-head">
+              <div class="today-card-label" style="margin-bottom:0">💼 Portfolio Simulator</div>
+              <button class="btn-sm btn-ghost" onclick="resetPortfolioSim()">Reset</button>
+            </div>
+            <div class="portfolio-summary">
+              <div class="mini-card"><div class="mini-label">Cash</div><div class="mini-value" id="ps-cash">$0</div></div>
+              <div class="mini-card"><div class="mini-label">Market Value</div><div class="mini-value" id="ps-market">$0</div></div>
+              <div class="mini-card"><div class="mini-label">Unrealized</div><div class="mini-value" id="ps-unrealized">$0</div></div>
+              <div class="mini-card"><div class="mini-label">Realized</div><div class="mini-value" id="ps-realized">$0</div></div>
+            </div>
+            <div class="portfolio-order-row">
+              <div class="field-group"><label>Symbol</label><input type="text" id="ps-symbol" placeholder="AAPL"></div>
+              <div class="field-group"><label>Side</label><select id="ps-side"><option value="buy">Buy</option><option value="sell">Sell</option></select></div>
+              <div class="field-group"><label>Qty</label><input type="number" id="ps-qty" min="1" step="1" placeholder="100"></div>
+              <div class="field-group"><label>Price</label><input type="number" id="ps-price" step="0.01" placeholder="Fill price"></div>
+              <button class="btn-sm" onclick="submitPortfolioOrder()">Place</button>
+            </div>
+            <div class="scanner-note" id="ps-note">Starting cash defaults to $10,000. Orders are local simulator entries.</div>
+            <div style="margin-top:12px">
+              <div class="today-card-label" style="margin-bottom:8px">Open Positions</div>
+              <div id="portfolio-positions" class="portfolio-positions-list"></div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="today-card-label" style="margin-bottom:8px">Recent Orders</div>
+              <div id="portfolio-orders" class="portfolio-orders-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="today-row">
 
           <div class="today-card" style="flex:1">
 
@@ -2818,7 +3023,7 @@
 
         <!-- OneNote pop-out -->
 
-        <button class="cls-onenote-btn" onclick="window.open('https://1drv.ms/o/c/12dc5ef91903e837/IgA36AMZ-V7cIIASagAAAAAAAT_Od4z2v90tfxVGKrvLCg8?e=3fR69m','onenote','width=900,height=900,left='+(screen.width-920)+',top=40')">📓 My Notes</button>
+        <button class="cls-onenote-btn" onclick="openClassroomNotes()">📓 My Notes</button>
 
 
 
@@ -3050,6 +3255,20 @@
     <div id="lib-signin-error" style="color:var(--warn);font-size:13px;display:none"></div>
     <div style="font-size:12px;color:var(--muted);margin-top:-8px">Uses your Microsoft account (OneDrive) — no password stored here.</div>
 
+    <details style="max-width:440px;width:100%;text-align:left;font-size:12px;color:var(--muted)">
+      <summary style="cursor:pointer;color:var(--accent)">Seeing "invalid_request: redirect_uri is not valid"?</summary>
+      <div style="margin-top:8px;line-height:1.7;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        Microsoft rejects the sign-in because this site's address isn't registered on the app yet. One-time fix (done by the app owner):
+        <ol style="margin:8px 0 0;padding-left:18px">
+          <li>Go to <a href="https://portal.azure.com" target="_blank" style="color:var(--accent)">portal.azure.com</a> → <strong>App registrations</strong> → the TradeLab library app.</li>
+          <li>Open <strong>Authentication</strong>.</li>
+          <li>Under <strong>Single-page application</strong>, add redirect URI:<br><code style="background:var(--bg);padding:1px 6px;border-radius:4px;font-size:11px">https://tradehub-sooty.vercel.app/</code></li>
+          <li>Save, then retry sign-in here.</li>
+        </ol>
+        No Azure access? Use <strong>Connect Local Folder</strong> below instead — the shared OneDrive folder link still works for downloading.
+      </div>
+    </details>
+
     <!-- Divider -->
     <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:420px">
       <div style="flex:1;height:1px;background:var(--border)"></div>
@@ -3122,7 +3341,9 @@ const SUPABASE_URL = 'https://bazjlrualnmbanmhiuau.supabase.co';
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhempscnVhbG5tYmFubWhpdWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTkyNDQsImV4cCI6MjA5MTA5NTI0NH0.R8f7yEhxVHIcjwSS3H1b3tLj5jpuRP1pR4jiyVFEbmE';
 
-const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _supabase = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const SUPABASE_ENABLED = !!_supabase;
+const LIB_REDIRECT_URI = 'https://tradehub-sooty.vercel.app/';
 
 
 
@@ -3142,9 +3363,139 @@ let clsCurrentPl = 'pl1';
 
 let clsVideos = { pl1: null, pl2: null }; // null = not loaded yet
 
+function openClassroomNotes() {
+  const url = 'https://1drv.ms/o/c/12dc5ef91903e837/IgA36AMZ-V7cIIASagAAAAAAAT_Od4z2v90tfxVGKrvLCg8?e=3fR69m';
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer external';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+const TRADEHUB_SHARED_BRIDGE_ORIGIN = 'https://toolbox-nine-eta.vercel.app';
+const TRADEHUB_SHARED_NAMESPACE = 'tradehub';
+const TRADEHUB_SHARED_PREFIXES = ['td_'];
+let _tradehubSharedFramePromise = null;
+let _tradehubSharedPending = new Map();
+let _tradehubSharedPatched = false;
+
+function shouldSyncTradehubSharedKey(key) {
+  if (!key) return false;
+  return TRADEHUB_SHARED_PREFIXES.some(prefix => key.startsWith(prefix));
+}
+
+function collectTradehubSharedEntries() {
+  const entries = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!shouldSyncTradehubSharedKey(key)) continue;
+    entries[key] = localStorage.getItem(key);
+  }
+  return entries;
+}
+
+function ensureTradehubSharedFrame() {
+  if (_tradehubSharedFramePromise) return _tradehubSharedFramePromise;
+  _tradehubSharedFramePromise = new Promise((resolve, reject) => {
+    const frame = document.createElement('iframe');
+    frame.src = TRADEHUB_SHARED_BRIDGE_ORIGIN + '/bridge.html';
+    frame.style.display = 'none';
+    frame.onload = () => resolve(frame);
+    frame.onerror = () => reject(new Error('Shared settings bridge failed to load'));
+    document.body.appendChild(frame);
+  });
+  return _tradehubSharedFramePromise;
+}
+
+window.addEventListener('message', event => {
+  if (event.origin !== TRADEHUB_SHARED_BRIDGE_ORIGIN) return;
+  const data = event.data;
+  if (!data || data.source !== 'nikki-shared-settings-bridge' || !data.requestId) return;
+  const pending = _tradehubSharedPending.get(data.requestId);
+  if (!pending) return;
+  _tradehubSharedPending.delete(data.requestId);
+  if (data.ok) pending.resolve(data.payload || {});
+  else pending.reject(new Error(data.error || 'Shared settings request failed'));
+});
+
+async function requestTradehubShared(action, payload = {}) {
+  const frame = await ensureTradehubSharedFrame();
+  return new Promise((resolve, reject) => {
+    const requestId = 'tradehub-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    _tradehubSharedPending.set(requestId, { resolve, reject });
+    frame.contentWindow.postMessage({
+      source: 'nikki-shared-settings-client',
+      requestId,
+      namespace: TRADEHUB_SHARED_NAMESPACE,
+      action,
+      payload,
+    }, TRADEHUB_SHARED_BRIDGE_ORIGIN);
+    setTimeout(() => {
+      if (!_tradehubSharedPending.has(requestId)) return;
+      _tradehubSharedPending.delete(requestId);
+      reject(new Error('Shared settings bridge timeout'));
+    }, 4000);
+  });
+}
+
+async function syncTradehubSharedSettingsOnBoot() {
+  try {
+    const remote = (await requestTradehubShared('getNamespace')).entries || {};
+    const local = collectTradehubSharedEntries();
+    for (const [key, value] of Object.entries(remote)) {
+      if (!shouldSyncTradehubSharedKey(key)) continue;
+      if (localStorage.getItem(key) === null && value !== null) localStorage.setItem(key, value);
+    }
+    const missingRemote = {};
+    for (const [key, value] of Object.entries(local)) {
+      if (!(key in remote)) missingRemote[key] = value;
+    }
+    if (Object.keys(missingRemote).length) {
+      requestTradehubShared('mergeNamespace', { entries: missingRemote }).catch(() => {});
+    }
+  } catch {}
+}
+
+function installTradehubSharedStoragePatch() {
+  if (_tradehubSharedPatched) return;
+  _tradehubSharedPatched = true;
+  const originalSetItem = Storage.prototype.setItem;
+  const originalRemoveItem = Storage.prototype.removeItem;
+  const originalClear = Storage.prototype.clear;
+
+  Storage.prototype.setItem = function(key, value) {
+    originalSetItem.call(this, key, value);
+    if (this === localStorage && shouldSyncTradehubSharedKey(String(key))) {
+      requestTradehubShared('mergeNamespace', { entries: { [key]: String(value) } }).catch(() => {});
+    }
+  };
+
+  Storage.prototype.removeItem = function(key) {
+    originalRemoveItem.call(this, key);
+    if (this === localStorage && shouldSyncTradehubSharedKey(String(key))) {
+      requestTradehubShared('removeNamespaceKeys', { keys: [String(key)] }).catch(() => {});
+    }
+  };
+
+  Storage.prototype.clear = function() {
+    const keysToRemove = this === localStorage ? Object.keys(collectTradehubSharedEntries()) : [];
+    originalClear.call(this);
+    if (this === localStorage && keysToRemove.length) {
+      requestTradehubShared('removeNamespaceKeys', { keys: keysToRemove }).catch(() => {});
+    }
+  };
+}
+
 
 
 async function initAuth() {
+  if (!SUPABASE_ENABLED) {
+    currentUser = null;
+    renderAuthState();
+    return;
+  }
 
   const { data: { session } } = await _supabase.auth.getSession();
 
@@ -3188,7 +3539,7 @@ function renderAuthState() {
 
     document.getElementById('auth-area-logged-in').style.display = 'none';
 
-    if (gate) gate.style.display = 'flex';
+    if (gate) gate.style.display = 'none';
 
     if (adminLink) adminLink.style.display = 'none';
 
@@ -3251,6 +3602,11 @@ function toggleAuthMode() {
 
 
 async function submitAuth() {
+  if (!SUPABASE_ENABLED) {
+    const errEl = document.getElementById('auth-error');
+    errEl.textContent = 'Cloud sign-in is temporarily unavailable. You can still use the app in guest mode.';
+    return;
+  }
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   const errEl = document.getElementById('auth-error');
@@ -3317,13 +3673,23 @@ async function submitAuth() {
 
 async function doSignOut() {
 
+  if (!SUPABASE_ENABLED) {
+    currentUser = null;
+    renderAuthState();
+    return;
+  }
+
   await _supabase.auth.signOut();
 
 }
 
 
 
-initAuth();
+(async () => {
+  await syncTradehubSharedSettingsOnBoot();
+  installTradehubSharedStoragePatch();
+  initAuth();
+})();
 
 
 
@@ -3333,7 +3699,7 @@ async function dbSet(key, value) {
 
   localStorage.setItem('td_' + key, JSON.stringify(value));
 
-  if (!currentUser) return;
+  if (!currentUser || !SUPABASE_ENABLED) return;
 
   await _supabase.from('user_data').upsert({ user_id: currentUser.id, key, value }, { onConflict: 'user_id,key' });
 
@@ -3345,7 +3711,7 @@ async function dbGet(key) {
 
   const local = localStorage.getItem('td_' + key);
 
-  if (!currentUser) return local ? JSON.parse(local) : null;
+  if (!currentUser || !SUPABASE_ENABLED) return local ? JSON.parse(local) : null;
 
   const { data } = await _supabase.from('user_data').select('value').eq('user_id', currentUser.id).eq('key', key).maybeSingle();
 
@@ -3359,7 +3725,7 @@ async function dbRemove(key) {
 
   localStorage.removeItem('td_' + key);
 
-  if (!currentUser) return;
+  if (!currentUser || !SUPABASE_ENABLED) return;
 
   await _supabase.from('user_data').delete().eq('user_id', currentUser.id).eq('key', key);
 
@@ -3369,7 +3735,7 @@ async function dbRemove(key) {
 
 async function dbInit() {
 
-  if (!currentUser) return;
+  if (!currentUser || !SUPABASE_ENABLED) return;
 
   const { data } = await _supabase.from('user_data').select('key,value').eq('user_id', currentUser.id);
 
@@ -3404,6 +3770,8 @@ function switchTab(name) {
 
   if (panel) panel.classList.add('active');
 
+  if (isMobileSidebar()) closeSidebar();
+
   if (name === 'today') { renderToday(); pmRender(); }
 
 }
@@ -3432,6 +3800,8 @@ function switchStudyTab(view) {
 
   document.getElementById('study-flashcard-view').style.display = view === 'flashcards' ? 'block' : 'none';
 
+  document.getElementById('study-guide-view').style.display = view === 'guide' ? 'block' : 'none';
+
   document.querySelectorAll('.study-subtab').forEach(btn => {
 
     btn.classList.toggle('active', btn.getAttribute('onclick').includes(view));
@@ -3446,17 +3816,145 @@ function switchStudyTab(view) {
 
 // ==================== SIDEBAR TOGGLE ====================
 
-function toggleSidebar() {
+const mobileSidebarQuery = window.matchMedia('(max-width: 820px)');
+
+function isMobileSidebar() {
+
+  return mobileSidebarQuery.matches;
+
+}
+
+function syncSidebarUI() {
 
   const sb = document.getElementById('sidebar');
 
   const btn = document.getElementById('sidebar-toggle');
 
-  sb.classList.toggle('collapsed');
+  const backdrop = document.getElementById('sidebar-backdrop');
 
-  btn.textContent = sb.classList.contains('collapsed') ? '▶' : '◀';
+  const open = isMobileSidebar() ? sb.classList.contains('open') : !sb.classList.contains('collapsed');
+
+  backdrop.classList.toggle('visible', isMobileSidebar() && open);
+
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+  btn.textContent = isMobileSidebar() ? (open ? '✕ Close' : '☰ Menu') : (sb.classList.contains('collapsed') ? '▶' : '◀');
 
 }
+
+function openSidebar() {
+
+  const sb = document.getElementById('sidebar');
+
+  if (isMobileSidebar()) {
+
+    sb.classList.remove('collapsed');
+
+    sb.classList.add('open');
+
+  } else {
+
+    sb.classList.remove('collapsed');
+
+  }
+
+  syncSidebarUI();
+
+}
+
+function closeSidebar() {
+
+  const sb = document.getElementById('sidebar');
+
+  if (isMobileSidebar()) {
+
+    sb.classList.remove('open');
+
+    sb.classList.add('collapsed');
+
+  } else {
+
+    sb.classList.add('collapsed');
+
+  }
+
+  syncSidebarUI();
+
+}
+
+function toggleSidebar() {
+
+  const sb = document.getElementById('sidebar');
+
+  if (isMobileSidebar()) {
+
+    sb.classList.contains('open') ? closeSidebar() : openSidebar();
+
+  } else {
+
+    sb.classList.toggle('collapsed');
+
+    syncSidebarUI();
+
+  }
+
+}
+
+function initSidebarShell() {
+
+  const sb = document.getElementById('sidebar');
+
+  if (isMobileSidebar()) {
+
+    sb.classList.add('collapsed');
+
+    sb.classList.remove('open');
+
+  } else {
+
+    sb.classList.remove('collapsed');
+
+  }
+
+  sb.addEventListener('click', (event) => {
+
+    if (!isMobileSidebar()) return;
+
+    if (event.target.closest('.quick-link, .watchlist-item')) closeSidebar();
+
+  });
+
+  document.addEventListener('keydown', (event) => {
+
+    if (event.key === 'Escape' && isMobileSidebar()) closeSidebar();
+
+  });
+
+  mobileSidebarQuery.addEventListener('change', () => {
+
+    if (isMobileSidebar()) {
+
+      sb.classList.add('collapsed');
+
+      sb.classList.remove('open');
+
+    } else {
+
+      sb.classList.remove('collapsed');
+
+      sb.classList.remove('open');
+
+    }
+
+    syncSidebarUI();
+
+  });
+
+  syncSidebarUI();
+
+}
+
+initSidebarShell();
 
 
 
@@ -3680,11 +4178,11 @@ function addTicker() {
 
   watchlist.push({sym});
 
-  saveWatchlist(); renderWatchlistWithNotes(); inp.value='';
+  saveWatchlist(); renderWatchlistWithNotes(); renderScannerSymbolOptions(); renderToday(); inp.value='';
 
 }
 
-function removeTicker(i) { watchlist.splice(i,1); saveWatchlist(); renderWatchlistWithNotes(); }
+function removeTicker(i) { watchlist.splice(i,1); saveWatchlist(); renderWatchlistWithNotes(); renderScannerSymbolOptions(); renderToday(); }
 
 function loadSymbol(sym) {
 
@@ -3701,6 +4199,8 @@ function loadSymbol(sym) {
 document.getElementById('ticker-input').addEventListener('keydown', e=>{ if(e.key==='Enter') addTicker(); });
 
 renderWatchlistWithNotes();
+renderScannerSymbolOptions();
+document.getElementById('scanner-symbol')?.addEventListener('change', e => loadScannerRule(e.target.value));
 
 
 
@@ -4058,9 +4558,9 @@ function renderToday() {
 
   const paper = JSON.parse(localStorage.getItem('td_paper') || '{}');
 
-  const days = paper.days || [];
+  const days = Object.values(paper.days || {});
 
-  const completed = days.filter(d => d && d !== 'future').length;
+  const completed = days.filter(Boolean).length;
 
   document.getElementById('today-challenge-val').textContent = completed ? `Day ${completed} of 90` : 'Not started';
 
@@ -4089,6 +4589,11 @@ function renderToday() {
       </div>`).join('');
 
   }
+
+  renderScannerSymbolOptions();
+  renderStrategyAlerts();
+  renderPortfolioSim();
+  refreshPortfolioQuotes(false).then(renderPortfolioSim);
 
 
 
@@ -4160,7 +4665,8 @@ function renderToday() {
 
 }
 
-renderToday();
+// Initial renderToday() happens at the end of this script block —
+// it depends on strategyScanner/portfolio state declared further down.
 
 const PM_ITEMS = [
   'Checked SPY/QQQ pre-market direction',
@@ -5716,7 +6222,7 @@ function describeYouTubeApiError(error) {
     return 'The key is valid, but YouTube Data API v3 is not enabled for its Google Cloud project.';
   }
   if (reason === 'forbidden' || reason === 'ipRefererBlocked' || reason === 'refererNotAllowedMapError') {
-    return 'The key is restricted to a different website. Add https://nikkis-tradehub.vercel.app/* to its website restrictions, or remove the website restriction.';
+    return 'The key is restricted to a different website. Add https://tradehub-sooty.vercel.app/* to its website restrictions, or remove the website restriction.';
   }
   if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
     return 'The key works, but its YouTube API quota is used up for today.';
@@ -6042,6 +6548,23 @@ function _doPlay(videoId, title) {
 
 }
 
+function renderDirectVideoEmbed(videoId, title) {
+  document.getElementById('cls-pick-prompt').style.display = 'none';
+  document.getElementById('cls-embed-error').style.display = 'none';
+  const wrap = document.getElementById('cls-player-wrap');
+  let playerDiv = document.getElementById('cls-yt-player');
+  if (playerDiv) playerDiv.remove();
+  const iframe = document.createElement('iframe');
+  iframe.id = 'cls-yt-player';
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+  iframe.allowFullscreen = true;
+  iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1`;
+  iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+  wrap.appendChild(iframe);
+  console.info('[classroom] direct iframe fallback', { videoId, title });
+}
+
 
 
 function showEmbedError(videoId, title) {
@@ -6088,6 +6611,11 @@ function playVideo(videoId, title) {
   } else {
     // API still loading — queue it
     _pendingPlay = { videoId, title };
+    setTimeout(() => {
+      if (_pendingPlay && _pendingPlay.videoId === videoId && !_ytApiReady) {
+        renderDirectVideoEmbed(videoId, title);
+      }
+    }, 1800);
   }
 
 }
@@ -6450,6 +6978,57 @@ const QUIZ_BANK = [
 
 ];
 
+QUIZ_BANK.push(
+  { id:56, cat:'terms', q:'What does "relative volume" (RVOL) measure?', opts:['How many shares a company issued','Current volume compared with its normal volume for that time of day','The distance between bid and ask','The percentage of float traded short'], ans:1, exp:'Relative volume compares current trading volume to the stock\'s typical volume. An RVOL of 3 means the stock is trading three times its usual pace. High RVOL often confirms that a move has real attention and can continue.' },
+  { id:57, cat:'terms', q:'What is a "halt" in trading?', opts:['A broker fee','A temporary pause in trading by the exchange','A type of stop order','A forced account closure'], ans:1, exp:'A halt is a temporary pause in trading, usually triggered by volatility, pending news, or regulatory reasons. During a halt you cannot enter or exit, which is why low-float halt-prone names require smaller size.' },
+  { id:58, cat:'terms', q:'What does "liquidity" mean in a stock?', opts:['How much cash the company has','How easily shares can be bought or sold without moving price too much','The amount of dividend yield','How many insiders own shares'], ans:1, exp:'Liquidity is the ease of entering and exiting a position. Highly liquid stocks have tighter spreads, deeper order books, and smaller slippage. Illiquid stocks can trap traders in fast moves.' },
+  { id:59, cat:'terms', q:'What is a "watchlist" for a day trader?', opts:['A list of stocks under SEC investigation','A focused list of symbols being monitored for setups','A list of stocks you already own only','A broker-generated tax report'], ans:1, exp:'A watchlist is a short list of symbols you plan to monitor because they have catalysts, strong technical levels, or unusual volume. Good traders narrow focus before the market opens rather than scanning everything live.' },
+  { id:60, cat:'terms', q:'What does "rotation" mean in the market?', opts:['Changing chart timeframes','Money moving from one sector/theme into another','A stock trading sideways','A broker rotating your positions automatically'], ans:1, exp:'Sector rotation means traders are moving capital from one group of stocks into another, such as tech into energy. Recognizing rotation helps you focus on where momentum and volume are flowing today.' },
+  { id:61, cat:'patterns', q:'What is a "flat-top breakout"?', opts:['A stock with no volatility','Repeated tests of a resistance level while lows keep rising underneath it','A bearish continuation pattern','A gap-down reversal setup'], ans:1, exp:'A flat-top breakout forms when price repeatedly hits the same resistance level while buyers keep stepping up at higher lows. It can lead to a squeeze through resistance if volume comes in.' },
+  { id:62, cat:'patterns', q:'What does a series of higher lows into resistance usually suggest?', opts:['Buyers are becoming more aggressive','The stock is guaranteed to fail','Volume no longer matters','The spread is widening'], ans:0, exp:'Higher lows into resistance often show that buyers are willing to pay more on each pullback. That pressure can lead to a breakout if resistance eventually gives way.' },
+  { id:63, cat:'patterns', q:'Why is a retest after a breakout important?', opts:['It proves the broker filled you correctly','It can confirm former resistance is turning into support','It means the breakout failed automatically','It only matters on weekly charts'], ans:1, exp:'A retest helps confirm whether the breakout is real. If price breaks above a key level, pulls back, then holds that area as support, it often gives a cleaner and lower-risk entry.' },
+  { id:64, cat:'patterns', q:'What is a "failed breakout"?', opts:['A breakout that never reaches all-time highs','Price briefly breaks a level, then falls back under it and traps buyers','A stock that breaks out in pre-market only','Any breakout on the one-minute chart'], ans:1, exp:'A failed breakout happens when price clears a level but cannot hold above it. That failure can trap late buyers and sometimes creates a strong reversal in the opposite direction.' },
+  { id:65, cat:'patterns', q:'What makes a wedge break more trustworthy?', opts:['No volume','Volume expansion on the break','A very wide bid-ask spread','The stock being under $1'], ans:1, exp:'A wedge or triangle break is more reliable when it comes with expanding volume. Volume shows participation and conviction instead of just a random drift out of the pattern.' },
+  { id:66, cat:'risk', q:'Why should stop placement come before share sizing?', opts:['Because brokers require it','Because your stop distance determines how many shares fit your risk budget','Because it increases win rate automatically','Because it removes slippage'], ans:1, exp:'If you decide share size first, you end up risking a random amount. Proper process is setup first, invalidation level second, then share size based on your allowed dollar risk.' },
+  { id:67, cat:'risk', q:'What is the danger of averaging down on a losing day trade?', opts:['It usually improves risk/reward','It increases exposure to a setup that is already proving you wrong','It lowers your cost basis with no downside','It helps avoid the PDT rule'], ans:1, exp:'Averaging down often turns a manageable loss into a damaging one. If the original thesis is failing, adding size usually compounds the mistake instead of fixing it.' },
+  { id:68, cat:'risk', q:'When should you reduce size even on a valid setup?', opts:['Only after a winning streak','When volatility is extreme or spread/liquidity are poor','Never','Only when a stock is above VWAP'], ans:1, exp:'Even a valid setup may deserve smaller size if the name is halt-prone, the spread is wide, or the stock is moving too violently for your normal risk model.' },
+  { id:69, cat:'risk', q:'What is the purpose of a trade plan before entry?', opts:['To make the trade feel official','To define entry, stop, target, and conditions for managing the position','To avoid paying commissions','To guarantee discipline under pressure'], ans:1, exp:'A plan helps you decide in calm conditions how to respond under stress. It should include entry, invalidation, target ideas, and what would make you exit early or hold longer.' },
+  { id:70, cat:'risk', q:'Why is "risking the same dollars on every trade" useful?', opts:['It removes commissions','It keeps outcomes comparable and prevents oversized mistakes','It guarantees a positive expectancy','It is required for margin accounts'], ans:1, exp:'Consistent dollar risk helps normalize your performance data. It makes winning and losing streaks easier to evaluate and prevents one impulsive oversized trade from distorting everything.' },
+  { id:71, cat:'orders', q:'Why might a limit order be better than a market order on a low-float runner?', opts:['Limit orders are always faster','They protect you from getting filled far away from the expected price','They guarantee execution','They avoid taxes'], ans:1, exp:'On fast low-float names, a market order can fill unexpectedly far from the current displayed price. Limit orders give you price control, even though you may miss some fills.' },
+  { id:72, cat:'orders', q:'What does "partial fill" mean?', opts:['Only part of your order executes at the requested price','The exchange rejected your order','Your broker split your account','Your order becomes a stop order'], ans:0, exp:'A partial fill means some shares executed but the rest are still waiting. This is common in thinner names and matters because your actual position size may differ from your intended size.' },
+  { id:73, cat:'orders', q:'What is the main benefit of a stop-market order?', opts:['It guarantees the exit price','It prioritizes getting out once the stop is triggered','It gives free commissions','It avoids halts'], ans:1, exp:'A stop-market order converts to a market order once the stop is hit. It prioritizes getting out, but the actual fill can be worse than expected during fast moves or gaps.' },
+  { id:74, cat:'orders', q:'Why should you know whether your order is DAY or GTC?', opts:['Because it changes the stock symbol','Because it controls how long the order remains active','Because it affects taxation instantly','Because it changes margin interest'], ans:1, exp:'DAY orders expire at the end of the session, while GTC orders can remain active longer. Forgetting an open order can create unwanted fills later if price returns to that level.' },
+  { id:75, cat:'orders', q:'What is an OCO order?', opts:['A trailing stop only','One Cancels the Other — two linked orders where execution of one cancels the other','An after-hours only order','A hidden order for institutions'], ans:1, exp:'OCO orders are often used for bracket-style management. For example, if your profit target fills, the stop order is canceled automatically, and vice versa.' },
+  { id:76, cat:'mechanics', q:'Why do many traders avoid the lunch hour?', opts:['It is illegal to trade then','Volume and movement often fade, producing choppier setups','Stocks cannot be shorted then','Charts stop updating'], ans:1, exp:'Midday often brings lower volume and weaker follow-through. Many traders prefer the open and power hour because setups tend to be cleaner and liquidity better.' },
+  { id:77, cat:'mechanics', q:'What does it mean if a stock is "SSR" (short sale restricted)?', opts:['You can only short with a stop order','Shorting is limited after a large intraday drop','The stock is delisted','Only institutions can trade it'], ans:1, exp:'SSR usually triggers after a stock falls 10% from the prior close. It restricts short selling on downticks, which can change how breakdown setups behave.' },
+  { id:78, cat:'mechanics', q:'Why can pre-market volume be misleading?', opts:['It is always fake','Liquidity is thinner, so price can move more on less size','It does not count toward daily volume','It only happens on ETFs'], ans:1, exp:'Pre-market trading often has thinner liquidity and wider spreads. Big percentage moves can occur on relatively small size, so regular-session confirmation still matters.' },
+  { id:79, cat:'mechanics', q:'What does a high-float stock generally require to move sharply?', opts:['Less volume than usual','More sustained buying or selling volume','A narrower spread only','A lower share price'], ans:1, exp:'High-float stocks usually need much more capital and volume to move significantly because there is more supply available to absorb buying or selling.' },
+  { id:80, cat:'mechanics', q:'Why do traders monitor the market indexes while trading a stock?', opts:['Indexes decide commissions','Broad market direction often affects individual stock follow-through','Indexes only matter for swing traders','It is required by brokers'], ans:1, exp:'A breakout in an individual stock is more likely to work if the broader market is supportive. Weak indexes can drag down even strong-looking names.' },
+  { id:81, cat:'psychology', q:'Why is boredom a trading risk?', opts:['It makes platforms crash','It tempts traders into forcing low-quality setups','It lowers the bid-ask spread','It improves reaction speed'], ans:1, exp:'Boredom often pushes traders into "manufacturing" opportunities that are not really there. Good trading often involves long periods of patience followed by selective action.' },
+  { id:82, cat:'psychology', q:'What is a good response after a large unexpected win?', opts:['Immediately double size','Review the trade objectively and stick to your normal process','Assume your strategy is perfected','Trade more because confidence is high'], ans:1, exp:'Big wins can be as dangerous as big losses because they can inflate confidence and encourage sloppy risk-taking. Treat them as data, not proof that you should suddenly size up.' },
+  { id:83, cat:'psychology', q:'Why is journaling execution mistakes separately from P&L helpful?', opts:['Because profits erase mistakes','Because a green trade can still be a bad trade if the process was poor','Because red trades never matter','Because brokers need it'], ans:1, exp:'You can make money while breaking rules, but that does not mean the trade was good. Separating process from outcome helps you avoid reinforcing bad habits just because they happened to work once.' },
+  { id:84, cat:'psychology', q:'What is "hesitation" in trading usually a sign of?', opts:['Always strong discipline','Unclear trade criteria or lack of trust in the setup/process','A guaranteed good setup','Overly high volume'], ans:1, exp:'Hesitation often comes from not having clear criteria or from taking setups that are outside your plan. It can also signal size is too large for your comfort.' },
+  { id:85, cat:'psychology', q:'Why can social media be dangerous during active trading?', opts:['It speeds up chart loading','It can trigger FOMO, bias, and reactive trades not based on your own plan','It prevents short selling','It makes spreads wider'], ans:1, exp:'Watching other traders call out moves in real time can create urgency and emotional pressure. It is easy to chase trades that you did not plan or understand.' },
+  { id:86, cat:'technical', q:'Why does a stock holding above VWAP after a pullback matter?', opts:['It means the company has earnings today','It can show buyers are defending an important intraday benchmark','It guarantees a squeeze','It means the spread is tight'], ans:1, exp:'When price reclaims or holds above VWAP after a pullback, many traders interpret it as a sign that buyers are maintaining control of the session.' },
+  { id:87, cat:'technical', q:'What does a lower high after a strong bounce often warn of?', opts:['Renewed weakness or a possible trend continuation lower','Guaranteed reversal higher','A stock split','No meaningful information'], ans:0, exp:'A lower high suggests buyers could not regain prior momentum. In a weak chart, that can be a clue that sellers may step back in.' },
+  { id:88, cat:'technical', q:'Why do traders combine price action with volume instead of using one alone?', opts:['Because chart software requires it','Because price shows direction and volume shows conviction','Because volume predicts earnings','Because price action is outdated'], ans:1, exp:'Price shows what is happening, while volume helps explain how much participation is behind the move. The combination gives stronger context than either one alone.' },
+  { id:89, cat:'technical', q:'What is the purpose of a higher timeframe check before taking an intraday trade?', opts:['To make the chart look nicer','To avoid trading directly into major support, resistance, or trend pressure','To increase commissions','To reset VWAP'], ans:1, exp:'A one-minute breakout may look clean, but if the stock is running into a major daily resistance level, the trade may have limited room. Higher timeframe context helps avoid low-quality entries.' },
+  { id:90, cat:'technical', q:'What does tight consolidation near highs often imply?', opts:['Automatic reversal','Potential continuation if buyers are absorbing supply','The chart is broken','No tradable information'], ans:1, exp:'Tight action near highs can signal that sellers are not pushing price back down much. If volume expands on the break, it can lead to another leg higher.' },
+  { id:91, cat:'scenarios', q:'You planned to trade only A+ setups, but the open is messy and nothing matches your playbook. What is the best move?', opts:['Force at least one trade to stay active','Stay patient and wait, even if that means no trade','Trade a random low-float stock instead','Increase size to make the first setup count'], ans:1, exp:'No trade is a valid professional decision. Forcing action in poor conditions is one of the fastest ways to damage both confidence and capital.' },
+  { id:92, cat:'scenarios', q:'A stock spikes through your target on a sudden news candle with huge volume. What is a reasonable management idea?', opts:['Cancel all exits and hope for infinity','Take at least partial profits and reassess with the new information','Add maximum size instantly','Ignore the move because the original target was hit'], ans:1, exp:'A strong extension can justify partial profit-taking while leaving room for more. It is important to react with structure, not greed.' },
+  { id:93, cat:'scenarios', q:'You are red on the day and see a setup that is valid but lower quality than your morning trades. What should you do?', opts:['Take it bigger to recover faster','Pass or reduce size because your emotional state is already stressed','Take it because being red means you are due','Hold overnight if it fails'], ans:1, exp:'When you are already under emotional pressure, marginal setups become more dangerous. Either pass or size down and be extra strict.' },
+  { id:94, cat:'scenarios', q:'A stock you shorted starts squeezing and halts upward. What is the key lesson for future trades?', opts:['Short squeezes are impossible to predict','Size must respect the possibility of halts and squeezes, especially in low-float names','Never use stops','All halts are bullish'], ans:1, exp:'Low-float and crowded-short names can move violently against you. Risk management must assume halts and squeezes are possible, not theoretical.' },
+  { id:95, cat:'scenarios', q:'You notice that your best trades all come from one setup, but you keep taking others out of curiosity. What should you do?', opts:['Trade all setups equally to diversify','Lean into your proven edge and reduce the noise trades','Ignore the journal data','Double size on unfamiliar setups'], ans:1, exp:'Your journal should guide specialization. If one setup clearly performs best for you, focusing there usually improves consistency faster than trying to master everything at once.' },
+  { id:96, cat:'terms', q:'What is a "thesis" in a trade plan?', opts:['A college paper','The reason you believe the trade should work','Your broker\'s rating','A company\'s earnings estimate'], ans:1, exp:'A trade thesis is your core reason for taking the setup. It should be clear enough that you can also define what would invalidate it.' },
+  { id:97, cat:'patterns', q:'What does a base under resistance often represent?', opts:['Only bearish pressure','A pause where supply may be getting absorbed before a breakout attempt','Guaranteed downside continuation','A stock that should be avoided entirely'], ans:1, exp:'When a stock keeps holding under resistance instead of selling off hard, it can suggest buyers are absorbing supply and preparing for another push.' },
+  { id:98, cat:'risk', q:'What is the first job of a beginner trader?', opts:['Make money every day','Protect capital long enough to learn','Find the fastest-moving stocks only','Trade as often as possible'], ans:1, exp:'Beginners need survival more than speed. Protecting capital gives you enough repetitions to learn what actually works without blowing up early.' },
+  { id:99, cat:'orders', q:'Why should you review your filled price after entry?', opts:['Because brokers sometimes change symbols','Because actual fills affect your real stop distance and risk','Because it changes the sector','Because you cannot place exits otherwise'], ans:1, exp:'A small fill difference can materially change your position risk, especially in fast names. Always know your actual average fill, not just the planned entry.' },
+  { id:100, cat:'mechanics', q:'Why can an economic calendar matter even if you are only trading stocks?', opts:['It only matters to forex traders','Macro events can move indexes, sectors, and risk appetite across the market','It changes tax rates intraday','It prevents halts'], ans:1, exp:'Fed decisions, CPI, jobs data, and other macro releases can shift the entire market. Stock setups often behave differently right before and after major economic reports.' },
+  { id:101, cat:'psychology', q:'What does "process over outcome" mean in trading?', opts:['Ignore profits forever','Judge trades by whether you followed your plan, not only by whether they made money','Never review results','Only trade one setup'], ans:1, exp:'A losing trade can still be good process, and a winning trade can still be poor process. Long-term improvement comes from reinforcing good decisions, not random outcomes.' },
+  { id:102, cat:'technical', q:'What is a common use of the 20 EMA intraday?', opts:['Tax reporting','Tracking short-term trend quality and pullback support/resistance','Measuring float rotation','Finding short interest'], ans:1, exp:'Many traders use the 20 EMA as a smoother guide to short-term trend structure. Pullbacks that hold the 20 EMA can show orderly continuation.' },
+  { id:103, cat:'scenarios', q:'A breakout works immediately and you feel tempted to add size far above your planned entry. What is the higher-quality response?', opts:['Chase with full size','Only add if your plan already defined where and why an add makes sense','Move your stop lower to make room','Sell immediately because winners should scare you'], ans:1, exp:'Adding to a winner can be valid, but it should be planned. Randomly chasing after a move has already extended often worsens your average and damages the reward/risk.' }
+);
+
 
 
 // ---- Quiz State ----
@@ -6594,7 +7173,10 @@ function startQuiz(mode) {
 
 
 
-  const count = (mode === 'timed') ? 25 : (mode === 'scenarios') ? pool.length : Math.min(10, pool.length);
+  // Timed = 25; Scenarios & Category = every question in the pool; Quick/Weak Spots = 10
+  const count = (mode === 'timed') ? 25
+    : (mode === 'scenarios' || mode === 'category') ? pool.length
+    : Math.min(10, pool.length);
 
   _quizQs = pool.slice(0, count);
 
@@ -7245,6 +7827,359 @@ function saveWlNote(i, val) {
   watchlist[i].note = val.trim();
   saveWatchlist();
   renderWatchlistWithNotes();
+  renderStrategyAlerts();
+  renderToday();
+}
+
+// ==================== STRATEGY SCANNER + PORTFOLIO SIM ====================
+let strategyScanner = JSON.parse(localStorage.getItem('td_strategy_scanner') || '{}');
+let strategyScanResults = JSON.parse(localStorage.getItem('td_strategy_scan_results') || '[]');
+let portfolioSim = JSON.parse(localStorage.getItem('td_portfolio_sim') || 'null') || {
+  startingCash: 10000,
+  cash: 10000,
+  realizedPnl: 0,
+  positions: {},
+  orders: []
+};
+let liveQuoteCache = {};
+
+function normalizePortfolioSim() {
+  if (typeof portfolioSim.startingCash !== 'number') portfolioSim.startingCash = 10000;
+  if (typeof portfolioSim.cash !== 'number') portfolioSim.cash = portfolioSim.startingCash;
+  if (typeof portfolioSim.realizedPnl !== 'number') portfolioSim.realizedPnl = 0;
+  if (!portfolioSim.positions || typeof portfolioSim.positions !== 'object') portfolioSim.positions = {};
+  if (!Array.isArray(portfolioSim.orders)) portfolioSim.orders = [];
+}
+
+normalizePortfolioSim();
+
+function saveStrategyScanner() {
+  dbSet('strategy_scanner', strategyScanner);
+}
+
+function saveStrategyScanResults() {
+  dbSet('strategy_scan_results', strategyScanResults);
+}
+
+function savePortfolioSim() {
+  normalizePortfolioSim();
+  dbSet('portfolio_sim', portfolioSim);
+}
+
+async function fetchQuoteSnapshot(sym, forceRefresh = false) {
+  const key = getStoredKey('td_finnhub_key') || getStoredKey('td_api_key');
+  if (!key) return liveQuoteCache[sym] || null;
+  const cached = liveQuoteCache[sym];
+  if (!forceRefresh && cached && Date.now() - cached.fetchedAt < 60000) return cached;
+  try {
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${key}`);
+    const data = await res.json();
+    if (!res.ok || !data || typeof data.c !== 'number') throw new Error(data?.error || 'Quote unavailable');
+    liveQuoteCache[sym] = { ...data, fetchedAt: Date.now() };
+    return liveQuoteCache[sym];
+  } catch (e) {
+    console.warn('Quote fetch failed for', sym, e);
+    return cached || null;
+  }
+}
+
+function renderScannerSymbolOptions() {
+  const sel = document.getElementById('scanner-symbol');
+  if (!sel) return;
+  if (!watchlist.length) {
+    sel.innerHTML = '<option value="">Add a watchlist symbol first</option>';
+    return;
+  }
+  const current = sel.value || watchlist[0].sym;
+  sel.innerHTML = watchlist.map(w => `<option value="${w.sym}">${w.sym}</option>`).join('');
+  sel.value = watchlist.some(w => w.sym === current) ? current : watchlist[0].sym;
+  loadScannerRule(sel.value);
+}
+
+function loadScannerRule(sym) {
+  const rule = strategyScanner[sym] || {};
+  if (document.getElementById('scanner-symbol')) document.getElementById('scanner-symbol').value = sym || '';
+  if (document.getElementById('scanner-setup')) document.getElementById('scanner-setup').value = rule.setup || 'breakout';
+  if (document.getElementById('scanner-bias')) document.getElementById('scanner-bias').value = rule.bias || 'long';
+  if (document.getElementById('scanner-rvol')) document.getElementById('scanner-rvol').value = rule.rvol ?? '';
+  if (document.getElementById('scanner-trigger')) document.getElementById('scanner-trigger').value = rule.trigger ?? '';
+  if (document.getElementById('scanner-stop')) document.getElementById('scanner-stop').value = rule.stop ?? '';
+  if (document.getElementById('scanner-target')) document.getElementById('scanner-target').value = rule.target ?? '';
+  if (document.getElementById('scanner-manual-price')) document.getElementById('scanner-manual-price').value = rule.manualPrice ?? '';
+}
+
+function prefillScannerFromWatchlist() {
+  if (!watchlist.length) {
+    alert('Add symbols to your watchlist first.');
+    return;
+  }
+  renderScannerSymbolOptions();
+  renderStrategyAlerts();
+}
+
+function saveScannerRule() {
+  const sym = (document.getElementById('scanner-symbol').value || '').trim().toUpperCase();
+  const trigger = parseFloat(document.getElementById('scanner-trigger').value);
+  const stop = parseFloat(document.getElementById('scanner-stop').value);
+  if (!sym || !trigger || !stop) {
+    alert('Strategy scanner needs at least symbol, trigger, and stop.');
+    return;
+  }
+  strategyScanner[sym] = {
+    setup: document.getElementById('scanner-setup').value,
+    bias: document.getElementById('scanner-bias').value,
+    rvol: parseFloat(document.getElementById('scanner-rvol').value) || 0,
+    trigger,
+    stop,
+    target: parseFloat(document.getElementById('scanner-target').value) || 0,
+    manualPrice: parseFloat(document.getElementById('scanner-manual-price').value) || 0,
+    note: (watchlist.find(w => w.sym === sym)?.note || '').trim()
+  };
+  saveStrategyScanner();
+  renderStrategyAlerts();
+}
+
+function clearScannerRule() {
+  const sym = (document.getElementById('scanner-symbol').value || '').trim().toUpperCase();
+  if (!sym) return;
+  delete strategyScanner[sym];
+  saveStrategyScanner();
+  loadScannerRule(sym);
+  renderStrategyAlerts();
+}
+
+function evaluateScannerRule(sym, rule, quote) {
+  const price = quote?.c || rule.manualPrice || 0;
+  const trigger = Number(rule.trigger || 0);
+  const stop = Number(rule.stop || 0);
+  const target = Number(rule.target || 0);
+  const bias = rule.bias || 'long';
+  const risk = Math.abs(trigger - stop);
+  const rr = target && risk ? Math.abs(target - trigger) / risk : 0;
+  const gapPct = quote?.pc ? (((quote.o || quote.c) - quote.pc) / quote.pc) * 100 : 0;
+  const distPct = trigger ? (bias === 'long' ? ((price - trigger) / trigger) * 100 : ((trigger - price) / trigger) * 100) : -999;
+  const invalidated = price ? (bias === 'long' ? price <= stop : price >= stop) : false;
+  const triggered = price ? (bias === 'long' ? price >= trigger && !invalidated : price <= trigger && !invalidated) : false;
+  const extended = triggered && (bias === 'long' ? price >= trigger * 1.03 : price <= trigger * 0.97);
+  const near = !triggered && !invalidated && distPct > -1.2 && distPct <= 0.6;
+  const rvolScore = rule.rvol >= 3 ? 25 : rule.rvol >= 2 ? 18 : rule.rvol >= 1.2 ? 10 : 0;
+  const rrScore = rr >= 3 ? 25 : rr >= 2 ? 18 : rr >= 1.5 ? 10 : 0;
+  const gapScore = bias === 'long' ? (gapPct > 1 ? 10 : gapPct > 0 ? 5 : 0) : (gapPct < -1 ? 10 : gapPct < 0 ? 5 : 0);
+  const stateScore = invalidated ? 0 : extended ? 55 : triggered ? 82 : near ? 68 : 40;
+  const score = Math.min(99, Math.round(stateScore + rvolScore + rrScore + gapScore));
+  let status = 'wait';
+  let statusLabel = 'Building';
+  if (!price) {
+    status = 'risk';
+    statusLabel = 'No Price';
+  } else if (invalidated) {
+    status = 'risk';
+    statusLabel = 'Invalidated';
+  } else if (extended) {
+    status = 'near';
+    statusLabel = 'Extended';
+  } else if (triggered) {
+    status = 'ready';
+    statusLabel = 'Triggered';
+  } else if (near) {
+    status = 'near';
+    statusLabel = 'Near Trigger';
+  }
+  return {
+    sym,
+    price,
+    trigger,
+    stop,
+    target,
+    bias,
+    rr,
+    score,
+    status,
+    statusLabel,
+    quoteSource: quote ? 'live' : 'manual',
+    note: rule.note || '',
+    setup: rule.setup || 'breakout',
+    rvol: rule.rvol || 0,
+    gapPct,
+    detail: !price
+      ? 'Add a manual price or connect Finnhub.'
+      : invalidated
+      ? `Price crossed the stop at $${stop.toFixed(2)}.`
+      : triggered
+      ? `Trigger cleared at $${trigger.toFixed(2)} with ${rr ? `R:R ${rr.toFixed(2)}` : 'no target set'}.`
+      : `Needs ${Math.abs(distPct).toFixed(2)}% more movement to reach trigger.`,
+  };
+}
+
+async function runStrategyScan() {
+  const symbols = Object.keys(strategyScanner).filter(sym => watchlist.some(w => w.sym === sym));
+  if (!symbols.length) {
+    document.getElementById('strategy-alerts').innerHTML = '<div class="scanner-empty">Save at least one watchlist rule first.</div>';
+    return;
+  }
+  document.getElementById('scanner-last-run').textContent = 'Scanning watchlist...';
+  const quotes = await Promise.all(symbols.map(sym => fetchQuoteSnapshot(sym, true)));
+  strategyScanResults = symbols.map((sym, idx) => evaluateScannerRule(sym, strategyScanner[sym], quotes[idx]))
+    .sort((a, b) => b.score - a.score);
+  saveStrategyScanResults();
+  document.getElementById('scanner-last-run').textContent = `Last scan: ${new Date().toLocaleString()} · ${symbols.length} symbol${symbols.length === 1 ? '' : 's'} checked`;
+  renderStrategyAlerts();
+  renderPortfolioSim();
+}
+
+function renderStrategyAlerts() {
+  const el = document.getElementById('strategy-alerts');
+  if (!el) return;
+  const rules = Object.keys(strategyScanner);
+  if (!rules.length) {
+    el.innerHTML = '<div class="scanner-empty">Build a playbook entry for each watchlist symbol, then run the scan.</div>';
+    return;
+  }
+  const results = strategyScanResults.length
+    ? strategyScanResults
+        .filter(item => strategyScanner[item.sym] && watchlist.some(w => w.sym === item.sym))
+    : rules.map(sym => evaluateScannerRule(sym, strategyScanner[sym], liveQuoteCache[sym] || null)).sort((a, b) => b.score - a.score);
+  if (!results.length) {
+    el.innerHTML = '<div class="scanner-empty">Your saved scanner rules no longer match the current watchlist.</div>';
+    return;
+  }
+  el.innerHTML = results.map(item => `
+    <div class="strategy-alert">
+      <div class="strategy-alert-top">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--accent)">${item.sym}</div>
+          <div class="strategy-meta">${item.setup} · ${item.bias.toUpperCase()} · score ${item.score}/99</div>
+        </div>
+        <span class="status-pill status-${item.status}">${item.statusLabel}</span>
+      </div>
+      <div class="strategy-badges">
+        <span class="status-pill status-wait">Last ${item.price ? '$' + item.price.toFixed(2) : '—'}</span>
+        <span class="status-pill status-wait">Trigger $${item.trigger.toFixed(2)}</span>
+        <span class="status-pill status-wait">Stop $${item.stop.toFixed(2)}</span>
+        ${item.target ? `<span class="status-pill status-wait">Target $${item.target.toFixed(2)}</span>` : ''}
+        ${item.rvol ? `<span class="status-pill status-wait">RVOL ${item.rvol.toFixed(1)}x</span>` : ''}
+      </div>
+      <div class="strategy-meta" style="margin-top:8px">${item.detail}</div>
+      <div class="strategy-meta">${item.quoteSource === 'live' ? `Gap ${item.gapPct.toFixed(2)}% from prior close.` : 'Using manual price because no live quote was available.'}${item.note ? ` Thesis: ${item.note}` : ''}</div>
+    </div>`).join('');
+}
+
+function updatePortfolioNote(text) {
+  const el = document.getElementById('ps-note');
+  if (el) el.textContent = text;
+}
+
+async function refreshPortfolioQuotes(forceRefresh = false) {
+  const symbols = Object.keys(portfolioSim.positions || {});
+  if (!symbols.length) return;
+  await Promise.all(symbols.map(sym => fetchQuoteSnapshot(sym, forceRefresh)));
+}
+
+function renderPortfolioSim() {
+  normalizePortfolioSim();
+  const positions = Object.entries(portfolioSim.positions);
+  let marketValue = 0;
+  let unrealized = 0;
+  positions.forEach(([sym, pos]) => {
+    const last = liveQuoteCache[sym]?.c || pos.avgCost;
+    marketValue += pos.qty * last;
+    unrealized += (last - pos.avgCost) * pos.qty;
+  });
+  const setMoney = (id, value, neutral = false) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = neutral ? `$${Math.abs(value).toFixed(2)}` : `${value >= 0 ? '+' : '-'}$${Math.abs(value).toFixed(2)}`;
+    el.style.color = neutral ? 'var(--text)' : value >= 0 ? 'var(--accent2)' : 'var(--warn)';
+  };
+  setMoney('ps-cash', portfolioSim.cash, true);
+  setMoney('ps-market', marketValue, true);
+  setMoney('ps-unrealized', unrealized);
+  setMoney('ps-realized', portfolioSim.realizedPnl);
+  const positionsEl = document.getElementById('portfolio-positions');
+  if (positionsEl) {
+    positionsEl.innerHTML = positions.length ? positions.map(([sym, pos]) => {
+      const last = liveQuoteCache[sym]?.c || pos.avgCost;
+      const openPnl = (last - pos.avgCost) * pos.qty;
+      return `<div class="portfolio-row">
+        <div class="portfolio-row-top">
+          <div><strong style="color:var(--accent)">${sym}</strong> <span class="portfolio-meta">${pos.qty} shares</span></div>
+          <div style="font-weight:700;color:${openPnl >= 0 ? 'var(--accent2)' : 'var(--warn)'}">${openPnl >= 0 ? '+' : ''}$${openPnl.toFixed(2)}</div>
+        </div>
+        <div class="portfolio-meta">Avg $${pos.avgCost.toFixed(2)} · Last $${last.toFixed(2)} · Value $${(last * pos.qty).toFixed(2)}</div>
+      </div>`;
+    }).join('') : '<div class="portfolio-empty">No open positions yet.</div>';
+  }
+  const ordersEl = document.getElementById('portfolio-orders');
+  if (ordersEl) {
+    ordersEl.innerHTML = portfolioSim.orders.length ? portfolioSim.orders.slice(0, 5).map(order => `
+      <div class="portfolio-row">
+        <div class="portfolio-row-top">
+          <div><strong>${order.side.toUpperCase()}</strong> ${order.qty} ${order.symbol} @ $${order.price.toFixed(2)}</div>
+          <div class="portfolio-meta">${new Date(order.ts).toLocaleString()}</div>
+        </div>
+        <div class="portfolio-meta">Notional $${(order.qty * order.price).toFixed(2)}</div>
+      </div>`).join('') : '<div class="portfolio-empty">No simulated orders yet.</div>';
+  }
+}
+
+async function submitPortfolioOrder() {
+  normalizePortfolioSim();
+  const symbol = (document.getElementById('ps-symbol').value || '').trim().toUpperCase();
+  const side = document.getElementById('ps-side').value;
+  const qty = parseInt(document.getElementById('ps-qty').value, 10);
+  let price = parseFloat(document.getElementById('ps-price').value);
+  if (!symbol || !qty || qty <= 0) {
+    alert('Portfolio simulator needs symbol and quantity.');
+    return;
+  }
+  if (!price) {
+    const quote = await fetchQuoteSnapshot(symbol, true);
+    price = quote?.c || 0;
+  }
+  if (!price) {
+    alert('Enter a fill price or connect a live quote source.');
+    return;
+  }
+  const notional = qty * price;
+  const pos = portfolioSim.positions[symbol] || { qty: 0, avgCost: 0 };
+  if (side === 'buy') {
+    if (portfolioSim.cash < notional) {
+      alert('Not enough simulator cash for that order.');
+      return;
+    }
+    const newQty = pos.qty + qty;
+    pos.avgCost = newQty ? ((pos.qty * pos.avgCost) + notional) / newQty : price;
+    pos.qty = newQty;
+    portfolioSim.cash -= notional;
+    portfolioSim.positions[symbol] = pos;
+  } else {
+    if (!pos.qty || pos.qty < qty) {
+      alert('You cannot sell more shares than the simulator currently holds.');
+      return;
+    }
+    portfolioSim.cash += notional;
+    portfolioSim.realizedPnl += (price - pos.avgCost) * qty;
+    pos.qty -= qty;
+    if (!pos.qty) delete portfolioSim.positions[symbol];
+    else portfolioSim.positions[symbol] = pos;
+  }
+  portfolioSim.orders.unshift({ ts: Date.now(), symbol, side, qty, price });
+  portfolioSim.orders = portfolioSim.orders.slice(0, 30);
+  savePortfolioSim();
+  document.getElementById('ps-symbol').value = '';
+  document.getElementById('ps-qty').value = '';
+  document.getElementById('ps-price').value = '';
+  updatePortfolioNote(`Last order: ${side.toUpperCase()} ${qty} ${symbol} @ $${price.toFixed(2)}`);
+  await refreshPortfolioQuotes(false);
+  renderPortfolioSim();
+}
+
+function resetPortfolioSim() {
+  if (!confirm('Reset simulator cash, positions, and orders?')) return;
+  portfolioSim = { startingCash: 10000, cash: 10000, realizedPnl: 0, positions: {}, orders: [] };
+  savePortfolioSim();
+  updatePortfolioNote('Simulator reset to $10,000 starting cash.');
+  renderPortfolioSim();
 }
 
 // ==================== JOURNAL FILTER ====================
@@ -7921,6 +8856,103 @@ const FC_CARDS = [
   { cat:'risk', term:'Position Sizing',   def:'Size your shares based on your stop distance, not gut feel: shares = (account% × balance) ÷ stop distance.' },
 ];
 
+FC_CARDS.push(
+  { cat:'glossary', term:'Relative Volume', def:'Current trading volume compared with the stock’s normal volume for that time of day. High RVOL means unusual interest.' },
+  { cat:'glossary', term:'Liquidity', def:'How easily you can enter or exit a stock without moving price too much. High liquidity usually means tighter spreads.' },
+  { cat:'glossary', term:'Catalyst', def:'A news event or reason that explains why a stock is moving, such as earnings, guidance, FDA news, or a contract win.' },
+  { cat:'glossary', term:'Halt', def:'A temporary pause in trading by the exchange, often due to volatility or pending news.' },
+  { cat:'glossary', term:'Bid', def:'The highest current price a buyer is willing to pay for a stock.' },
+  { cat:'glossary', term:'Ask', def:'The lowest current price a seller is willing to accept for a stock.' },
+  { cat:'glossary', term:'Slippage', def:'The difference between your expected execution price and your actual fill price.' },
+  { cat:'glossary', term:'Watchlist', def:'A short, focused list of symbols you plan to monitor for setups during the session.' },
+  { cat:'glossary', term:'Thesis', def:'Your core reason for taking a trade. It should also imply what would invalidate the idea.' },
+  { cat:'glossary', term:'Price Discovery', def:'The early process of the market finding a fair price after news or a large overnight gap.' },
+  { cat:'glossary', term:'SSR', def:'Short Sale Restriction. A rule that limits short selling after a stock drops sharply from the prior close.' },
+  { cat:'glossary', term:'Float Rotation', def:'The number of times a stock’s tradable float has effectively changed hands in volume during a session.' },
+  { cat:'glossary', term:'Consolidation', def:'A pause or sideways movement where price compresses before the next larger move.' },
+  { cat:'glossary', term:'Parabolic Move', def:'A steep, accelerating price move that often becomes unstable and vulnerable to sharp reversals.' },
+  { cat:'glossary', term:'Gap Fill', def:'When price retraces back toward the previous session’s close after opening with a gap.' },
+  { cat:'glossary', term:'Sector Rotation', def:'Money shifting from one market sector into another, changing which groups have momentum.' },
+  { cat:'glossary', term:'Tape', def:'The stream of executed trades shown in Time and Sales, used to read momentum and urgency.' },
+  { cat:'glossary', term:'Market Structure', def:'The arrangement of higher highs, higher lows, lower highs, and lower lows on a chart.' },
+  { cat:'glossary', term:'Risk Unit (R)', def:'A standardized way to measure performance based on how much you risked on a trade.' },
+  { cat:'glossary', term:'Chop', def:'Messy, indecisive price action with poor follow-through and frequent fake moves.' },
+  { cat:'patterns', term:'Flat-Top Breakout', def:'Repeated tests of the same resistance level while buyers keep stepping up at higher lows.' },
+  { cat:'patterns', term:'Ascending Triangle', def:'A pattern with a flat resistance line and rising lows, often leading to a bullish breakout.' },
+  { cat:'patterns', term:'Descending Triangle', def:'A pattern with flat support and lower highs, often resolving lower if support breaks.' },
+  { cat:'patterns', term:'Double Bottom', def:'Two failed attempts to break a low, which can signal a reversal if buyers reclaim control.' },
+  { cat:'patterns', term:'Double Top', def:'Two failed attempts to break a high, often signaling resistance and possible reversal.' },
+  { cat:'patterns', term:'Higher Low', def:'A pullback low that stays above the prior low, showing buyers are stepping in sooner.' },
+  { cat:'patterns', term:'Lower High', def:'A bounce high that fails below the prior high, often signaling weakening momentum.' },
+  { cat:'patterns', term:'Base', def:'A stable sideways range where price pauses and may absorb supply before a breakout attempt.' },
+  { cat:'patterns', term:'Wedge', def:'A narrowing pattern where price compresses into converging trendlines before a break.' },
+  { cat:'patterns', term:'VWAP Reclaim', def:'Price moves back above VWAP after being below it, often a sign of improving intraday strength.' },
+  { cat:'patterns', term:'Gap and Go', def:'A stock gaps up on news and continues running higher during the regular session.' },
+  { cat:'patterns', term:'Gap Fade', def:'A stock gaps up or down, then reverses back toward the prior close instead of continuing.' },
+  { cat:'patterns', term:'Break-and-Retest', def:'A breakout followed by a pullback that holds the old resistance as new support.' },
+  { cat:'patterns', term:'Failed Breakdown', def:'Price briefly loses support, then snaps back above it and traps shorts.' },
+  { cat:'patterns', term:'Squeeze Setup', def:'A pattern where pressure builds as price compresses, often leading to a sharp directional release.' },
+  { cat:'patterns', term:'Exhaustion Candle', def:'A large impulsive candle late in a move that can warn of climax or short-term exhaustion.' },
+  { cat:'patterns', term:'Inside Bar', def:'A bar whose high and low stay within the prior bar’s range, often marking compression.' },
+  { cat:'patterns', term:'Outside Bar', def:'A bar that engulfs the prior bar’s high and low, showing expanded volatility.' },
+  { cat:'patterns', term:'Trend Day', def:'A session where price trends strongly in one direction with limited meaningful pullbacks.' },
+  { cat:'patterns', term:'Range Day', def:'A session where price oscillates within a contained range rather than trending strongly.' },
+  { cat:'indicators', term:'VWAP Bands', def:'Reference bands around VWAP that help show extension away from the day’s average price.' },
+  { cat:'indicators', term:'EMA Stack', def:'A bullish or bearish alignment of moving averages, such as 9 EMA above 20 EMA above 50 EMA.' },
+  { cat:'indicators', term:'9/20 Cross', def:'A momentum signal where the 9 EMA crosses above or below the 20 EMA.' },
+  { cat:'indicators', term:'ATR Expansion', def:'A sign that volatility is increasing and moves may become larger and less forgiving.' },
+  { cat:'indicators', term:'Volume Spike', def:'A sudden surge in volume that often signals fresh attention, news, or institutional activity.' },
+  { cat:'indicators', term:'Relative Strength', def:'A stock outperforming the broader market or sector, often a sign of leadership.' },
+  { cat:'indicators', term:'Relative Weakness', def:'A stock underperforming the broader market or sector, often a sign of distribution.' },
+  { cat:'indicators', term:'Trendline', def:'A line drawn along highs or lows to visualize direction, support, resistance, or compression.' },
+  { cat:'indicators', term:'50 EMA', def:'A medium-term moving average often watched as trend support or resistance.' },
+  { cat:'indicators', term:'200 EMA', def:'A longer-term moving average that many traders use to judge broader trend context.' },
+  { cat:'indicators', term:'RSI Divergence', def:'When RSI and price disagree, which can warn that momentum is weakening or improving.' },
+  { cat:'indicators', term:'MACD Cross', def:'A MACD line crossing its signal line, used as a momentum confirmation tool.' },
+  { cat:'indicators', term:'Histogram', def:'The bar portion of MACD that shows the distance between the MACD line and signal line.' },
+  { cat:'indicators', term:'Anchored VWAP', def:'A VWAP calculation anchored to a specific event or date, often used for event-driven levels.' },
+  { cat:'indicators', term:'Power Hour', def:'The final hour of the session, which often brings renewed volume and directional movement.' },
+  { cat:'risk', term:'Daily Max Loss', def:'A hard limit for how much you allow yourself to lose in one day before you stop trading.' },
+  { cat:'risk', term:'Risk Budget', def:'The total amount of money you are willing to risk in a trade or in a day.' },
+  { cat:'risk', term:'Scale Out', def:'Selling part of a position into strength to lock in gains while still leaving some position on.' },
+  { cat:'risk', term:'Scale In', def:'Adding to a position in planned increments instead of entering full size all at once.' },
+  { cat:'risk', term:'Breakeven Stop', def:'Moving your stop to your entry price so the trade can no longer lose money before fees/slippage.' },
+  { cat:'risk', term:'Position Cap', def:'A maximum size rule that prevents you from committing too much capital to one idea.' },
+  { cat:'risk', term:'Hard Stop', def:'A non-negotiable exit level that must be honored when hit.' },
+  { cat:'risk', term:'Soft Stop', def:'A discretionary exit zone based on behavior rather than one exact printed price.' },
+  { cat:'risk', term:'R-Multiple', def:'Profit or loss expressed in units of the original risk. For example, a 2R win means twice the amount risked.' },
+  { cat:'risk', term:'Drawdown', def:'The decline from a recent peak in your equity curve or account balance.' },
+  { cat:'risk', term:'Capital Preservation', def:'The priority of protecting your trading account so you can stay in the game long enough to improve.' },
+  { cat:'risk', term:'Setup Quality', def:'A judgment of how closely a trade matches your playbook and ideal conditions.' },
+  { cat:'risk', term:'Execution Risk', def:'The risk created by slippage, poor fills, delays, or fast-moving price action.' },
+  { cat:'risk', term:'Overnight Risk', def:'The risk of holding a position after the market closes and facing gaps on the next open.' },
+  { cat:'risk', term:'Volatility Adjustment', def:'Reducing or changing size and stops based on how wildly a stock is moving.' },
+  { cat:'risk', term:'No-Trade Decision', def:'Choosing not to trade because conditions do not justify risk. This is a valid professional action.' },
+  { cat:'risk', term:'Trailing Stop', def:'A stop that moves in your favor as price moves in your favor, helping protect gains.' },
+  { cat:'risk', term:'Reward-to-Risk', def:'The relationship between what you could make and what you could lose on a trade.' },
+  { cat:'risk', term:'Margin of Safety', def:'Extra room in your planning that protects you from minor noise, slippage, or unexpected volatility.' },
+  { cat:'risk', term:'Account Heat', def:'The total combined risk you have open across all positions at once.' },
+  { cat:'glossary', term:'Opening Print', def:'The first official trade of the regular market session, often watched for context and momentum.' },
+  { cat:'glossary', term:'Institutional Order', def:'A large order from a fund or institution that can influence price and volume behavior.' },
+  { cat:'glossary', term:'Relative Strength Leader', def:'A stock outperforming peers and indexes, often a good candidate for long setups.' },
+  { cat:'glossary', term:'Relative Weakness Name', def:'A stock lagging peers and indexes, often a better candidate for short setups.' },
+  { cat:'patterns', term:'Flagpole', def:'The strong directional move that comes before the consolidation portion of a bull or bear flag.' },
+  { cat:'patterns', term:'Trap', def:'A move that lures traders into the wrong side of the market before quickly reversing.' },
+  { cat:'patterns', term:'Reclaim', def:'When price moves back above a key level after losing it, often changing the chart tone.' },
+  { cat:'patterns', term:'Flush', def:'A fast drop that sweeps out weak holders or stops before price stabilizes or reverses.' },
+  { cat:'patterns', term:'Trendline Break', def:'A move through a visible trendline that can signal a change in momentum or structure.' },
+  { cat:'indicators', term:'Extension', def:'How far price has moved away from a reference like VWAP or an EMA. More extension often means more chase risk.' },
+  { cat:'indicators', term:'Confluence', def:'Multiple levels or signals lining up in the same area, increasing that zone’s importance.' },
+  { cat:'indicators', term:'Intraday High', def:'The highest traded price reached so far during the current session.' },
+  { cat:'indicators', term:'Intraday Low', def:'The lowest traded price reached so far during the current session.' },
+  { cat:'risk', term:'Chase Risk', def:'The added risk created when you enter too far from your planned trigger after a move is already underway.' },
+  { cat:'risk', term:'Execution Discipline', def:'Following your plan on entries, exits, size, and stops instead of improvising under pressure.' },
+  { cat:'risk', term:'Risk Compression', def:'A setup where the stop distance is tight relative to the upside, improving potential reward-to-risk.' },
+  { cat:'risk', term:'Capital Efficiency', def:'Using only the amount of capital and risk needed for the setup instead of oversizing.' },
+  { cat:'risk', term:'Variance', def:'The natural randomness in short-term outcomes even when a strategy has a real edge.' },
+  { cat:'risk', term:'Playbook', def:'A defined set of setups, rules, and management patterns that you repeatedly execute and review.' }
+);
+
 let _fcCat = 'all';
 let _fcDeck = [];
 let _fcIdx  = 0;
@@ -8059,17 +9091,40 @@ let libMsalApp = null;
 let libAccount = null;
 let libMsalInitPromise = null;
 let libMsalReady = false;
+let libAuthUrl = '';
+
+function libSetSigninState(loading, label) {
+  const btn = document.getElementById('lib-ms-signin-btn');
+  if (!btn) return;
+  btn.disabled = !!loading;
+  btn.style.opacity = loading ? '.72' : '1';
+  btn.style.cursor = loading ? 'wait' : 'pointer';
+  btn.innerHTML = loading
+    ? `<svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>${label || 'Connecting…'}`
+    : `<svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign in with Microsoft`;
+}
 
 function libGetMsal() {
   if (libMsalApp) return libMsalApp;
+  if (!window.msal?.PublicClientApplication) return null;
   if (!LIB_CLIENT_ID) return null;
   libMsalApp = new msal.PublicClientApplication({
-    auth: { clientId: LIB_CLIENT_ID, authority: 'https://login.microsoftonline.com/common', redirectUri: window.location.origin },
-    cache: { cacheLocation: 'localStorage' }
+    auth: {
+      clientId: LIB_CLIENT_ID,
+      authority: 'https://login.microsoftonline.com/consumers',
+      redirectUri: LIB_REDIRECT_URI
+    },
+    cache: {
+      cacheLocation: 'localStorage',
+      storeAuthStateInCookie: true
+    }
   });
-  // After initialize(), process any pending redirect result (called once per page load)
-  libMsalInitPromise = libMsalApp.initialize().then(() => {
-    libMsalReady = true;
+  libMsalReady = true;
+  libSetSigninState(false);
+  libMsalInitPromise = Promise.resolve(true);
+
+  // Process any pending redirect result after app creation, but do not block sign-in on it.
+  Promise.resolve().then(() => {
     return libMsalApp.handleRedirectPromise().then(result => {
       if (result && result.account) {
         libAccount = result.account;
@@ -8079,10 +9134,12 @@ function libGetMsal() {
           setTimeout(() => { if (typeof switchTab === 'function') switchTab('library'); libLoadFiles(); }, 300);
         }
       }
+      libSetSigninState(false);
+      libPrimeAuthUrl();
     });
   }).catch(e => {
-    libMsalReady = true;
-    console.warn('MSAL init/redirect error:', e);
+    libSetSigninState(false);
+    console.warn('MSAL redirect handling error:', e);
     // If we were expecting a redirect result, switch to Library and show the error
     if (sessionStorage.getItem('td_lib_auth_return')) {
       sessionStorage.removeItem('td_lib_auth_return');
@@ -8096,13 +9153,27 @@ function libGetMsal() {
   return libMsalApp;
 }
 
+function libPrimeAuthUrl() {
+  if (!libMsalApp || !libMsalApp.getAuthCodeUrl) return;
+  libMsalApp.getAuthCodeUrl({
+    scopes: ['Files.Read.All', 'User.Read'],
+    redirectUri: LIB_REDIRECT_URI,
+    redirectStartPage: window.location.href
+  }).then((url) => {
+    libAuthUrl = url || '';
+  }).catch((e) => {
+    libAuthUrl = '';
+    console.warn('MSAL auth URL prime failed:', e);
+  });
+}
+
 // Eagerly initialize at page load so handleRedirectPromise runs immediately on page return
 try { libGetMsal(); } catch(e) { console.warn('MSAL pre-init failed:', e); }
 
 async function initLibrary() {
   const app = libGetMsal();
   if (!app) return;
-  await libMsalInitPromise; // waits for initialize() + handleRedirectPromise() to finish
+  if (!libAuthUrl) libPrimeAuthUrl();
   if (libAccount) { await libLoadFiles(); return; }
   const accounts = app.getAllAccounts();
   if (accounts.length > 0) { libAccount = accounts[0]; await libLoadFiles(); }
@@ -8111,21 +9182,31 @@ async function initLibrary() {
 async function libSignInMicrosoft() {
   const errEl = document.getElementById('lib-signin-error');
   errEl.style.display = 'none';
+  libSetSigninState(true, 'Connecting...');
+  if (window.location.protocol === 'https:' || window.location.protocol === 'http:') {
+    sessionStorage.setItem('td_lib_auth_return', '1');
+    window.location.href = new URL('./library-auth.html', window.location.href).toString();
+    return;
+  }
   let app = libGetMsal();
   if (!app) {
+    libSetSigninState(false);
+    errEl.textContent = window.msal?.PublicClientApplication
+      ? 'Microsoft sign-in is unavailable right now. Please reload and try again.'
+      : 'Microsoft sign-in library failed to load. Please reload the app.';
+    errEl.style.display = '';
+    return;
+  }
+  if (!LIB_CLIENT_ID) {
     const id = prompt('Azure Client ID not configured. Enter Client ID:');
-    if (!id) return;
+    if (!id) { libSetSigninState(false); return; }
     LIB_CLIENT_ID = id.trim();
     localStorage.setItem('td_lib_client_id', LIB_CLIENT_ID);
     libMsalApp = null; libMsalInitPromise = null; libMsalReady = false;
     try { libGetMsal(); } catch(e) {}
     errEl.textContent = 'Client ID saved. Please click "Sign in with Microsoft" again.';
     errEl.style.display = '';
-    return;
-  }
-  if (!libMsalReady) {
-    errEl.textContent = 'Still loading — please try again in a moment.';
-    errEl.style.display = '';
+    libSetSigninState(false);
     return;
   }
   // Clear any stale MSAL interaction state that can cause interaction_in_progress errors
@@ -8134,9 +9215,19 @@ async function libSignInMicrosoft() {
   // Page will navigate to Microsoft login, then return here automatically
   try {
     sessionStorage.setItem('td_lib_auth_return', '1');
-    await app.loginRedirect({ scopes: ['Files.Read.All', 'User.Read'] });
+    errEl.textContent = 'Redirecting to Microsoft sign-in...';
+    errEl.style.display = '';
+    const authUrl = libAuthUrl || await app.getAuthCodeUrl({
+      scopes: ['Files.Read.All', 'User.Read'],
+      redirectUri: LIB_REDIRECT_URI,
+      redirectStartPage: window.location.href
+    });
+    if (!authUrl) throw new Error('No Microsoft auth URL was generated.');
+    window.location.href = authUrl;
+    return;
   } catch(e) {
     sessionStorage.removeItem('td_lib_auth_return');
+    libSetSigninState(false);
     errEl.textContent = 'Sign-in failed: ' + (e.errorMessage || e.message || String(e));
     errEl.style.display = '';
   }
@@ -8153,6 +9244,7 @@ function libSignOut() {
   document.getElementById('lib-browser-view').style.display = 'none';
   document.getElementById('lib-signin-view').style.display = 'flex';
   document.getElementById('lib-signin-error').style.display = 'none';
+  libSetSigninState(false);
 }
 
 async function libGetToken() {
@@ -8388,6 +9480,228 @@ async function libLocalOpenDoc(idx) {
   if (orig) window.switchTab = function(n){ orig(n); if(n==='library'&&!libAccount) initLibrary(); };
 })();
 
+// Initial dashboard render — must run after all state above is declared.
+renderToday();
+
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js?v=2026-07-10-1').then((registration) => {
+      registration.update().catch(() => {});
+    }).catch((error) => {
+      console.error('Service worker registration failed', error);
+    });
+  });
+}
+</script>
+
+<script>
+window.addEventListener('load', () => {
+  try {
+    if (typeof showQuizLanding === 'function') showQuizLanding();
+  } catch (e) {
+    console.warn('Quiz recovery failed', e);
+  }
+  try {
+    if (typeof fcRender === 'function') fcRender();
+  } catch (e) {
+    console.warn('Flashcard recovery failed', e);
+    const deck = Array.isArray(window.FC_CARDS) ? window.FC_CARDS : [];
+    if (deck.length) {
+      const first = deck[0];
+      const front = document.getElementById('fc-front-term');
+      const back = document.getElementById('fc-back-def');
+      const counter = document.getElementById('fc-counter');
+      const progress = document.getElementById('fc-progress');
+      if (front) front.textContent = first.term;
+      if (back) back.textContent = first.def;
+      if (counter) counter.textContent = `1 / ${deck.length}`;
+      if (progress) progress.textContent = `0 of ${deck.length} known`;
+    }
+  }
+});
+</script>
+
+<script>
+window.addEventListener('load', () => {
+  const quizCards = {
+    quick: document.querySelector('.quiz-mode-card:nth-of-type(1)'),
+    timed: document.querySelector('.quiz-mode-card:nth-of-type(2)'),
+    scenarios: document.querySelector('.quiz-mode-card:nth-of-type(3)'),
+    weakspots: document.querySelector('.quiz-mode-card:nth-of-type(4)')
+  };
+
+  function fallbackRenderFlashcard(index = 0) {
+    if (!Array.isArray(FC_CARDS) || !FC_CARDS.length) return;
+    const card = FC_CARDS[((index % FC_CARDS.length) + FC_CARDS.length) % FC_CARDS.length];
+    const front = document.getElementById('fc-front-term');
+    const back = document.getElementById('fc-back-def');
+    const counter = document.getElementById('fc-counter');
+    const progress = document.getElementById('fc-progress');
+    if (front) front.textContent = card.term;
+    if (back) back.textContent = card.def;
+    if (counter) counter.textContent = `${((index % FC_CARDS.length) + FC_CARDS.length) % FC_CARDS.length + 1} / ${FC_CARDS.length}`;
+    if (progress) progress.textContent = `${(_fcKnown || []).length} of ${FC_CARDS.length} known`;
+    window.__fallbackFcIdx = ((index % FC_CARDS.length) + FC_CARDS.length) % FC_CARDS.length;
+  }
+
+  function ensureFlashcardsLive() {
+    const front = document.getElementById('fc-front-term');
+    if (!front || front.textContent.trim()) return;
+    fallbackRenderFlashcard(window.__fallbackFcIdx || 0);
+  }
+
+  function fallbackQuestionPool(mode) {
+    if (!Array.isArray(QUIZ_BANK)) return [];
+    if (mode === 'scenarios') return QUIZ_BANK.filter(q => q.cat === 'scenarios');
+    if (mode === 'weakspots') {
+      const stats = JSON.parse(localStorage.getItem('td_quiz_catstats') || '{}');
+      const weak = Object.entries(stats)
+        .map(([cat, s]) => ({ cat, pct: s.total ? s.correct / s.total : 1 }))
+        .sort((a, b) => a.pct - b.pct)
+        .slice(0, 3)
+        .map(x => x.cat);
+      return weak.length ? QUIZ_BANK.filter(q => weak.includes(q.cat)) : QUIZ_BANK.slice(0, 10);
+    }
+    return QUIZ_BANK.slice();
+  }
+
+  function fallbackStartQuiz(mode) {
+    const pool = fallbackQuestionPool(mode);
+    if (!pool.length) return;
+    const total = mode === 'timed' ? Math.min(25, pool.length) : mode === 'scenarios' ? pool.length : Math.min(10, pool.length);
+    const qs = pool.slice(0, total);
+    const landing = document.getElementById('quiz-landing');
+    const active = document.getElementById('quiz-active');
+    const results = document.getElementById('quiz-results');
+    if (landing) landing.style.display = 'none';
+    if (results) results.style.display = 'none';
+    if (active) active.style.display = '';
+    window.__fallbackQuiz = { qs, idx: 0, score: 0, mode };
+    renderFallbackQuestion();
+  }
+
+  function renderFallbackQuestion() {
+    const state = window.__fallbackQuiz;
+    if (!state || !state.qs.length) return;
+    const q = state.qs[state.idx];
+    const total = state.qs.length;
+    document.getElementById('quiz-q-counter').textContent = `Question ${state.idx + 1} of ${total}`;
+    document.getElementById('quiz-progress-bar').style.width = `${(state.idx / total) * 100}%`;
+    document.getElementById('quiz-live-num').textContent = state.score;
+    document.getElementById('quiz-q-cat').textContent = (CAT_META[q.cat]?.label || q.cat || '').toUpperCase();
+    document.getElementById('quiz-q-text').textContent = q.q;
+    document.getElementById('quiz-explanation').style.display = 'none';
+    document.getElementById('quiz-next-btn').style.display = 'none';
+    document.getElementById('quiz-result-badge').textContent = '';
+    const letters = ['A','B','C','D'];
+    document.getElementById('quiz-options').innerHTML = q.opts.map((opt, i) => `
+      <button class="quiz-opt" data-fallback-opt="${i}">
+        <span class="quiz-opt-letter">${letters[i]}</span>
+        <span>${opt}</span>
+      </button>
+    `).join('');
+    document.querySelectorAll('[data-fallback-opt]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.getAttribute('data-fallback-opt'));
+        const correct = idx === q.ans;
+        if (correct) state.score++;
+        document.getElementById('quiz-live-num').textContent = state.score;
+        document.getElementById('quiz-result-badge').textContent = correct ? '✅' : '❌';
+        document.querySelectorAll('[data-fallback-opt]').forEach((node, i) => {
+          node.classList.add('disabled');
+          if (i === q.ans) node.classList.add('correct');
+          else if (i === idx) node.classList.add('wrong');
+        });
+        const expEl = document.getElementById('quiz-explanation');
+        expEl.innerHTML = `<strong>Why:</strong> ${q.exp}`;
+        expEl.style.display = '';
+        const nextBtn = document.getElementById('quiz-next-btn');
+        nextBtn.style.display = '';
+        nextBtn.onclick = () => {
+          state.idx++;
+          if (state.idx >= state.qs.length) {
+            document.getElementById('quiz-active').style.display = 'none';
+            document.getElementById('quiz-results').style.display = '';
+            const pct = Math.round((state.score / state.qs.length) * 100);
+            document.getElementById('quiz-final-score').textContent = `${pct}%`;
+            document.getElementById('quiz-final-label').textContent = `${state.score} / ${state.qs.length} correct`;
+            document.getElementById('quiz-grade-msg').textContent = 'Fallback quiz mode is active while the main quiz engine is recovering.';
+            document.getElementById('quiz-cat-breakdown').innerHTML = '';
+          } else {
+            renderFallbackQuestion();
+          }
+        };
+      }, { once: true });
+    });
+  }
+
+  Object.entries(quizCards).forEach(([mode, el]) => {
+    if (!el) return;
+    el.addEventListener('click', () => {
+      setTimeout(() => {
+        const qtext = document.getElementById('quiz-q-text')?.textContent?.trim();
+        const activeVisible = getComputedStyle(document.getElementById('quiz-active')).display !== 'none';
+        if (!activeVisible || !qtext) fallbackStartQuiz(mode);
+      }, 120);
+    });
+  });
+
+  document.querySelectorAll('.study-subtab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => {
+        ensureFlashcardsLive();
+        if (getComputedStyle(document.getElementById('study-quiz-view')).display !== 'none') {
+          const visibleCards = document.querySelectorAll('.quiz-mode-card').length;
+          if (!visibleCards && document.getElementById('quiz-landing')) {
+            document.getElementById('quiz-landing').style.display = '';
+          }
+        }
+      }, 80);
+    });
+  });
+
+  const nextBtn = document.querySelector('.fc-actions + .fc-progress') ? document.querySelector('.fc-nav button:last-child') : null;
+  const prevBtn = document.querySelector('.fc-nav button:first-child');
+  if (nextBtn) nextBtn.addEventListener('click', () => setTimeout(() => ensureFlashcardsLive(), 60));
+  if (prevBtn) prevBtn.addEventListener('click', () => setTimeout(() => ensureFlashcardsLive(), 60));
+  document.querySelectorAll('.fc-cat-pill').forEach((pill, i) => {
+    pill.addEventListener('click', () => setTimeout(() => {
+      if (!document.getElementById('fc-front-term')?.textContent?.trim()) {
+        const cat = pill.dataset.cat;
+        const deck = cat === 'all' ? FC_CARDS : FC_CARDS.filter(c => c.cat === cat);
+        if (deck.length) {
+          const front = document.getElementById('fc-front-term');
+          const back = document.getElementById('fc-back-def');
+          const counter = document.getElementById('fc-counter');
+          const progress = document.getElementById('fc-progress');
+          if (front) front.textContent = deck[0].term;
+          if (back) back.textContent = deck[0].def;
+          if (counter) counter.textContent = `1 / ${deck.length}`;
+          if (progress) progress.textContent = `0 of ${deck.length} known`;
+        }
+      }
+    }, 60));
+  });
+
+  const videoList = document.getElementById('cls-vlist-scroll');
+  if (videoList) {
+    videoList.addEventListener('click', (event) => {
+      const row = event.target.closest('.cls-video-item');
+      if (!row) return;
+      const vid = row.dataset.vid;
+      const title = row.dataset.title || row.querySelector('.cls-video-title')?.textContent || 'Video';
+      setTimeout(() => {
+        const promptVisible = getComputedStyle(document.getElementById('cls-pick-prompt')).display !== 'none';
+        if (promptVisible && vid) renderDirectVideoEmbed(vid, title);
+      }, 250);
+    });
+  }
+
+  ensureFlashcardsLive();
+});
 </script>
 
 
