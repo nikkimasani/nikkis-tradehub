@@ -41,6 +41,16 @@ Most product logic still lives in `index.html`. There is no frontend build step 
 
 ## Recent Features
 
+- Pattern Lab (Trade menu):
+  synthetic-chart pattern detector, setup recognition trainer, and R-based strategy backtester — no API key needed
+- Mobile dashboard sections:
+  on phones, the Today modules collapse behind tappable headers (state remembered per device), the stat cards form a 2-column grid, and scrolling no longer rubber-bands before the bottom
+- How-to guides:
+  "📘 How to use" panels inside the Strategy Scanner, Portfolio Simulator, and Bot Builder, plus the full Guide under Study; all ? tooltips now open on tap
+- Quiz bank expansion:
+  200 questions total — 25 in each of the 8 categories
+- OneDrive sign-in fix:
+  the Library now uses an app registration that has the production redirect URI registered
 - Responsive shell update:
   the left sidebar is now a drawer on tablet/mobile instead of consuming the layout
 - PWA support:

@@ -92,6 +92,8 @@ Common persisted keys:
 - `td_quiz_catstats`
 - `td_rules`
 - `td_max_loss`
+- `td_today_secs` (mobile dashboard section open/closed state)
+- `td_lib_client_id` (Azure app client ID override for OneDrive sign-in)
 
 User-entered API keys:
 
