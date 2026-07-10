@@ -1189,6 +1189,45 @@
   .setup-trades { color:var(--muted); min-width:48px; text-align:right; }
   #setup-breakdown-wrap { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; flex-shrink:0; display:none; }
 
+  /* ===================== PATTERN LAB PANEL ===================== */
+  #panel-patterns { overflow-y:auto; padding:16px 20px; gap:14px; }
+  .pl-subtabs { display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap; }
+  .pl-subtab { padding:7px 14px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; border-radius:8px; border:1px solid var(--border); background:var(--surface); transition:all .15s; user-select:none; min-height:36px; display:flex; align-items:center; }
+  .pl-subtab:hover { color:var(--text); background:var(--surface2); }
+  .pl-subtab.active { color:#0d1117; background:var(--accent); border-color:var(--accent); font-weight:700; }
+  .pl-view { display:none; flex-direction:column; gap:14px; }
+  .pl-view.active { display:flex; }
+  .pl-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .pl-card h3 { font-size:13px; font-weight:700; color:var(--accent); margin-bottom:10px; }
+  .pl-controls { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+  .pl-controls .field-group { margin-bottom:0; min-width:110px; }
+  .pl-check { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text); cursor:pointer; white-space:nowrap; padding:6px 0; }
+  .pl-check input { accent-color:var(--accent); width:14px; height:14px; cursor:pointer; flex-shrink:0; }
+  .pl-checks { display:flex; gap:14px; flex-wrap:wrap; }
+  .pl-canvas-wrap { background:var(--bg); border:1px solid var(--border); border-radius:8px; overflow:hidden; position:relative; }
+  .pl-canvas-wrap canvas { display:block; width:100%; }
+  .pl-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11px; padding:6px 2px 0; }
+  .pl-legend span::before { content:'—'; margin-right:4px; font-weight:700; }
+  .pl-hits { display:flex; flex-direction:column; gap:6px; }
+  .pl-hit { display:flex; gap:10px; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:12px; cursor:pointer; transition:border-color .15s; flex-wrap:wrap; }
+  .pl-hit:hover, .pl-hit.focused { border-color:var(--accent); }
+  .pl-hit-tag { font-weight:700; min-width:140px; }
+  .pl-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+  .pl-quiz-opts { display:flex; flex-direction:column; gap:8px; }
+  .pl-quiz-opt { background:var(--bg); border:2px solid var(--border); border-radius:8px; padding:10px 14px; cursor:pointer; font-size:13px; color:var(--text); text-align:left; transition:all .15s; font-family:var(--font); min-height:40px; }
+  .pl-quiz-opt:hover:not(:disabled) { border-color:var(--accent); }
+  .pl-quiz-opt.correct { border-color:var(--accent2); background:rgba(74,222,128,.12); color:var(--accent2); }
+  .pl-quiz-opt.wrong { border-color:var(--warn); background:rgba(251,91,82,.1); color:var(--warn); }
+  .pl-quiz-opt:disabled { cursor:default; opacity:.85; }
+  .pl-explain { background:rgba(96,180,255,.07); border:1px solid rgba(96,180,255,.2); border-radius:8px; padding:12px 14px; font-size:12px; color:var(--text); line-height:1.6; display:none; margin-top:10px; }
+  .pl-explain.show { display:block; }
+  .pl-note { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5; }
+  @media (max-width:820px) {
+    #panel-patterns { padding:12px; }
+    .pl-controls .field-group { flex:1; }
+    .pl-hit-tag { min-width:110px; }
+  }
+
   /* ===================== RESPONSIVE SHELL ===================== */
   * { box-sizing:border-box; }
   html { height:100%; }
@@ -1384,6 +1423,7 @@
   <div class="tab" data-tab="calc">🧮 Position Calc</div>
   <div class="tab" data-tab="journal">📓 P&L Journal</div>
   <div class="tab" data-tab="paper">🎯 Paper Trade</div>
+  <div class="tab" data-tab="patterns">🔬 Pattern Lab</div>
 </div>
 <div class="nav-dropdown" id="nav-dd-learn">
   <div class="tab" data-tab="classroom">🎓 Classroom</div>
@@ -3784,7 +3824,7 @@ async function dbInit() {
 // ==================== TABS ====================
 
 // Which dropdown group each consolidated tab lives under
-const NAV_GROUPS = { charts:'trade', calc:'trade', journal:'trade', paper:'trade', classroom:'learn', learn:'learn', library:'learn' };
+const NAV_GROUPS = { charts:'trade', calc:'trade', journal:'trade', paper:'trade', patterns:'trade', classroom:'learn', learn:'learn', library:'learn' };
 
 function closeNavDropdowns() {
   document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
@@ -9882,6 +9922,90 @@ window.addEventListener('load', () => {
   </div>
 </div>
 
+<!-- ============ PATTERN LAB ============ -->
+<div class="panel" id="panel-patterns">
+
+  <div class="pl-subtabs">
+    <div class="pl-subtab active" data-plview="detect" onclick="plShowView('detect',this)">🔎 Detector</div>
+    <div class="pl-subtab" data-plview="train" onclick="plShowView('train',this)">🎯 Trainer</div>
+    <div class="pl-subtab" data-plview="backtest" onclick="plShowView('backtest',this)">📊 Backtester</div>
+  </div>
+
+  <!-- DETECTOR -->
+  <div class="pl-view active" id="pl-view-detect">
+    <div class="pl-card">
+      <h3 style="display:flex;align-items:center">🔎 Pattern Detector<span class="info-tip" data-tip="How to use the Pattern Detector:
+1. Pick which setups to scan for with the checkboxes.
+2. Click 'New Chart' to generate a fresh synthetic price chart.
+3. Detected setups are marked on the chart and listed below — click a detection to highlight it.
+4. These are the same rule-based patterns real trading bots trade: EMA-20 breaks and bounces with volume confirmation, 3-bar reversals, and flat-top breakouts.">?</span></h3>
+      <div class="pl-checks" id="pl-detect-checks"></div>
+      <div class="pl-controls" style="margin-top:8px">
+        <button class="btn-sm" onclick="plNewChart()">🎲 New Chart</button>
+      </div>
+      <div class="pl-note">Synthetic intraday-style data (no API key needed). Each pattern uses codified rules — volume surges, EMA position, and candle structure — not vibes.</div>
+    </div>
+    <div class="pl-canvas-wrap"><canvas id="pl-canvas-detect"></canvas></div>
+    <div class="pl-legend"><span style="color:#60b4ff">EMA 20</span><span style="color:#c084fc">EMA 5</span><span style="color:var(--muted)">volume (bottom)</span></div>
+    <div class="pl-card">
+      <h3>Detections</h3>
+      <div class="pl-hits" id="pl-hits"><div class="pl-note">Click "New Chart" to scan.</div></div>
+    </div>
+  </div>
+
+  <!-- TRAINER -->
+  <div class="pl-view" id="pl-view-train">
+    <div class="pl-card">
+      <h3 style="display:flex;align-items:center">🎯 Setup Recognition Trainer<span class="info-tip" data-tip="How to use the Trainer:
+1. Look at the final bars of the chart — a setup may have just fired on the last candle (marked with ▲).
+2. Pick which pattern you see, or 'No clean setup' if the rules aren't met.
+3. You'll get the rule-by-rule explanation after each answer.
+4. Your score and streak are saved on this device.">?</span></h3>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)" id="pl-train-score"></div>
+    </div>
+    <div class="pl-canvas-wrap"><canvas id="pl-canvas-train"></canvas></div>
+    <div class="pl-card">
+      <div class="pl-quiz-opts" id="pl-train-opts"><div class="pl-note">Loading…</div></div>
+      <div class="pl-explain" id="pl-train-explain"></div>
+      <div style="margin-top:10px;display:none" id="pl-train-next-wrap"><button class="btn-sm" onclick="plTrainNext()">Next Chart →</button></div>
+    </div>
+  </div>
+
+  <!-- BACKTESTER -->
+  <div class="pl-view" id="pl-view-backtest">
+    <div class="pl-card">
+      <h3 style="display:flex;align-items:center">📊 Strategy Backtester<span class="info-tip" data-tip="How to use the Backtester:
+1. Pick which setups to trade and how many charts to simulate.
+2. Entry is the open of the bar after each signal. Stop goes at the signal bar's low/high.
+3. Choose a profit target in R multiples (2R = risk $1 to make $2) or an EMA-20 trailing exit.
+4. Click 'Run Backtest' to see win rate, average R, profit factor, equity curve, and every simulated trade.
+Results are measured in R (risk units), so they're account-size independent.">?</span></h3>
+      <div class="pl-checks" id="pl-bt-checks"></div>
+      <div class="pl-controls" style="margin-top:8px">
+        <div class="field-group"><label>Charts</label><input type="number" id="pl-bt-charts" value="30" min="1" max="200"></div>
+        <div class="field-group"><label>Bars / chart</label><input type="number" id="pl-bt-bars" value="240" min="60" max="1000"></div>
+        <div class="field-group"><label>Target (R)</label><input type="number" id="pl-bt-rmult" value="2" min="0.5" max="10" step="0.5"></div>
+        <div class="field-group"><label>Exit style</label><select id="pl-bt-stopmode"><option value="signal">Fixed stop + target</option><option value="ema20">Stop + EMA-20 trail exit</option></select></div>
+        <button class="btn-sm" onclick="plRunBacktest()">▶ Run Backtest</button>
+      </div>
+      <div class="pl-note" id="pl-bt-note">Trades are simulated on synthetic data — the point is to learn how win rate, R multiple, and exits interact, not to predict the market.</div>
+    </div>
+    <div class="pl-stat-grid" id="pl-bt-stats"></div>
+    <div class="pl-canvas-wrap" id="pl-equity-wrap" style="display:none"><canvas id="pl-canvas-equity"></canvas></div>
+    <div class="pl-card" id="pl-bt-breakdown-card" style="display:none">
+      <h3>Per-Pattern Results</h3>
+      <div id="pl-bt-breakdown"></div>
+    </div>
+    <div class="trade-table-wrap" id="pl-bt-table-wrap" style="display:none">
+      <table class="trade-table">
+        <thead><tr><th>#</th><th>Chart</th><th>Pattern</th><th>Dir</th><th>Entry</th><th>Stop</th><th>Exit</th><th>Result (R)</th><th>Reason</th></tr></thead>
+        <tbody id="pl-bt-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
 <!-- Rules Editor Modal -->
 <div id="rules-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:min(480px,92vw);max-height:80vh;display:flex;flex-direction:column;gap:12px">
@@ -9894,6 +10018,614 @@ window.addEventListener('load', () => {
     </div>
   </div>
 </div>
+<script>
+// ==================== PATTERN LAB ====================
+(function(){
+  'use strict';
+
+  // ---- seeded RNG (independent of RSI sim's) ----
+  let _pls = (Date.now() ^ 0x9e3779b9) | 0;
+  function prand() { _pls = Math.imul(1664525, _pls) + 1013904223 | 0; return (_pls >>> 0) / 4294967296; }
+  function pgauss() { let u, v; do { u = prand(); } while (!u); do { v = prand(); } while (!v); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+  // ---- synthetic OHLCV generation (GBM + vol clustering + volume spikes) ----
+  function genCandles(n, opts) {
+    opts = opts || {};
+    const out = [];
+    let close = opts.start || (15 + prand() * 185);
+    let vol = .012;
+    const drift = opts.drift !== undefined ? opts.drift : (prand() - .5) * .001;
+    const baseVol = 400000 + prand() * 1600000;
+    for (let i = 0; i < n; i++) {
+      vol = Math.min(.04, Math.max(.004, .006 + .0025 * Math.abs(pgauss()) + .72 * vol));
+      const o = close;
+      close = o * Math.exp(drift - .5 * vol * vol + vol * pgauss());
+      const h = Math.max(o, close) * (1 + prand() * vol * .7);
+      const l = Math.min(o, close) * (1 - prand() * vol * .7);
+      const spike = prand() < .08 ? (1.8 + prand() * 2.6) : 1;
+      const v = Math.round(baseVol * (.55 + prand() * .9) * spike);
+      out.push({ o: o, h: h, l: l, c: close, v: v });
+    }
+    return out;
+  }
+
+  function ema(vals, p) {
+    const out = new Array(vals.length).fill(null);
+    const k = 2 / (p + 1);
+    let e = null, sum = 0;
+    for (let i = 0; i < vals.length; i++) {
+      if (i < p - 1) { sum += vals[i]; continue; }
+      if (i === p - 1) { sum += vals[i]; e = sum / p; }
+      else e = vals[i] * k + e * (1 - k);
+      out[i] = e;
+    }
+    return out;
+  }
+
+  // ---- pattern detectors: rule-based, adapted from real bot strategy rules ----
+  const PATTERNS = {
+    emaBreakUp: {
+      name: 'EMA-20 Break ↑', color: '#4ade80', dir: 1,
+      rules: 'Bar opens below the 20 EMA and closes above it, bullish body, on volume ≥ 1.7× the prior bar. The volume surge is what separates a real break from drift.',
+      test: function(c, i, e20) {
+        if (i < 21 || e20[i] == null) return null;
+        const b = c[i], pv = c[i - 1];
+        if (b.o < e20[i] && b.c > e20[i] && b.c > b.o && b.v >= pv.v * 1.7) return { stop: b.l };
+        return null;
+      }
+    },
+    emaBreakDown: {
+      name: 'EMA-20 Break ↓', color: '#fb5b52', dir: -1,
+      rules: 'Bar opens above the 20 EMA and closes below it, bearish body, on volume ≥ 1.7× the prior bar. A short setup — stop goes above the signal bar high.',
+      test: function(c, i, e20) {
+        if (i < 21 || e20[i] == null) return null;
+        const b = c[i], pv = c[i - 1];
+        if (b.o > e20[i] && b.c < e20[i] && b.c < b.o && b.v >= pv.v * 1.7) return { stop: b.h };
+        return null;
+      }
+    },
+    emaBounce: {
+      name: 'EMA-20 Bounce', color: '#60b4ff', dir: 1,
+      rules: 'In an uptrend (20 EMA rising), price dips to touch the 20 EMA and gets rejected: the bar closes back above it with a bullish body bigger than its upper wick. Buying the dip — with rules.',
+      test: function(c, i, e20) {
+        if (i < 24 || e20[i] == null || e20[i - 3] == null) return null;
+        const b = c[i];
+        const uptrend = e20[i] > e20[i - 3];
+        const touched = b.l <= e20[i] * 1.003 && b.l >= e20[i] * .99;
+        const rejected = b.c > e20[i] && b.c > b.o && (b.c - b.o) > (b.h - b.c);
+        if (uptrend && touched && rejected) return { stop: b.l };
+        return null;
+      }
+    },
+    threeBar: {
+      name: '3-Bar Reversal', color: '#c084fc', dir: 1,
+      rules: 'Two consecutive down bars closing below the 5 EMA, then a strong reversal bar that closes above BOTH prior highs and the 5 EMA, with a tiny upper tail (≤25% of range), more volume than the prior bar, and a bigger range. Exhaustion, then conviction.',
+      test: function(c, i, e20, e5) {
+        if (i < 7 || e5[i] == null || e5[i - 1] == null || e5[i - 2] == null) return null;
+        const b = c[i], p1 = c[i - 1], p2 = c[i - 2];
+        const twoDown = p1.c < p1.o && p2.c < p2.o && p1.c < e5[i - 1] && p2.c < e5[i - 2];
+        const strong = b.c > b.o && b.c > p1.h && b.c > p2.h && b.c > e5[i];
+        const range = b.h - b.l;
+        if (range <= 0) return null;
+        const smallTail = (b.h - b.c) / range <= .25;
+        const volOK = b.v > p1.v && range > (p1.h - p1.l);
+        if (twoDown && strong && smallTail && volOK) return { stop: b.l };
+        return null;
+      }
+    },
+    flatTop: {
+      name: 'Flat-Top Breakout', color: '#fbbf24', dir: 1,
+      rules: 'Over ~12 bars: at least 3 highs hitting the same resistance level (within 0.25%) while the lows keep rising underneath — then a bar closes above resistance on volume ≥ 1.5× average. Buyers stepping up into a ceiling until it breaks.',
+      test: function(c, i) {
+        const look = 12;
+        if (i < look + 2) return null;
+        const win = c.slice(i - look, i);
+        let hi = -Infinity;
+        for (const x of win) if (x.h > hi) hi = x.h;
+        const near = win.filter(function(x) { return x.h >= hi * .9975; }).length;
+        const lows = win.map(function(x) { return x.l; });
+        const firstLow = Math.min.apply(null, lows.slice(0, 4));
+        const lastLow = Math.min.apply(null, lows.slice(-4));
+        const avgV = win.reduce(function(s, x) { return s + x.v; }, 0) / look;
+        const b = c[i];
+        if (near >= 3 && lastLow > firstLow && b.c > hi && b.v >= avgV * 1.5) return { stop: lastLow };
+        return null;
+      }
+    }
+  };
+  const PKEYS = Object.keys(PATTERNS);
+
+  function scan(c, keys) {
+    const closes = c.map(function(x) { return x.c; });
+    const e20 = ema(closes, 20), e5 = ema(closes, 5);
+    const hits = [];
+    for (let i = 0; i < c.length; i++) {
+      for (const k of keys) {
+        const r = PATTERNS[k].test(c, i, e20, e5);
+        if (r) hits.push({ i: i, key: k, stop: r.stop, dir: PATTERNS[k].dir });
+      }
+    }
+    return { hits: hits, e20: e20, e5: e5 };
+  }
+
+  // ---- canvas chart renderer ----
+  function drawChart(canvas, c, extras) {
+    extras = extras || {};
+    const wrap = canvas.parentElement;
+    const cssW = Math.max(280, wrap.clientWidth);
+    const cssH = extras.height || 360;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+    canvas.style.height = cssH + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#0a0e17'; ctx.fillRect(0, 0, cssW, cssH);
+    const M = { t: 10, r: 10, b: 6, l: 46 };
+    const volH = Math.round(cssH * .16);
+    const priceH = cssH - M.t - M.b - volH - 4;
+    const n = c.length;
+    let pMin = Infinity, pMax = -Infinity, vMax = 0;
+    for (const b of c) { if (b.l < pMin) pMin = b.l; if (b.h > pMax) pMax = b.h; if (b.v > vMax) vMax = b.v; }
+    const pad = (pMax - pMin) * .06 || 1;
+    pMin -= pad; pMax += pad;
+    const xw = (cssW - M.l - M.r) / n;
+    const bw = Math.max(1.5, Math.min(9, xw * .62));
+    const px = function(i) { return M.l + i * xw + xw / 2; };
+    const py = function(p) { return M.t + priceH * (1 - (p - pMin) / (pMax - pMin)); };
+    // gridlines + price labels
+    ctx.strokeStyle = 'rgba(122,139,168,.12)'; ctx.fillStyle = '#7a8ba8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+    for (let g = 0; g <= 4; g++) {
+      const p = pMin + (pMax - pMin) * g / 4, y = py(p);
+      ctx.beginPath(); ctx.moveTo(M.l, y); ctx.lineTo(cssW - M.r, y); ctx.stroke();
+      ctx.fillText(p >= 100 ? p.toFixed(0) : p.toFixed(2), 4, y + 3);
+    }
+    // volume
+    for (let i = 0; i < n; i++) {
+      const b = c[i];
+      ctx.fillStyle = b.c >= b.o ? 'rgba(74,222,128,.35)' : 'rgba(251,91,82,.35)';
+      const vh = Math.max(1, volH * b.v / vMax);
+      ctx.fillRect(px(i) - bw / 2, cssH - M.b - vh, bw, vh);
+    }
+    // EMA lines
+    const drawLine = function(vals, color) {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < n; i++) {
+        if (vals[i] == null) continue;
+        const x = px(i), y = py(vals[i]);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.lineWidth = 1;
+    };
+    if (extras.e20) drawLine(extras.e20, '#60b4ff');
+    if (extras.e5) drawLine(extras.e5, '#c084fc');
+    // candles
+    for (let i = 0; i < n; i++) {
+      const b = c[i], up = b.c >= b.o, col = up ? '#4ade80' : '#fb5b52', x = px(i);
+      ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(x, py(b.h)); ctx.lineTo(x, py(b.l)); ctx.stroke();
+      ctx.fillStyle = col;
+      const yo = py(b.o), yc = py(b.c);
+      ctx.fillRect(x - bw / 2, Math.min(yo, yc), bw, Math.max(1, Math.abs(yc - yo)));
+    }
+    // markers
+    if (extras.hits) {
+      for (const h of extras.hits) {
+        const b = c[h.i], pat = PATTERNS[h.key], x = px(h.i);
+        const above = pat.dir < 0;
+        const y = above ? py(b.h) - 8 : py(b.l) + 8;
+        ctx.fillStyle = pat.color;
+        ctx.beginPath();
+        if (above) { ctx.moveTo(x, y); ctx.lineTo(x - 5, y - 7); ctx.lineTo(x + 5, y - 7); }
+        else { ctx.moveTo(x, y); ctx.lineTo(x - 5, y + 7); ctx.lineTo(x + 5, y + 7); }
+        ctx.closePath(); ctx.fill();
+        if (extras.focus === h) {
+          ctx.strokeStyle = pat.color; ctx.lineWidth = 1.5;
+          ctx.strokeRect(x - bw / 2 - 4, py(b.h) - 5, bw + 8, py(b.l) - py(b.h) + 10);
+          ctx.lineWidth = 1;
+        }
+      }
+    }
+    if (extras.lastBarMark) {
+      const b = c[n - 1], x = px(n - 1);
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.moveTo(x, py(b.l) + 9); ctx.lineTo(x - 5, py(b.l) + 16); ctx.lineTo(x + 5, py(b.l) + 16); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  function drawEquity(canvas, eq) {
+    const wrap = canvas.parentElement;
+    const cssW = Math.max(280, wrap.clientWidth), cssH = 170;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+    canvas.style.height = cssH + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#0a0e17'; ctx.fillRect(0, 0, cssW, cssH);
+    const M = { t: 12, r: 10, b: 12, l: 40 };
+    let mn = Math.min.apply(null, eq), mx = Math.max.apply(null, eq);
+    if (mn === mx) { mn -= 1; mx += 1; }
+    const xs = function(i) { return M.l + (cssW - M.l - M.r) * i / Math.max(1, eq.length - 1); };
+    const ys = function(v) { return M.t + (cssH - M.t - M.b) * (1 - (v - mn) / (mx - mn)); };
+    ctx.strokeStyle = 'rgba(122,139,168,.25)'; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(M.l, ys(0)); ctx.lineTo(cssW - M.r, ys(0)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#7a8ba8'; ctx.font = '10px sans-serif';
+    ctx.fillText('0R', 6, ys(0) + 3);
+    ctx.fillText((mx).toFixed(1) + 'R', 6, ys(mx) + 8);
+    ctx.fillText((mn).toFixed(1) + 'R', 6, ys(mn) - 2);
+    const last = eq[eq.length - 1];
+    ctx.strokeStyle = last >= 0 ? '#4ade80' : '#fb5b52'; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (let i = 0; i < eq.length; i++) { const x = xs(i), y = ys(eq[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke(); ctx.lineWidth = 1;
+  }
+
+  // ---- state ----
+  const S = { detect: null, train: null, bt: null, activated: false };
+
+  // ---- checkbox groups ----
+  function buildChecks(elId, prefix) {
+    const el = document.getElementById(elId);
+    el.innerHTML = PKEYS.map(function(k) {
+      return '<label class="pl-check"><input type="checkbox" id="' + prefix + k + '" checked><span style="color:' + PATTERNS[k].color + '">●</span> ' + PATTERNS[k].name + '</label>';
+    }).join('');
+  }
+  function checkedKeys(prefix) {
+    return PKEYS.filter(function(k) { const el = document.getElementById(prefix + k); return el && el.checked; });
+  }
+
+  // ---- one-time init, safe to call from any entry point ----
+  function ensureInit() {
+    if (S.activated) return;
+    S.activated = true;
+    buildChecks('pl-detect-checks', 'pl-dk-');
+    buildChecks('pl-bt-checks', 'pl-bk-');
+    renderTrainScore();
+  }
+
+  // ---- DETECTOR ----
+  window.plNewChart = function() {
+    ensureInit();
+    const keys = checkedKeys('pl-dk-');
+    const c = genCandles(150);
+    const res = scan(c, keys.length ? keys : PKEYS);
+    S.detect = { c: c, res: res, focus: null };
+    renderDetect();
+  };
+
+  function renderDetect() {
+    if (!S.detect) return;
+    const d = S.detect;
+    drawChart(document.getElementById('pl-canvas-detect'), d.c, { e20: d.res.e20, e5: d.res.e5, hits: d.res.hits, focus: d.focus, height: 380 });
+    const list = document.getElementById('pl-hits');
+    if (!d.res.hits.length) {
+      list.innerHTML = '<div class="pl-note">No setups matched the rules on this chart — that\'s realistic. Most bars are not tradeable. Generate another chart.</div>';
+      return;
+    }
+    list.innerHTML = d.res.hits.map(function(h, idx) {
+      const p = PATTERNS[h.key], b = d.c[h.i];
+      return '<div class="pl-hit' + (d.focus === h ? ' focused' : '') + '" onclick="plFocusHit(' + idx + ')">' +
+        '<span class="pl-hit-tag" style="color:' + p.color + '">' + p.name + '</span>' +
+        '<span>bar ' + (h.i + 1) + '</span>' +
+        '<span style="color:var(--muted)">signal close ' + b.c.toFixed(2) + ' · stop ' + h.stop.toFixed(2) + '</span>' +
+        '<span class="' + (h.dir > 0 ? 'dir-long' : 'dir-short') + '">' + (h.dir > 0 ? 'LONG' : 'SHORT') + '</span></div>';
+    }).join('');
+  }
+
+  window.plFocusHit = function(idx) {
+    if (!S.detect) return;
+    S.detect.focus = S.detect.res.hits[idx];
+    renderDetect();
+  };
+
+  // ---- TRAINER ----
+  const TRAIN_STORE = 'td_plab_stats';
+  function trainStats() {
+    try { return JSON.parse(localStorage.getItem(TRAIN_STORE)) || { right: 0, wrong: 0, streak: 0, best: 0 }; }
+    catch (e) { return { right: 0, wrong: 0, streak: 0, best: 0 }; }
+  }
+  function saveTrainStats(s) { localStorage.setItem(TRAIN_STORE, JSON.stringify(s)); }
+
+  // Build a chart whose last bar fires exactly the target pattern (or none), verified by the detector itself.
+  function makeTrainingChart(targetKey) {
+    for (let attempt = 0; attempt < 80; attempt++) {
+      let c;
+      if (targetKey === 'none') {
+        c = genCandles(90, { drift: (prand() - .5) * .0004 });
+        const res = scan(c, PKEYS);
+        if (!res.hits.some(function(h) { return h.i >= c.length - 12; })) return { c: c, res: res };
+        continue;
+      }
+      c = craft(targetKey);
+      if (!c) continue;
+      const res = scan(c, PKEYS);
+      const lastHits = res.hits.filter(function(h) { return h.i === c.length - 1; });
+      if (lastHits.length && lastHits.some(function(h) { return h.key === targetKey; }) &&
+          lastHits.every(function(h) { return h.key === targetKey; })) {
+        return { c: c, res: res };
+      }
+    }
+    return null;
+  }
+
+  function lastE(c, p) { return ema(c.map(function(x) { return x.c; }), p)[c.length - 1]; }
+
+  function craft(key) {
+    if (key === 'emaBreakUp' || key === 'emaBreakDown') {
+      const up = key === 'emaBreakUp';
+      const c = genCandles(70, { drift: up ? -.0012 - prand() * .001 : .0012 + prand() * .001 });
+      const e = lastE(c, 20), prev = c[c.length - 1];
+      // park price just on the wrong side of the EMA, then break through it
+      const o = up ? e * (.995 - prand() * .003) : e * (1.005 + prand() * .003);
+      const cl = up ? e * (1.009 + prand() * .004) : e * (.991 - prand() * .004);
+      const h = up ? cl * 1.0015 : o * 1.0015;
+      const l = up ? o * .9985 : cl * .9985;
+      c.push({ o: o, h: h, l: l, c: cl, v: Math.round(prev.v * (2 + prand())) });
+      return c;
+    }
+    if (key === 'emaBounce') {
+      const c = genCandles(70, { drift: .0016 + prand() * .0012 });
+      // walk price gently down toward the rising 20 EMA
+      for (let j = 0; j < 3; j++) {
+        const e = lastE(c, 20), last = c[c.length - 1];
+        if (last.c <= e * 1.006) break;
+        const o = last.c, cl = Math.max(e * 1.004, o * .994);
+        c.push({ o: o, h: o * 1.002, l: cl * .998, c: cl, v: Math.round(last.v * (.8 + prand() * .3)) });
+      }
+      const e = lastE(c, 20), last = c[c.length - 1];
+      const o = Math.max(e * 1.0005, last.c * .999), cl = o * (1.006 + prand() * .003);
+      const h = cl * 1.0018, l = e * (.998 + prand() * .003);
+      c.push({ o: o, h: h, l: Math.min(l, o * .9995), c: cl, v: Math.round(last.v * (1.3 + prand() * .8)) });
+      return c;
+    }
+    if (key === 'threeBar') {
+      const c = genCandles(70, { drift: .0004 });
+      const l0 = c[c.length - 1];
+      let e5v = lastE(c, 5);
+      // two down bars closing below the 5 EMA
+      const d1o = Math.min(l0.c, e5v) * .9995, d1c = d1o * (.988 - prand() * .004);
+      c.push({ o: d1o, h: d1o * 1.001, l: d1c * .998, c: d1c, v: Math.round(l0.v * (.9 + prand() * .2)) });
+      e5v = lastE(c, 5);
+      const d2o = d1c * .9995, d2c = Math.min(d2o * (.99 - prand() * .003), e5v * .995);
+      c.push({ o: d2o, h: d2o * 1.001, l: d2c * .9975, c: d2c, v: Math.round(l0.v * (.85 + prand() * .2)) });
+      // strong reversal bar: closes above both prior highs + 5 EMA, tiny upper tail, bigger range + volume
+      const p1 = c[c.length - 1], p2 = c[c.length - 2];
+      const hiRef = Math.max(p1.h, p2.h);
+      const cl = hiRef * (1.006 + prand() * .003);
+      const h = cl * 1.001;
+      const p1range = p1.h - p1.l;
+      const o = p1.c * .9995;
+      const l = Math.min(o * .998, h - p1range * (1.3 + prand() * .4));
+      // volume must beat the prior bar (3-bar rule) but stay under the 1.7x EMA-break
+      // threshold so the crafted chart can't ambiguously match two patterns at once
+      c.push({ o: o, h: h, l: l, c: cl, v: Math.round(p1.v * (1.2 + prand() * .3)) });
+      return c;
+    }
+    if (key === 'flatTop') {
+      const c = genCandles(55, { drift: .0006 });
+      const base = c[c.length - 1].c;
+      const R = base * (1.012 + prand() * .01);
+      let lowFloor = base * .985;
+      for (let j = 0; j < 12; j++) {
+        const touch = (j % 3 === 1);
+        const o = lowFloor * (1.002 + prand() * .004);
+        const h = touch ? R * (1 - prand() * .0008) : R * (.988 - prand() * .006);
+        const cl = o + (h - o) * (.3 + prand() * .5);
+        const l = lowFloor * (1 + prand() * .002);
+        const v = Math.round(c[c.length - 1].v * (.75 + prand() * .5));
+        c.push({ o: o, h: Math.max(h, Math.max(o, cl)), l: Math.min(l, Math.min(o, cl)), c: cl, v: v });
+        lowFloor *= 1.0022 + prand() * .0015; // rising lows
+      }
+      const win = c.slice(-12);
+      const avgV = win.reduce(function(s, x) { return s + x.v; }, 0) / 12;
+      const last = c[c.length - 1];
+      const o = last.c, cl = R * (1.006 + prand() * .004);
+      c.push({ o: o, h: cl * 1.0012, l: o * .9985, c: cl, v: Math.round(avgV * (1.9 + prand())) });
+      return c;
+    }
+    return null;
+  }
+
+  const TRAIN_CHOICES = PKEYS.map(function(k) { return { key: k, label: PATTERNS[k].name }; })
+    .concat([{ key: 'none', label: 'No clean setup' }]);
+
+  window.plTrainNext = function() {
+    // weight 'none' at ~25%, patterns evenly otherwise
+    let target = prand() < .25 ? 'none' : PKEYS[Math.floor(prand() * PKEYS.length)];
+    let built = makeTrainingChart(target);
+    if (!built && target !== 'none') { target = 'none'; built = makeTrainingChart('none'); }
+    if (!built) { document.getElementById('pl-train-opts').innerHTML = '<div class="pl-note">Chart generation hiccup — click Next Chart.</div>'; return; }
+    S.train = { target: target, built: built, answered: false };
+    drawChart(document.getElementById('pl-canvas-train'), built.c.slice(-60), {
+      e20: built.res.e20.slice(-60), e5: built.res.e5.slice(-60), height: 340, lastBarMark: true
+    });
+    const opts = document.getElementById('pl-train-opts');
+    opts.innerHTML = TRAIN_CHOICES.map(function(ch) {
+      return '<button class="pl-quiz-opt" data-plkey="' + ch.key + '" onclick="plTrainAnswer(this)">' + ch.label + '</button>';
+    }).join('');
+    document.getElementById('pl-train-explain').className = 'pl-explain';
+    document.getElementById('pl-train-next-wrap').style.display = 'none';
+    renderTrainScore();
+  };
+
+  window.plTrainAnswer = function(btn) {
+    if (!S.train || S.train.answered) return;
+    S.train.answered = true;
+    const pick = btn.dataset.plkey, target = S.train.target;
+    const stats = trainStats();
+    const correct = pick === target;
+    if (correct) { stats.right++; stats.streak++; if (stats.streak > stats.best) stats.best = stats.streak; }
+    else { stats.wrong++; stats.streak = 0; }
+    saveTrainStats(stats);
+    document.querySelectorAll('#pl-train-opts .pl-quiz-opt').forEach(function(b) {
+      b.disabled = true;
+      if (b.dataset.plkey === target) b.classList.add('correct');
+      else if (b === btn) b.classList.add('wrong');
+    });
+    const ex = document.getElementById('pl-train-explain');
+    const ruleText = target === 'none'
+      ? 'None of the pattern rules were fully satisfied on the last bar. Recognizing "no trade" is the most profitable skill in this tab — most bars fail at least one rule (volume, EMA position, or candle structure).'
+      : '<strong style="color:' + PATTERNS[target].color + '">' + PATTERNS[target].name + ':</strong> ' + PATTERNS[target].rules;
+    ex.innerHTML = (correct ? '✅ <strong>Correct.</strong> ' : '❌ <strong>Not quite.</strong> ') + ruleText;
+    ex.className = 'pl-explain show';
+    document.getElementById('pl-train-next-wrap').style.display = 'block';
+    renderTrainScore();
+  };
+
+  function renderTrainScore() {
+    const s = trainStats();
+    const total = s.right + s.wrong;
+    const pct = total ? Math.round(100 * s.right / total) : 0;
+    document.getElementById('pl-train-score').innerHTML =
+      '<span>Answered: <strong style="color:var(--text)">' + total + '</strong></span>' +
+      '<span>Accuracy: <strong style="color:' + (pct >= 70 ? 'var(--accent2)' : pct >= 40 ? 'var(--gold)' : 'var(--warn)') + '">' + pct + '%</strong></span>' +
+      '<span>Streak: <strong style="color:var(--text)">' + s.streak + '</strong></span>' +
+      '<span>Best streak: <strong style="color:var(--gold)">' + s.best + '</strong></span>';
+  }
+
+  // ---- BACKTESTER ----
+  window.plRunBacktest = function() {
+    ensureInit();
+    const keys = checkedKeys('pl-bk-');
+    if (!keys.length) { document.getElementById('pl-bt-note').textContent = 'Pick at least one pattern to test.'; return; }
+    const charts = Math.min(200, Math.max(1, parseInt(document.getElementById('pl-bt-charts').value) || 30));
+    const bars = Math.min(1000, Math.max(60, parseInt(document.getElementById('pl-bt-bars').value) || 240));
+    const rMult = Math.min(10, Math.max(.5, parseFloat(document.getElementById('pl-bt-rmult').value) || 2));
+    const stopMode = document.getElementById('pl-bt-stopmode').value;
+    const trades = [], equity = [0];
+    let cum = 0;
+    for (let ch = 0; ch < charts; ch++) {
+      const c = genCandles(bars);
+      const res = scan(c, keys);
+      let busyUntil = -1;
+      for (const h of res.hits) {
+        if (h.i <= busyUntil || h.i >= c.length - 2) continue;
+        const entry = c[h.i + 1].o, stop = h.stop, dir = h.dir;
+        const risk = Math.abs(entry - stop);
+        if (risk <= 0 || risk / entry < .0005) continue;
+        const target = entry + dir * risk * rMult;
+        let exit = null, exitIdx = null, reason = '';
+        for (let j = h.i + 1; j < c.length; j++) {
+          const b = c[j];
+          if (dir > 0) {
+            if (b.l <= stop) { exit = stop; exitIdx = j; reason = 'stopped'; break; }
+            if (b.h >= target) { exit = target; exitIdx = j; reason = 'target'; break; }
+            if (stopMode === 'ema20' && res.e20[j] != null && b.c < res.e20[j]) { exit = b.c; exitIdx = j; reason = 'EMA exit'; break; }
+          } else {
+            if (b.h >= stop) { exit = stop; exitIdx = j; reason = 'stopped'; break; }
+            if (b.l <= target) { exit = target; exitIdx = j; reason = 'target'; break; }
+            if (stopMode === 'ema20' && res.e20[j] != null && b.c > res.e20[j]) { exit = b.c; exitIdx = j; reason = 'EMA exit'; break; }
+          }
+        }
+        if (exit == null) { exit = c[c.length - 1].c; exitIdx = c.length - 1; reason = 'chart end'; }
+        const r = dir * (exit - entry) / risk;
+        trades.push({ chart: ch + 1, key: h.key, dir: dir, entry: entry, stop: stop, exit: exit, r: r, reason: reason });
+        cum += r; equity.push(cum);
+        busyUntil = exitIdx;
+      }
+    }
+    S.bt = { trades: trades, equity: equity, rMult: rMult };
+    renderBacktest();
+  };
+
+  function renderBacktest() {
+    if (!S.bt) return;
+    const t = S.bt.trades, eq = S.bt.equity;
+    const statsEl = document.getElementById('pl-bt-stats');
+    if (!t.length) {
+      statsEl.innerHTML = '<div class="pl-note">No trades were triggered — try more charts or more patterns.</div>';
+      document.getElementById('pl-equity-wrap').style.display = 'none';
+      document.getElementById('pl-bt-breakdown-card').style.display = 'none';
+      document.getElementById('pl-bt-table-wrap').style.display = 'none';
+      return;
+    }
+    const wins = t.filter(function(x) { return x.r > 0; });
+    const winPct = Math.round(100 * wins.length / t.length);
+    const totR = t.reduce(function(s, x) { return s + x.r; }, 0);
+    const avgR = totR / t.length;
+    const grossW = t.reduce(function(s, x) { return s + (x.r > 0 ? x.r : 0); }, 0);
+    const grossL = Math.abs(t.reduce(function(s, x) { return s + (x.r < 0 ? x.r : 0); }, 0));
+    const pf = grossL ? (grossW / grossL) : Infinity;
+    let peak = 0, maxDD = 0;
+    for (const v of eq) { if (v > peak) peak = v; if (peak - v > maxDD) maxDD = peak - v; }
+    const card = function(label, val, colorClass) {
+      return '<div class="stat-card"><div class="stat-label">' + label + '</div><div class="stat-value' + (colorClass ? ' ' + colorClass : '') + '">' + val + '</div></div>';
+    };
+    statsEl.innerHTML =
+      card('Trades', t.length) +
+      card('Win rate', winPct + '%', winPct >= 50 ? 'pnl-pos' : 'pnl-neg') +
+      card('Total R', (totR >= 0 ? '+' : '') + totR.toFixed(1) + 'R', totR >= 0 ? 'pnl-pos' : 'pnl-neg') +
+      card('Avg R / trade', (avgR >= 0 ? '+' : '') + avgR.toFixed(2)) +
+      card('Profit factor', pf === Infinity ? '∞' : pf.toFixed(2), pf >= 1 ? 'pnl-pos' : 'pnl-neg') +
+      card('Max drawdown', '-' + maxDD.toFixed(1) + 'R', 'pnl-neg');
+    document.getElementById('pl-equity-wrap').style.display = 'block';
+    drawEquity(document.getElementById('pl-canvas-equity'), eq);
+    // per-pattern breakdown
+    const byPat = {};
+    for (const x of t) {
+      (byPat[x.key] = byPat[x.key] || []).push(x);
+    }
+    document.getElementById('pl-bt-breakdown-card').style.display = 'block';
+    document.getElementById('pl-bt-breakdown').innerHTML = Object.keys(byPat).map(function(k) {
+      const arr = byPat[k], w = arr.filter(function(x) { return x.r > 0; }).length;
+      const sum = arr.reduce(function(s, x) { return s + x.r; }, 0);
+      const pct = Math.round(100 * w / arr.length);
+      return '<div class="setup-row"><span class="setup-tag" style="color:' + PATTERNS[k].color + ';min-width:150px">' + PATTERNS[k].name + '</span>' +
+        '<div class="setup-bar-wrap"><div class="setup-bar" style="width:' + pct + '%;background:' + (pct >= 50 ? 'var(--accent2)' : 'var(--warn)') + '"></div></div>' +
+        '<span class="setup-pct">' + pct + '%</span>' +
+        '<span class="setup-trades">' + arr.length + ' trades</span>' +
+        '<span class="' + (sum >= 0 ? 'pnl-pos' : 'pnl-neg') + '" style="min-width:64px;text-align:right">' + (sum >= 0 ? '+' : '') + sum.toFixed(1) + 'R</span></div>';
+    }).join('');
+    // trades table (cap display at 200 rows)
+    document.getElementById('pl-bt-table-wrap').style.display = 'block';
+    const shown = t.slice(0, 200);
+    document.getElementById('pl-bt-tbody').innerHTML = shown.map(function(x, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + x.chart + '</td>' +
+        '<td style="color:' + PATTERNS[x.key].color + '">' + PATTERNS[x.key].name + '</td>' +
+        '<td><span class="' + (x.dir > 0 ? 'dir-long' : 'dir-short') + '">' + (x.dir > 0 ? 'LONG' : 'SHORT') + '</span></td>' +
+        '<td>' + x.entry.toFixed(2) + '</td><td>' + x.stop.toFixed(2) + '</td><td>' + x.exit.toFixed(2) + '</td>' +
+        '<td class="' + (x.r >= 0 ? 'pnl-pos' : 'pnl-neg') + '">' + (x.r >= 0 ? '+' : '') + x.r.toFixed(2) + 'R</td>' +
+        '<td style="color:var(--muted)">' + x.reason + '</td></tr>';
+    }).join('') + (t.length > 200 ? '<tr><td colspan="9" style="color:var(--muted)">…and ' + (t.length - 200) + ' more trades (stats above include all)</td></tr>' : '');
+  }
+
+  // ---- view switching + activation ----
+  window.plShowView = function(name, el) {
+    ensureInit();
+    document.querySelectorAll('.pl-subtab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.pl-view').forEach(function(v) { v.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById('pl-view-' + name).classList.add('active');
+    // canvases need a repaint when their container becomes visible
+    setTimeout(function() {
+      if (name === 'detect') renderDetect();
+      if (name === 'train' && !S.train) plTrainNext();
+      else if (name === 'train' && S.train && !S.train.answered) { /* keep current question */ }
+      if (name === 'backtest' && S.bt) { renderBacktest(); }
+    }, 30);
+  };
+
+  function plActivate() {
+    ensureInit();
+    if (!S.detect) plNewChart();
+    else renderDetect();
+  }
+
+  const patternsTab = document.querySelector('[data-tab="patterns"]');
+  if (patternsTab) patternsTab.addEventListener('click', function() { setTimeout(plActivate, 40); });
+
+  let plResizeT = null;
+  window.addEventListener('resize', function() {
+    if (!S.activated) return;
+    clearTimeout(plResizeT);
+    plResizeT = setTimeout(function() {
+      const panel = document.getElementById('panel-patterns');
+      if (!panel.classList.contains('active')) return;
+      renderDetect();
+      if (S.train) drawChart(document.getElementById('pl-canvas-train'), S.train.built.c.slice(-60), { e20: S.train.built.res.e20.slice(-60), e5: S.train.built.res.e5.slice(-60), height: 340, lastBarMark: true });
+      if (S.bt) drawEquity(document.getElementById('pl-canvas-equity'), S.bt.equity);
+    }, 150);
+  });
+})();
+</script>
 </body>
 
 </html>
